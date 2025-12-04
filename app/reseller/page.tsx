@@ -474,24 +474,23 @@ export default function ResellerPage() {
           <div className="flex flex-col md:flex-row gap-2 items-stretch justify-center" style={{ gap: "0px", alignItems: "stretch" }}>
             {/* Card 1: AI Consultants & Solution Providers */}
             <div 
-              className="group flex flex-col gap-6 p-6 w-full md:w-[386.72px] relative bg-white card-divider stagger-item transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+              className="flex flex-col gap-6 p-6 w-full md:w-[386.72px] relative bg-white card-divider stagger-item"
               style={{
                 padding: "24.51px",
                 gap: "24.49px",
                 backgroundColor: "#FFFFFF",
                 position: "relative",
-                willChange: "transform",
               }}
             >
               {/* Icon */}
               <div 
-                className="bg-[#181818] rounded-[8.17px] flex items-center justify-center shrink-0 relative z-10 transition-transform duration-300 group-hover:scale-110"
+                className="bg-[#181818] rounded-[8.17px] flex items-center justify-center shrink-0 relative z-10"
                 style={{
                   width: "49.02px",
                   height: "49.02px",
                 }}
               >
-                <Target className="w-6 h-6 text-white transition-transform duration-300 group-hover:rotate-12" />
+                <Target className="w-6 h-6 text-white" />
               </div>
               
               {/* Content */}
@@ -533,24 +532,23 @@ export default function ResellerPage() {
 
             {/* Card 2: IT Consultants & Service Providers */}
             <div 
-              className="group flex flex-col gap-6 p-6 w-full md:w-[386.72px] relative bg-white card-divider stagger-item transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+              className="flex flex-col gap-6 p-6 w-full md:w-[386.72px] relative bg-white card-divider stagger-item"
               style={{
                 padding: "24.51px",
                 gap: "24.49px",
                 backgroundColor: "#FFFFFF",
                 position: "relative",
-                willChange: "transform",
               }}
             >
               {/* Icon */}
               <div 
-                className="bg-[#181818] rounded-[8.17px] flex items-center justify-center shrink-0 relative z-10 transition-transform duration-300 group-hover:scale-110"
+                className="bg-[#181818] rounded-[8.17px] flex items-center justify-center shrink-0 relative z-10"
                 style={{
                   width: "49.02px",
                   height: "49.02px",
                 }}
               >
-                <Globe className="w-6 h-6 text-white transition-transform duration-300 group-hover:rotate-12" />
+                <Globe className="w-6 h-6 text-white" />
               </div>
              
               {/* Content */}
@@ -592,24 +590,23 @@ export default function ResellerPage() {
 
             {/* Card 3: AI Enterprise and GTM Agencies */}
             <div 
-              className="group flex flex-col gap-6 p-6 w-full md:w-[386.72px] relative bg-white stagger-item transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+              className="flex flex-col gap-6 p-6 w-full md:w-[386.72px] relative bg-white stagger-item"
               style={{
                 padding: "24.51px",
                 gap: "24.49px",
                 backgroundColor: "#FFFFFF",
                 position: "relative",
-                willChange: "transform",
               }}
             >
               {/* Icon */}
               <div 
-                className="bg-[#181818] rounded-[8.17px] flex items-center justify-center shrink-0 relative z-10 transition-transform duration-300 group-hover:scale-110"
+                className="bg-[#181818] rounded-[8.17px] flex items-center justify-center shrink-0 relative z-10"
                 style={{
                   width: "49.02px",
                   height: "49.02px",
                 }}
               >
-                <TrendingUp className="w-6 h-6 text-white transition-transform duration-300 group-hover:rotate-12" />
+                <TrendingUp className="w-6 h-6 text-white" />
               </div>
               
               {/* Content */}

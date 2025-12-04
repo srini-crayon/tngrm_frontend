@@ -112,13 +112,82 @@ export default function ISVPage() {
     if (!element) return;
 
     let angle = 0;
+    let animationFrameId: number;
     const rotateGradient = () => {
       angle = (angle + 1) % 360;
       element.style.setProperty("--gradient-angle", `${angle}deg`);
-      requestAnimationFrame(rotateGradient);
+      animationFrameId = requestAnimationFrame(rotateGradient);
     };
 
     rotateGradient();
+    
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [])
+
+  // Scroll animations with IntersectionObserver - Optimized for performance
+  useEffect(() => {
+    // Use requestIdleCallback for better performance, fallback to setTimeout
+    const scheduleObservation = (callback: () => void) => {
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(callback, { timeout: 200 });
+      } else {
+        setTimeout(callback, 100);
+      }
+    };
+
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: "0px 0px -50px 0px", // Trigger earlier for smoother experience
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      // Use requestAnimationFrame for smooth animations
+      requestAnimationFrame(() => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Handle different animation types
+            if (entry.target.classList.contains("fade-in-section")) {
+              entry.target.classList.add("fade-in-visible");
+            } else if (entry.target.classList.contains("slide-in-left")) {
+              entry.target.classList.add("slide-in-visible");
+            } else if (entry.target.classList.contains("slide-in-right")) {
+              entry.target.classList.add("slide-in-visible");
+            } else if (entry.target.classList.contains("scale-in")) {
+              entry.target.classList.add("scale-in-visible");
+            } else if (entry.target.classList.contains("fade-in-blur")) {
+              entry.target.classList.add("fade-in-blur-visible");
+            } else if (entry.target.classList.contains("stagger-item")) {
+              entry.target.classList.add("stagger-visible");
+            }
+            // Unobserve after animation to improve performance
+            observer.unobserve(entry.target);
+          }
+        });
+      });
+    }, observerOptions);
+
+    // Function to observe all animated elements
+    const observeElements = () => {
+      const animatedElements = document.querySelectorAll(
+        ".fade-in-section, .slide-in-left, .slide-in-right, .scale-in, .fade-in-blur, .stagger-item"
+      );
+      animatedElements.forEach((el) => observer.observe(el));
+    };
+
+    // Observe elements after DOM is ready
+    scheduleObservation(observeElements);
+
+    return () => {
+      const animatedElements = document.querySelectorAll(
+        ".fade-in-section, .slide-in-left, .slide-in-right, .scale-in, .fade-in-blur, .stagger-item"
+      );
+      animatedElements.forEach((el) => observer.unobserve(el));
+      observer.disconnect();
+    };
   }, [])
 
   const handleOnboardAgent = () => {
@@ -131,9 +200,9 @@ export default function ISVPage() {
     }
   }
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" style={{ scrollBehavior: "smooth" }}>
             {/* Hero Section with Gradient */}
-            <section className="relative overflow-hidden min-h-[90vh]">
+            <section className="relative overflow-hidden min-h-[90vh]" style={{ transform: "translateZ(0)", willChange: "scroll-position", contain: "layout style paint" }}>
         {/* Top radial gradient banner */}
         <div
           aria-hidden="true"
@@ -152,7 +221,7 @@ export default function ISVPage() {
         <div className="w-full px-8 md:px-12 lg:px-16 py-12 md:py-20 lg:py-24 relative text-center">
             {/* Badge */}
               <span 
-                className="inline-block"
+                className="inline-block scale-in"
                 style={{
                   width: "244px",
                   height: "32px",
@@ -177,6 +246,7 @@ export default function ISVPage() {
                   textAlign: "center",
                   color: "#2910A7",
               marginBottom: "14px",
+                  willChange: "transform",
                 }}
               >
                 Independent Software Vendor
@@ -184,7 +254,7 @@ export default function ISVPage() {
 
             {/* Main Title */}
           <h1 
-            className="mb-4 text-center"
+            className="mb-4 text-center fade-in-blur"
                 style={{
               fontFamily: "Poppins",
                   fontWeight: 500,
@@ -194,6 +264,7 @@ export default function ISVPage() {
                   textAlign: "center",
               color: "var(--Interface-Color-Primary-900, #091917)",
               marginBottom: "18px",
+              willChange: "opacity, transform, filter",
                 }}
               >
                 Do you have an<br />
@@ -202,7 +273,7 @@ export default function ISVPage() {
 
             {/* Subtitle */}
             <p
-              className="text-center"
+              className="text-center fade-in-section"
               style={{
                 fontFamily: "Poppins",
                 fontWeight: 600,
@@ -212,6 +283,7 @@ export default function ISVPage() {
                 textAlign: "center",
                 color: "var(--Interface-Color-Primary-900, #091917)",
                 marginBottom: "6px",
+                willChange: "opacity, transform",
               }}
             >
               Build and Scale AI Agents That Reach Global Customers
@@ -219,7 +291,7 @@ export default function ISVPage() {
 
             {/* Description */}
             <p 
-              className="mx-auto max-w-2xl text-center"
+              className="mx-auto max-w-2xl text-center fade-in-section"
               style={{
                 fontFamily: "Poppins",
                 fontWeight: 400,
@@ -229,6 +301,7 @@ export default function ISVPage() {
                 textAlign: "center",
                 color: "var(--Interface-Color-Primary-900, #091917)",
                 marginBottom: "46px",
+                willChange: "opacity, transform",
               }}
             >
               Independent Software Vendor (ISV) Accelerator gives you access to 1000+ new customers to grow your business
@@ -236,10 +309,11 @@ export default function ISVPage() {
             </p>
 
             {/* Buttons */}
-          <div className="flex justify-center">
+          <div className="flex justify-center scale-in">
             <button
               onClick={() => openModal("auth", { mode: "login", role: "isv" })}
-              className="border-gradient relative text-white rounded-[4px] px-[28px] cursor-pointer transition-all hover:opacity-90"
+              className="border-gradient relative text-white rounded-[4px] px-[28px] cursor-pointer transition-all hover:opacity-90 hover:scale-105"
+              style={{ willChange: "transform" } as React.CSSProperties}
             style={{
               display: "flex",
               height: "48px",
@@ -280,8 +354,8 @@ export default function ISVPage() {
         </div>
 
           {/* Logo Scroll Section */}
-          <div className="mt-24 md:mt-32 w-full overflow-hidden">
-            <div className="overflow-hidden relative">
+          <div className="mt-24 md:mt-32 w-full overflow-hidden fade-in-section">
+            <div className="overflow-hidden relative" style={{ transform: "translateZ(0)", willChange: "transform" }}>
               <div 
                 className="flex items-center animate-scroll-tags" 
                   style={{ 
@@ -367,11 +441,12 @@ export default function ISVPage() {
       </section>
 
       {/* Build the Future Together Section */}
-      <section className="w-full px-8 md:px-12 lg:px-16 pt-8 md:pt-12 lg:pt-16 pb-16 md:pb-20 lg:pb-24 bg-white">
+      <section className="w-full px-8 md:px-12 lg:px-16 pt-8 md:pt-12 lg:pt-16 pb-16 md:pb-20 lg:pb-24 bg-white fade-in-section" style={{ transform: "translateZ(0)", willChange: "transform" }}>
         <div className="max-w-[1209px] mx-auto">
           {/* Heading and Description */}
           <div className="flex flex-col gap-3 items-center text-center mb-16 md:mb-18">
             <h2 
+              className="fade-in-blur"
               style={{
                 textAlign: "center",
                 fontFamily: "Poppins",
@@ -383,11 +458,13 @@ export default function ISVPage() {
                 backgroundClip: "text",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
+                willChange: "opacity, transform, filter",
               }}
             >
               Build the Future Together
             </h2>
             <p 
+              className="fade-in-section"
               style={{
                 color: "var(--Interface-Color-Primary-900, #091917)",
                 textAlign: "center",
@@ -398,6 +475,7 @@ export default function ISVPage() {
                 lineHeight: "normal",
                 maxWidth: "1100px",
                 margin: "0 auto",
+                willChange: "opacity, transform",
               }}
             >
               The Tangram.ai ISV Program empowers Independent Software Vendors to build, integrate, and scale on the Tangram.ai platform. Partners gain co-sell support, marketplace visibility, and go-to-market alignment — accelerating growth and expanding reach across the Tangram.ai ecosystem.
@@ -408,7 +486,7 @@ export default function ISVPage() {
           <div className="flex flex-col md:flex-row gap-2 items-stretch justify-center" style={{ gap: "0px", alignItems: "stretch" }}>
             {/* Card 1: Accelerate Project Successes */}
           <div 
-              className="flex flex-col gap-6 p-6 w-full md:w-[386.72px] relative bg-white card-divider"
+              className="flex flex-col gap-6 p-6 w-full md:w-[386.72px] relative bg-white card-divider stagger-item"
             style={{
                 padding: "24.51px",
                 gap: "24.49px",
@@ -441,6 +519,7 @@ export default function ISVPage() {
                 }}
               >
                 <h3 
+                className="fade-in-blur"
                 style={{
                     color: "#181818",
                     fontFamily: "Poppins",
@@ -449,6 +528,7 @@ export default function ISVPage() {
                     fontWeight: 500,
                     lineHeight: "150%",
                     letterSpacing: "-0.4px",
+                    willChange: "opacity, transform, filter",
                 }}
               >
                 Accelerate Project Successes
@@ -471,7 +551,7 @@ export default function ISVPage() {
 
             {/* Card 2: Scale your operations globally */}
             <div 
-              className="flex flex-col gap-6 p-6 w-full md:w-[386.72px] relative bg-white card-divider"
+              className="flex flex-col gap-6 p-6 w-full md:w-[386.72px] relative bg-white card-divider stagger-item"
               style={{
                 padding: "24.51px",
                 gap: "24.49px",
@@ -504,6 +584,7 @@ export default function ISVPage() {
                 }}
               >
                 <h3 
+                className="fade-in-blur"
                 style={{
                     color: "#181818",
                     fontFamily: "Poppins",
@@ -513,6 +594,7 @@ export default function ISVPage() {
                     lineHeight: "150%",
                     letterSpacing: "-0.4px",
                     whiteSpace: "nowrap",
+                    willChange: "opacity, transform, filter",
                 }}
               >
                 Scale your operations globally
@@ -535,7 +617,7 @@ export default function ISVPage() {
 
             {/* Card 3: Get faster business results */}
             <div 
-              className="flex flex-col gap-6 p-6 w-full md:w-[386.72px] relative bg-white"
+              className="flex flex-col gap-6 p-6 w-full md:w-[386.72px] relative bg-white stagger-item"
               style={{
                 padding: "24.51px",
                 gap: "24.49px",
@@ -568,6 +650,7 @@ export default function ISVPage() {
                 }}
               >
                 <h3 
+                className="fade-in-blur"
                 style={{
                     color: "#181818",
                     fontFamily: "Poppins",
@@ -576,6 +659,7 @@ export default function ISVPage() {
                     fontWeight: 500,
                     lineHeight: "150%",
                     letterSpacing: "-0.4px",
+                    willChange: "opacity, transform, filter",
                 }}
               >
                 Get faster business results
@@ -600,11 +684,11 @@ export default function ISVPage() {
       </section>
 
       {/* ISV's Testimonials Section */}
-      <section className="w-full px-8 md:px-12 lg:px-16 pt-12 md:pt-16 lg:pt-20 pb-16 md:pb-20 lg:pb-24" style={{ backgroundColor: "#F9FAFB" }}>
+      <section className="w-full px-8 md:px-12 lg:px-16 pt-12 md:pt-16 lg:pt-20 pb-16 md:pb-20 lg:pb-24 fade-in-section" style={{ backgroundColor: "#F9FAFB", transform: "translateZ(0)", willChange: "transform" }}>
         <div className="max-w-[1130px] mx-auto">
           {/* Heading */}
           <h2 
-            className="text-center mb-16"
+            className="text-center mb-16 fade-in-blur"
             style={{
               fontFamily: "Poppins, sans-serif",
               fontWeight: 600,
@@ -616,6 +700,7 @@ export default function ISVPage() {
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
+              willChange: "opacity, transform, filter",
             }}
           >
             ISV's Testimonials
@@ -633,7 +718,7 @@ export default function ISVPage() {
             >
               {/* First Set of Testimonials */}
               {/* Testimonial Card 1 */}
-              <div className="flex flex-col md:flex-row gap-8 md:gap-[72px] items-center min-w-full">
+              <div className="flex flex-col md:flex-row gap-8 md:gap-[72px] items-center min-w-full fade-in-section">
                 {/* Logo */}
                 <div 
                   className="relative shrink-0"
@@ -660,6 +745,7 @@ export default function ISVPage() {
                 <div className="flex flex-col gap-2 flex-1 w-full md:w-[584px]">
                   {/* Company Name */}
               <h3 
+                className="fade-in-blur"
                 style={{
                   fontFamily: "Poppins, sans-serif",
                       fontWeight: 500,
@@ -668,6 +754,7 @@ export default function ISVPage() {
                       lineHeight: "1.5",
                       letterSpacing: "-0.4px",
                       color: "#181818",
+                      willChange: "opacity, transform, filter",
                     }}
                   >
                     Mozark
@@ -705,7 +792,7 @@ export default function ISVPage() {
             </div>
 
               {/* Testimonial Card 2 */}
-              <div className="flex flex-col md:flex-row gap-8 md:gap-[72px] items-center min-w-full">
+              <div className="flex flex-col md:flex-row gap-8 md:gap-[72px] items-center min-w-full fade-in-section">
                 {/* Logo */}
             <div 
                   className="relative shrink-0"
@@ -777,7 +864,7 @@ export default function ISVPage() {
         </div>
 
               {/* Testimonial Card 3 */}
-              <div className="flex flex-col md:flex-row gap-8 md:gap-[72px] items-center min-w-full">
+              <div className="flex flex-col md:flex-row gap-8 md:gap-[72px] items-center min-w-full fade-in-section">
                 {/* Logo */}
                 <div 
                   className="relative shrink-0"
@@ -850,7 +937,7 @@ export default function ISVPage() {
 
               {/* Duplicate Set for Seamless Loop */}
               {/* Testimonial Card 1 (Duplicate) */}
-              <div className="flex flex-col md:flex-row gap-8 md:gap-[72px] items-center min-w-full">
+              <div className="flex flex-col md:flex-row gap-8 md:gap-[72px] items-center min-w-full fade-in-section">
                 {/* Logo */}
                 <div 
                   className="relative shrink-0"
@@ -922,7 +1009,7 @@ export default function ISVPage() {
             </div>
 
               {/* Testimonial Card 2 (Duplicate) */}
-              <div className="flex flex-col md:flex-row gap-8 md:gap-[72px] items-center min-w-full">
+              <div className="flex flex-col md:flex-row gap-8 md:gap-[72px] items-center min-w-full fade-in-section">
                 {/* Logo */}
             <div 
                   className="relative shrink-0"
@@ -994,7 +1081,7 @@ export default function ISVPage() {
             </div>
 
               {/* Testimonial Card 3 (Duplicate) */}
-              <div className="flex flex-col md:flex-row gap-8 md:gap-[72px] items-center min-w-full">
+              <div className="flex flex-col md:flex-row gap-8 md:gap-[72px] items-center min-w-full fade-in-section">
                 {/* Logo */}
             <div 
                   className="relative shrink-0"
@@ -1150,13 +1237,14 @@ export default function ISVPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="w-full px-8 md:px-12 lg:px-16 py-16 md:py-20 lg:py-24 bg-white">
+      <section className="w-full px-8 md:px-12 lg:px-16 py-16 md:py-20 lg:py-24 bg-white fade-in-section" style={{ transform: "translateZ(0)", willChange: "transform" }}>
         <div className="max-w-[1200px] mx-auto">
           <div className="flex flex-col md:flex-row gap-8 md:gap-[32px] items-start">
             {/* Left Column - Heading */}
             <div className="w-full md:w-[481.33px] shrink-0">
               <div className="sticky top-0">
                 <h2 
+                className="fade-in-blur"
                 style={{
                   fontFamily: "Poppins, sans-serif",
                   fontWeight: 600,
@@ -1167,6 +1255,7 @@ export default function ISVPage() {
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text",
+                  willChange: "opacity, transform, filter",
                 }}
               >
                   frequently asked questions<br />
@@ -1181,16 +1270,17 @@ export default function ISVPage() {
             {/* Right Column - FAQ Items */}
             <div className="flex-1 w-full md:w-[584px]">
                 {/* FAQ Item 1 */}
-              <div>
+              <div className="fade-in-section">
                 <button
                   onClick={() => setExpandedFaq(expandedFaq === 0 ? null : 0)}
-                  className="w-full flex items-center justify-between px-2 py-6"
+                  className="w-full flex items-center justify-between px-2 py-6 transition-all duration-300 hover:opacity-80"
                   style={{
                     paddingTop: "24px",
                     paddingBottom: "24px",
                   }}
                 >
                   <h3 
+                  className="fade-in-blur"
                       style={{
                       color: "#161D26",
                       fontFamily: "Poppins",
@@ -1198,6 +1288,7 @@ export default function ISVPage() {
                       fontStyle: "normal",
                       fontWeight: 500,
                         lineHeight: "23.99px",
+                        willChange: "opacity, transform, filter",
                       }}
                     >
                       Incentives for Sales teams
@@ -1256,16 +1347,17 @@ export default function ISVPage() {
                 </div>
 
                 {/* FAQ Item 2 */}
-              <div className="border-t" style={{ borderColor: "#D1D6DB" }}>
+              <div className="border-t fade-in-section" style={{ borderColor: "#D1D6DB" }}>
                 <button
                   onClick={() => setExpandedFaq(expandedFaq === 1 ? null : 1)}
-                  className="w-full flex items-center justify-between px-2 py-6"
+                  className="w-full flex items-center justify-between px-2 py-6 transition-all duration-300 hover:opacity-80"
                   style={{
                     paddingTop: "24px",
                     paddingBottom: "24px",
                   }}
                 >
                   <h3 
+                  className="fade-in-blur"
                       style={{
                         fontFamily: "Poppins, sans-serif",
                         fontWeight: 500,
@@ -1273,6 +1365,7 @@ export default function ISVPage() {
                       fontSize: "18px",
                         lineHeight: "23.99px",
                       color: "#161d26",
+                        willChange: "opacity, transform, filter",
                       }}
                     >
                       Drive visibility with Tangram.ai Sales
@@ -1331,16 +1424,17 @@ export default function ISVPage() {
                 </div>
 
                 {/* FAQ Item 3 */}
-              <div className="border-t" style={{ borderColor: "#D1D6DB" }}>
+              <div className="border-t fade-in-section" style={{ borderColor: "#D1D6DB" }}>
                 <button
                   onClick={() => setExpandedFaq(expandedFaq === 2 ? null : 2)}
-                  className="w-full flex items-center justify-between px-2 py-6"
+                  className="w-full flex items-center justify-between px-2 py-6 transition-all duration-300 hover:opacity-80"
                   style={{
                     paddingTop: "24px",
                     paddingBottom: "24px",
                   }}
                 >
                   <h3 
+                  className="fade-in-blur"
                       style={{
                         fontFamily: "Poppins, sans-serif",
                         fontWeight: 500,
@@ -1348,6 +1442,7 @@ export default function ISVPage() {
                       fontSize: "17.2px",
                         lineHeight: "23.99px",
                       color: "#161d26",
+                        willChange: "opacity, transform, filter",
                       }}
                     >
                       Focused co-sell support and resources

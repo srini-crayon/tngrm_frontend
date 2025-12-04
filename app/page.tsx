@@ -184,42 +184,60 @@ export default function HomePage() {
     };
 
     const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          // Handle different animation types
-          if (entry.target.classList.contains("fade-in-section")) {
-            entry.target.classList.add("fade-in-visible");
-          } else if (entry.target.classList.contains("slide-in-left")) {
-            entry.target.classList.add("slide-in-visible");
-          } else if (entry.target.classList.contains("slide-in-right")) {
-            entry.target.classList.add("slide-in-visible");
-          } else if (entry.target.classList.contains("scale-in")) {
-            entry.target.classList.add("scale-in-visible");
-          } else if (entry.target.classList.contains("fade-in-blur")) {
-            entry.target.classList.add("fade-in-blur-visible");
-          } else if (entry.target.classList.contains("stagger-item")) {
-            entry.target.classList.add("stagger-visible");
+      // Use requestAnimationFrame for smooth animations
+      requestAnimationFrame(() => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Handle different animation types
+            if (entry.target.classList.contains("fade-in-section")) {
+              entry.target.classList.add("fade-in-visible");
+            } else if (entry.target.classList.contains("slide-in-left")) {
+              entry.target.classList.add("slide-in-visible");
+            } else if (entry.target.classList.contains("slide-in-right")) {
+              entry.target.classList.add("slide-in-visible");
+            } else if (entry.target.classList.contains("scale-in")) {
+              entry.target.classList.add("scale-in-visible");
+            } else if (entry.target.classList.contains("fade-in-blur")) {
+              entry.target.classList.add("fade-in-blur-visible");
+            } else if (entry.target.classList.contains("stagger-item")) {
+              entry.target.classList.add("stagger-visible");
+            }
+            // Unobserve after animation to improve performance
+            observer.unobserve(entry.target);
           }
-        }
+        });
       });
     }, observerOptions);
 
-    // Observe all animated elements
-    const animatedElements = document.querySelectorAll(
-      ".fade-in-section, .slide-in-left, .slide-in-right, .scale-in, .fade-in-blur, .stagger-item"
-    );
-    animatedElements.forEach((element) => observer.observe(element));
+    // Function to observe all animated elements
+    const observeElements = () => {
+      const animatedElements = document.querySelectorAll(
+        ".fade-in-section, .slide-in-left, .slide-in-right, .scale-in, .fade-in-blur, .stagger-item"
+      );
+      animatedElements.forEach((element) => observer.observe(element));
+    };
+
+    // Use requestIdleCallback for better performance, fallback to setTimeout
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(observeElements, { timeout: 200 });
+    } else {
+      setTimeout(observeElements, 100);
+    }
 
     return () => {
+      const animatedElements = document.querySelectorAll(
+        ".fade-in-section, .slide-in-left, .slide-in-right, .scale-in, .fade-in-blur, .stagger-item"
+      );
       animatedElements.forEach((element) => observer.unobserve(element));
+      observer.disconnect();
     };
   }, []);
 
   return (
-    <div className="flex flex-col" style={{ transform: "translateZ(0)", willChange: "scroll-position" }}>
+    <div className="flex flex-col" style={{ transform: "translateZ(0)", willChange: "scroll-position", scrollBehavior: "smooth" }}>
       {/* Hero Section (Agents hero moved here) */}
       <section 
-        className="relative py-16 md:py-20 lg:py-24 h-[85vh] flex items-center w-full"
+        className="relative py-16 md:py-20 lg:py-24 h-[85vh] flex items-center w-full fade-in-section"
         style={{
           backgroundImage: "url('/img/indexbg.png')",
           backgroundSize: "cover",
@@ -228,12 +246,13 @@ export default function HomePage() {
           transform: "translateZ(0)",
           willChange: "transform",
           backfaceVisibility: "hidden",
+          contain: "layout style paint",
         }}
       >
         <div className="w-full px-8 md:px-12 lg:px-16">
           <div className="text-center">
             {/* Badge: From Pilot to Platform */}
-            <div className="mt-0 flex justify-center" style={{ marginBottom: "18px" }}>
+            <div className="mt-0 flex justify-center scale-in" style={{ marginBottom: "18px", willChange: "transform" }}>
               <div 
                 className="inline-flex items-center gap-2 border bg-white"
                 style={{
@@ -277,7 +296,7 @@ export default function HomePage() {
             </div>
 
             <div className="mb-0 text-balance mx-auto block">
-              <h1 style={{
+              <h1 className="fade-in-blur" style={{
                 fontFamily: "Poppins, sans-serif",
                 fontWeight: 500,
                 fontSize: "52px",
@@ -287,10 +306,11 @@ export default function HomePage() {
                 color: "#091917",
                 margin: "0 auto",
                 marginBottom: "14px",
+                willChange: "opacity, transform, filter",
               }}>
                 Simplify AI Success.
               </h1>
-              <div style={{
+              <div className="fade-in-section" style={{
                 fontFamily: "Poppins, sans-serif",
                 fontSize: "28px",
                 lineHeight: "1.4",
@@ -301,6 +321,7 @@ export default function HomePage() {
                 flexDirection: "column",
                 alignItems: "center",
                 gap: "0",
+                willChange: "opacity, transform",
               }}>
                 <p style={{ margin: 0, lineHeight: "1.4", color: "#091917" }}>
                   With the Tangram Generative + Agentic AI platform that
@@ -335,7 +356,7 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-            <p className="mb-8 text-balance mx-auto" style={{
+            <p className="mb-8 text-balance mx-auto fade-in-section" style={{
               fontFamily: "Poppins, sans-serif",
               fontWeight: 400,
               fontStyle: "normal",
@@ -346,12 +367,13 @@ export default function HomePage() {
               verticalAlign: "middle",
               color: "#091917",
               marginTop: "4px",
+              willChange: "opacity, transform",
             }}>
               
             </p>
 
             {/* AI Capabilities Marquee - Two Rows */}
-            <div className="mx-auto max-w-5xl overflow-hidden" style={{ marginBottom: "64px" }}>
+            <div className="mx-auto max-w-5xl overflow-hidden fade-in-section" style={{ marginBottom: "64px", willChange: "opacity, transform" }}>
               {(() => {
                 const capabilities = [
                   { icon: "circle", color: "#04ab8b", text: "Conversational AI & Advisory" },
@@ -482,10 +504,10 @@ export default function HomePage() {
             </div>
 
             {/* See Tangram in Action Button */}
-            <div className="flex justify-center">
+            <div className="flex justify-center scale-in">
               <Link
                 href="/contact"
-                className="border-gradient relative text-white rounded-[4px] px-[28px]"
+                className="border-gradient relative text-white rounded-[4px] px-[28px] transition-transform duration-300 hover:scale-105"
                 style={{
                   display: "flex",
                   height: "48px",
@@ -502,6 +524,7 @@ export default function HomePage() {
                   padding: "20px 28px",
                   boxShadow: "0 0 20px rgba(255, 109, 27, 0.3), 0 0 40px rgba(75, 138, 255, 0.2), 0 0 60px rgba(107, 95, 255, 0.1)",
                   "--gradient-angle": "0deg",
+                  willChange: "transform",
                 } as React.CSSProperties & { "--gradient-angle"?: string }}
               >
                 {/* Text */}

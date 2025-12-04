@@ -198,6 +198,68 @@ export default function AgentLibraryPage() {
     fetchData();
   }, []);
 
+  // Scroll animations with IntersectionObserver - Optimized for performance
+  useEffect(() => {
+    // Use requestIdleCallback for better performance, fallback to setTimeout
+    const scheduleObservation = (callback: () => void) => {
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(callback, { timeout: 200 });
+      } else {
+        setTimeout(callback, 100);
+      }
+    };
+
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: "0px 0px -50px 0px", // Trigger earlier for smoother experience
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      // Use requestAnimationFrame for smooth animations
+      requestAnimationFrame(() => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Handle different animation types
+            if (entry.target.classList.contains("fade-in-section")) {
+              entry.target.classList.add("fade-in-visible");
+            } else if (entry.target.classList.contains("slide-in-left")) {
+              entry.target.classList.add("slide-in-visible");
+            } else if (entry.target.classList.contains("slide-in-right")) {
+              entry.target.classList.add("slide-in-visible");
+            } else if (entry.target.classList.contains("scale-in")) {
+              entry.target.classList.add("scale-in-visible");
+            } else if (entry.target.classList.contains("fade-in-blur")) {
+              entry.target.classList.add("fade-in-blur-visible");
+            } else if (entry.target.classList.contains("stagger-item")) {
+              entry.target.classList.add("stagger-visible");
+            }
+            // Unobserve after animation to improve performance
+            observer.unobserve(entry.target);
+          }
+        });
+      });
+    }, observerOptions);
+
+    // Function to observe all animated elements
+    const observeElements = () => {
+      const animatedElements = document.querySelectorAll(
+        ".fade-in-section, .slide-in-left, .slide-in-right, .scale-in, .fade-in-blur, .stagger-item"
+      );
+      animatedElements.forEach((el) => observer.observe(el));
+    };
+
+    // Observe elements after DOM is ready
+    scheduleObservation(observeElements);
+
+    return () => {
+      const animatedElements = document.querySelectorAll(
+        ".fade-in-section, .slide-in-left, .slide-in-right, .scale-in, .fade-in-blur, .stagger-item"
+      );
+      animatedElements.forEach((el) => observer.unobserve(el));
+      observer.disconnect();
+    };
+  }, []);
+
 
   const allCapabilities = useMemo(() => {
     const capabilities = new Set<string>();
@@ -400,7 +462,7 @@ export default function AgentLibraryPage() {
   };
 
   return (
-    <div className="flex flex-col relative">
+    <div className="flex flex-col relative" style={{ scrollBehavior: "smooth" }}>
       {/* Top radial gradient banner fixed to top (no whitespace) */}
       <div
         aria-hidden="true"
@@ -417,12 +479,12 @@ export default function AgentLibraryPage() {
         }}
       />
       {/* Hero Section */}
-      <section className="pt-8 pb-12 md:pt-12 md:pb-16 lg:pt-16 lg:pb-20">
+      <section className="pt-8 pb-12 md:pt-12 md:pb-16 lg:pt-16 lg:pb-20 fade-in-section" style={{ transform: "translateZ(0)", willChange: "scroll-position", contain: "layout style paint" }}>
         <div className="w-full px-8 md:px-12 lg:px-16">
           <div className="text-center">
             <div className="flex justify-center mb-4">
               <span 
-                className="inline-block"
+                className="inline-block scale-in"
                 style={{
                   width: "115px",
                   height: "32px",
@@ -443,13 +505,14 @@ export default function AgentLibraryPage() {
                   letterSpacing: "0%",
                   textAlign: "center",
                   color: "#BD0159",
+                  willChange: "transform",
                 }}
               >
                 Agent Store
               </span>
             </div>
 
-            <h1 className="mb-4 text-center">
+            <h1 className="mb-4 text-center fade-in-blur">
               <span
                 style={{
                   fontFamily: "Poppins, sans-serif",
@@ -461,13 +524,14 @@ export default function AgentLibraryPage() {
                   textAlign: "center",
                   color: "#091917",
                   display: "inline-block",
+                  willChange: "opacity, transform, filter",
                 }}
               >
                 The One-Stop Store.
               </span>
             </h1>
             <p
-              className="mb-2 text-center"
+              className="mb-2 text-center fade-in-section"
               style={{
                 fontFamily: "Poppins, sans-serif",
                 fontWeight: 600,
@@ -476,13 +540,14 @@ export default function AgentLibraryPage() {
                 lineHeight: "24px",
                 textAlign: "center",
                 color: "#091917",
+                willChange: "opacity, transform",
               }}
             >
               Discover.Try. Deploy.
             </p>
 
             <p 
-              className="mx-auto mb-8 max-w-2xl text-center"
+              className="mx-auto mb-8 max-w-2xl text-center fade-in-section"
               style={{
                 fontFamily: "Poppins, sans-serif",
                 fontWeight: 400,
@@ -491,14 +556,15 @@ export default function AgentLibraryPage() {
                 lineHeight: "24px",
                 textAlign: "center",
                 color: "#091917",
+                willChange: "opacity, transform",
               }}
             >
               Start referring or integrating agents from Tangram.ai store with your clients today to unlock new revenue opportunities, accelerate growth, and deliver intelligent AI solutions at scale.
             </p>
 
             {/* Centered search bar under subheader */}
-            <div className="flex w-full justify-center mb-0">
-              <div className="w-full max-w-5xl">
+            <div className="flex w-full justify-center mb-0 scale-in">
+              <div className="w-full max-w-5xl" style={{ willChange: "transform" }}>
                 {/* reuse same search-chat as home */}
                 <AgentSearchChat 
                   externalValue={agentSearchChatValue}
@@ -508,7 +574,7 @@ export default function AgentLibraryPage() {
             </div>
 
             {/* Category tags - Two Row Scrolling */}
-            <div className="mb-4 mx-auto max-w-5xl overflow-hidden" style={{ minHeight: "80px" }}>
+            <div className="mb-4 mx-auto max-w-5xl overflow-hidden fade-in-section" style={{ minHeight: "80px", willChange: "opacity, transform" }}>
               {(() => {
                 // Get unique agent names from API for first row
                 const agentNames = [...new Set(agents.map(agent => agent.title))].slice(0, 20); // Limit to 20 unique names
