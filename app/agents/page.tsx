@@ -4,12 +4,13 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { AgentSearchChat } from "../../components/agent-search-chat";
 import { AgentCard } from "../../components/agent-card";
+import { AgentCardSkeleton } from "../../components/agent-card-skeleton";
 import ChatDialog from "../../components/chat-dialog";
-import { Search } from "lucide-react";
-import { VoiceInputControls } from "../../components/voice-input-controls";
+import { Search, ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useChatStore } from "../../lib/store/chat.store";
+import { useModal } from "../../hooks/use-modal";
 
 // Fallback mock data (minimal) in case the API fails
 const fallbackAgents = [
@@ -98,10 +99,12 @@ async function fetchAgents() {
 }
 
 export default function AgentLibraryPage() {
+  const { openModal } = useModal();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [agentSearchChatValue, setAgentSearchChatValue] = useState("");
   const [providerFilter, setProviderFilter] = useState<string>("All");
   const [capabilityFilter, setCapabilityFilter] = useState<string>("All");
   const [deploymentFilter, setDeploymentFilter] = useState<string>("All");
@@ -353,43 +356,45 @@ export default function AgentLibraryPage() {
     if (total <= 1) return null;
     const pages = Array.from({ length: total }, (_, idx) => idx + 1);
     return (
-      <div className="mt-10 flex flex-col items-center gap-3">
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onChange(Math.max(1, current - 1))}
-            disabled={current === 1}
-            className="px-4 py-2"
-          >
-            Previous
-          </Button>
+      <div className="mt-16 flex items-center justify-center gap-2">
+        <button
+          onClick={() => onChange(Math.max(1, current - 1))}
+          disabled={current === 1}
+          className="text-sm text-gray-600 hover:text-gray-900 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors px-2"
+          style={{
+            fontFamily: "Poppins, sans-serif",
+          }}
+        >
+          Previous
+        </button>
+        <div className="flex items-center gap-1">
           {pages.map((page) => (
             <button
               key={page}
               onClick={() => onChange(page)}
-              className={`h-9 w-9 rounded-full border text-sm font-medium transition-all ${
+              className={`text-sm px-2 py-1 min-w-[32px] transition-colors ${
                 page === current
-                  ? "bg-gray-900 text-white border-gray-900"
-                  : "border-gray-300 text-gray-700 hover:bg-gray-100"
+                  ? "text-gray-900 font-medium"
+                  : "text-gray-600 hover:text-gray-900"
               }`}
+              style={{
+                fontFamily: "Poppins, sans-serif",
+              }}
             >
               {page}
             </button>
           ))}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onChange(Math.min(total, current + 1))}
-            disabled={current === total}
-            className="px-4 py-2"
-          >
-            Next
-          </Button>
         </div>
-        <p className="text-sm text-gray-500">
-          Page {current} of {total}
-        </p>
+        <button
+          onClick={() => onChange(Math.min(total, current + 1))}
+          disabled={current === total}
+          className="text-sm text-gray-600 hover:text-gray-900 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors px-2"
+          style={{
+            fontFamily: "Poppins, sans-serif",
+          }}
+        >
+          Next
+        </button>
       </div>
     );
   };
@@ -412,7 +417,7 @@ export default function AgentLibraryPage() {
         }}
       />
       {/* Hero Section */}
-      <section className="py-12 md:py-16 lg:py-20">
+      <section className="pt-8 pb-12 md:pt-12 md:pb-16 lg:pt-16 lg:pb-20">
         <div className="w-full px-8 md:px-12 lg:px-16">
           <div className="text-center">
             <div className="flex justify-center mb-4">
@@ -422,17 +427,14 @@ export default function AgentLibraryPage() {
                   width: "115px",
                   height: "32px",
                   borderRadius: "50px",
-                  paddingTop: "4px",
-                  paddingRight: "16px",
-                  paddingBottom: "4px",
-                  paddingLeft: "16px",
+                  padding: "4px 16px",
                   gap: "8px",
                   opacity: 1,
-                  transform: "rotate(-0.28deg)",
+                  transform: "rotate(0.282deg)",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: "#F472B6",
+                  background: "#FFD0E6",
                   fontFamily: "Poppins, sans-serif",
                   fontWeight: 500,
                   fontStyle: "normal",
@@ -465,16 +467,14 @@ export default function AgentLibraryPage() {
               </span>
             </h1>
             <p
-              className="mb-4 text-center"
+              className="mb-2 text-center"
               style={{
-                fontFamily: "Poppins, Inter, sans-serif",
+                fontFamily: "Poppins, sans-serif",
                 fontWeight: 600,
                 fontStyle: "normal",
                 fontSize: "14px",
                 lineHeight: "24px",
-                letterSpacing: "0px",
                 textAlign: "center",
-                verticalAlign: "middle",
                 color: "#091917",
               }}
             >
@@ -484,28 +484,31 @@ export default function AgentLibraryPage() {
             <p 
               className="mx-auto mb-8 max-w-2xl text-center"
               style={{
-                fontFamily: "Poppins, Inter, sans-serif",
+                fontFamily: "Poppins, sans-serif",
                 fontWeight: 400,
                 fontStyle: "normal",
-                fontSize: "16px",
+                fontSize: "14px",
                 lineHeight: "24px",
-                letterSpacing: "0%",
-                color: "#374151",
+                textAlign: "center",
+                color: "#091917",
               }}
             >
               Start referring or integrating agents from Tangram.ai store with your clients today to unlock new revenue opportunities, accelerate growth, and deliver intelligent AI solutions at scale.
             </p>
 
             {/* Centered search bar under subheader */}
-            <div className="flex w-full justify-center mb-16">
+            <div className="flex w-full justify-center mb-0">
               <div className="w-full max-w-5xl">
                 {/* reuse same search-chat as home */}
-                <AgentSearchChat />
+                <AgentSearchChat 
+                  externalValue={agentSearchChatValue}
+                  onExternalValueChange={setAgentSearchChatValue}
+                />
               </div>
             </div>
 
             {/* Category tags - Two Row Scrolling */}
-            <div className="mb-12 mx-auto max-w-5xl overflow-hidden">
+            <div className="mb-4 mx-auto max-w-5xl overflow-hidden" style={{ minHeight: "80px" }}>
               {(() => {
                 // Get unique agent names from API for first row
                 const agentNames = [...new Set(agents.map(agent => agent.title))].slice(0, 20); // Limit to 20 unique names
@@ -513,11 +516,19 @@ export default function AgentLibraryPage() {
                 const iconTypes = ["circle", "triangle", "square"];
 
                 // Create agent name tags for first row
-                const agentNameTags = agentNames.map((name, idx) => ({
-                  text: name,
-                  icon: iconTypes[idx % iconTypes.length] as "circle" | "triangle" | "square",
-                  color: iconColors[idx % iconColors.length],
-                }));
+                // Use placeholder tags if no agents loaded yet to prevent layout shift
+                const agentNameTags = agentNames.length > 0 
+                  ? agentNames.map((name, idx) => ({
+                      text: name,
+                      icon: iconTypes[idx % iconTypes.length] as "circle" | "triangle" | "square",
+                      color: iconColors[idx % iconColors.length],
+                    }))
+                  : [
+                      // Placeholder tags to maintain layout until agents load
+                      { text: "Agent 1", icon: "circle" as const, color: "#E5E7EB" },
+                      { text: "Agent 2", icon: "triangle" as const, color: "#E5E7EB" },
+                      { text: "Agent 3", icon: "square" as const, color: "#E5E7EB" },
+                    ];
 
                 // Capability tags for second row
                 const tagDefinitions = [
@@ -553,6 +564,7 @@ export default function AgentLibraryPage() {
                   return (
                     <button
                       key={key}
+                      onClick={() => setAgentSearchChatValue(tag.text)}
                       className="flex items-center bg-white whitespace-nowrap shrink-0 shadow-sm cursor-pointer transition-all hover:shadow-md"
                       style={{
                         height: "32px",
@@ -593,7 +605,11 @@ export default function AgentLibraryPage() {
                   return (
                     <button
                       key={key}
-                      onClick={() => setCapabilityFilter(isSelected ? "All" : matchingCapability)}
+                      onClick={() => {
+                        setAgentSearchChatValue(tag.text);
+                        // Also set the filter
+                        setCapabilityFilter(isSelected ? "All" : matchingCapability);
+                      }}
                       className="flex items-center bg-white whitespace-nowrap shrink-0 shadow-sm cursor-pointer transition-all hover:shadow-md"
                       style={{
                         height: "32px",
@@ -633,16 +649,16 @@ export default function AgentLibraryPage() {
                 const duplicatedCapabilityTags = [...tagDefinitions, ...tagDefinitions, ...tagDefinitions];
 
                 return (
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-3" style={{ minHeight: "80px" }}>
                     {/* First Row - Left to Right - Agent Names from API */}
-                    <div className="overflow-hidden relative">
-                      <div className="flex gap-3 animate-scroll-tags" style={{ width: "fit-content", animationDuration: "120s" }}>
+                    <div className="overflow-hidden relative" style={{ height: "44px", minHeight: "44px" }}>
+                      <div className="flex gap-3 animate-scroll-tags" style={{ width: "fit-content", animationDuration: "240s" }}>
                         {duplicatedAgentNames.map((tag, idx) => renderAgentNameTag(tag, `row1-${idx}`))}
                       </div>
                     </div>
                     {/* Second Row - Right to Left - Capability Tags */}
-                    <div className="overflow-hidden relative">
-                      <div className="flex gap-3 animate-scroll-tags-reverse" style={{ width: "fit-content", animationDuration: "100s" }}>
+                    <div className="overflow-hidden relative" style={{ height: "44px", minHeight: "44px" }}>
+                      <div className="flex gap-3 animate-scroll-tags-reverse" style={{ width: "fit-content", animationDuration: "200s" }}>
                         {duplicatedCapabilityTags.map((tag, idx) => renderCapabilityTag(tag, `row2-${idx}`))}
                       </div>
                     </div>
@@ -717,7 +733,7 @@ export default function AgentLibraryPage() {
                 placeholder="Quick search by name, tags, or description..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 pr-28 py-2 w-full border-0 shadow-none focus-visible:ring-0"
+                className="pl-10 pr-4 py-2 w-full border-0 shadow-none focus-visible:ring-0"
                 style={{
                   border: "none",
                   boxShadow: "none",
@@ -731,128 +747,134 @@ export default function AgentLibraryPage() {
                   color: "#667085",
                 }}
               />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                <VoiceInputControls
-                  value={search}
-                  onValueChange={setSearch}
-                  buttonVariant="ghost"
-                  compact
-                  ariaLabel="Use voice search"
-                />
-              </div>
             </div>
             
             {/* Filters */}
-            <div className="flex flex-nowrap gap-1 items-center w-full lg:basis-[40%] lg:justify-end lg:pl-4">
-              <select
-                className="bg-white"
-                value={providerFilter}
-                onChange={(e) => setProviderFilter(e.target.value)}
-                style={{
-                  width: "110px",
-                  height: "20px",
-                  borderTop: "none",
-                  borderBottom: "none",
-                  borderLeft: "1px solid #DFDFDF",
-                  borderRadius: "0",
-                  padding: "0 8px",
-                  color: "#344054",
-                  fontFamily: "Poppins, sans-serif",
-                  fontSize: "14px",
-                  appearance: "none",
-                  backgroundImage: "url('/Down_arow.png')",
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 8px center",
-                  backgroundSize: "12px 12px",
-                  paddingRight: "2px",
-                }}
-              >
-                <option value="All">By Provider</option>
-                {allProviders.map(provider => (
-                  <option key={provider} value={provider}>{provider}</option>
-                ))}
-              </select>
-              <select
-                className="bg-white"
-                value={capabilityFilter}
-                onChange={(e) => setCapabilityFilter(e.target.value)}
-                style={{
-                  width: "125px",
-                  height: "20px",
-                  borderTop: "none",
-                  borderBottom: "none",
-                  borderRadius: "0",
-                  padding: "0 8px",
-                  color: "#344054",
-                  fontFamily: "Poppins, sans-serif",
-                  fontSize: "14px",
-                  appearance: "none",
-                  backgroundImage: "url('/Down_arow.png')",
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 8px center",
-                  backgroundSize: "12px 12px",
-                  paddingRight: "2px",
-                }}
-              >
-                <option value="All">By Capability</option>
-                {allCapabilities.map(capability => (
-                  <option key={capability} value={capability}>{capability}</option>
-                ))}
-              </select>
-              <select
-                className="bg-white"
-                value={deploymentFilter}
-                onChange={(e) => setDeploymentFilter(e.target.value)}
-                style={{
-                  width: "130px",
-                  height: "20px",
-                  borderTop: "none",
-                  borderBottom: "none",
-                  borderRadius: "0",
-                  padding: "0 8px",
-                  color: "#344054",
-                  fontFamily: "Poppins, sans-serif",
-                  fontSize: "14px",
-                  appearance: "none",
-                  backgroundImage: "url('/Down_arow.png')",
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 8px center",
-                  backgroundSize: "12px 12px",
-                  paddingRight: "2px",
-                }}
-              >
-                <option value="All">By Asset Type</option>
-                {allDeploymentTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-              <select
-                className="bg-white"
-                value={personaFilter}
-                onChange={(e) => setPersonaFilter(e.target.value)}
-                style={{
-                  width: "110px",
-                  height: "20px",
-                  borderTop: "none",
-                  borderBottom: "none",
-                  borderRadius: "0",
-                  padding: "0 8px",
-                  color: "#344054",
-                  fontFamily: "Poppins, sans-serif",
-                  fontSize: "14px",
-                  appearance: "none",
-                  backgroundImage: "url('/Down_arow.png')",
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 8px center",
-                  backgroundSize: "12px 12px",
-                  paddingRight: "2px",
-                }}
-              >
-                <option value="All">By Persona</option>
-                {allPersonas.map(persona => (
-                  <option key={persona} value={persona}>{persona}</option>
-                ))}
-              </select>
+            <div className="flex flex-nowrap items-center w-full lg:basis-[40%] lg:justify-end lg:pl-4 gap-2 lg:gap-6">
+              <div className="relative inline-flex items-center" style={{ borderLeft: "1px solid #DFDFDF", paddingLeft: "8px" }}>
+                <span
+                  style={{
+                    fontFamily: "Poppins, sans-serif",
+                    fontSize: "14px",
+                    color: "#344054",
+                    marginRight: "4px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {providerFilter === "All" ? "Provider" : providerFilter}
+                </span>
+                <ChevronDown 
+                  className="pointer-events-none"
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    color: "#344054",
+                  }}
+                />
+                <select
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  value={providerFilter}
+                  onChange={(e) => setProviderFilter(e.target.value)}
+                >
+                  <option value="All">Provider</option>
+                  {allProviders.map(provider => (
+                    <option key={provider} value={provider}>{provider}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="relative inline-flex items-center" style={{ paddingLeft: "8px" }}>
+                <span
+                  style={{
+                    fontFamily: "Poppins, sans-serif",
+                    fontSize: "14px",
+                    color: "#344054",
+                    marginRight: "4px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {capabilityFilter === "All" ? "Capability" : capabilityFilter}
+                </span>
+                <ChevronDown 
+                  className="pointer-events-none"
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    color: "#344054",
+                  }}
+                />
+                <select
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  value={capabilityFilter}
+                  onChange={(e) => setCapabilityFilter(e.target.value)}
+                >
+                  <option value="All">Capability</option>
+                  {allCapabilities.map(capability => (
+                    <option key={capability} value={capability}>{capability}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="relative inline-flex items-center" style={{ paddingLeft: "8px" }}>
+                <span
+                  style={{
+                    fontFamily: "Poppins, sans-serif",
+                    fontSize: "14px",
+                    color: "#344054",
+                    marginRight: "4px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {deploymentFilter === "All" ? "Asset Type" : deploymentFilter}
+                </span>
+                <ChevronDown 
+                  className="pointer-events-none"
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    color: "#344054",
+                  }}
+                />
+                <select
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  value={deploymentFilter}
+                  onChange={(e) => setDeploymentFilter(e.target.value)}
+                >
+                  <option value="All">Asset Type</option>
+                  {allDeploymentTypes.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="relative inline-flex items-center" style={{ paddingLeft: "8px" }}>
+                <span
+                  style={{
+                    fontFamily: "Poppins, sans-serif",
+                    fontSize: "14px",
+                    color: "#344054",
+                    marginRight: "4px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {personaFilter === "All" ? "Persona" : personaFilter}
+                </span>
+                <ChevronDown 
+                  className="pointer-events-none"
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    color: "#344054",
+                  }}
+                />
+                <select
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  value={personaFilter}
+                  onChange={(e) => setPersonaFilter(e.target.value)}
+                >
+                  <option value="All">Persona</option>
+                  {allPersonas.map(persona => (
+                    <option key={persona} value={persona}>{persona}</option>
+                  ))}
+                </select>
+              </div>
               
               {/* Clear All Filters Button */}
               {(() => {
@@ -866,9 +888,7 @@ export default function AgentLibraryPage() {
                 if (!hasActiveFilters) return null;
                 
                 return (
-                  <Button
-                    variant="outline"
-                    size="sm"
+                  <button
                     onClick={() => {
                       setProviderFilter("All");
                       setCapabilityFilter("All");
@@ -876,10 +896,27 @@ export default function AgentLibraryPage() {
                       setPersonaFilter("All");
                       setSearch("");
                     }}
-                    className="text-xs px-3 py-2 border-gray-300 hover:bg-gray-50"
+                    style={{
+                      fontFamily: "Poppins, sans-serif",
+                      fontSize: "14px",
+                      color: "#344054",
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: 0,
+                      textDecoration: "underline",
+                      whiteSpace: "nowrap",
+                      flexShrink: 0,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.opacity = "0.7";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.opacity = "1";
+                    }}
                   >
                     Clear All
-                  </Button>
+                  </button>
                 );
               })()}
             </div>
@@ -888,11 +925,18 @@ export default function AgentLibraryPage() {
       </section>
 
       {/* Agent Grid */}
-      <section className="py-12 md:py-16 lg:py-20">
+      <section className="pt-4 pb-12 md:pt-6 md:pb-16 lg:pt-8 lg:pb-20">
         <div className="w-full mx-auto" style={{ maxWidth: "auto", paddingLeft: "70px", paddingRight: "70px" }}>
           {loading && (
-            <div className="text-center py-12">
-              <div className="text-muted-foreground">Loading agents...</div>
+            <div 
+              className="grid gap-4 md:gap-6 lg:gap-10"
+              style={{
+                gridTemplateColumns: "repeat(3, 1fr)",
+              }}
+            >
+              {Array.from({ length: 9 }).map((_, index) => (
+                <AgentCardSkeleton key={index} />
+              ))}
             </div>
           )}
           
@@ -929,10 +973,9 @@ export default function AgentLibraryPage() {
                   </div>
                   
                 <div 
-                  className="grid"
+                  className="grid gap-4 md:gap-6 lg:gap-10"
                   style={{
                     gridTemplateColumns: "repeat(3, 1fr)",
-                    gap: "60px 40px",
                   }}
                 >
                   {paginatedAiAgents.map((agent) => (
@@ -953,10 +996,9 @@ export default function AgentLibraryPage() {
               {/* All Agents Section */}
               <div className={aiSearchedAgentIds && aiSearchedAgentIds.length > 0 ? "border-t pt-12" : ""}>
                 <div 
-                  className="grid"
+                  className="grid gap-4 md:gap-6 lg:gap-10"
                   style={{
                     gridTemplateColumns: "repeat(3, 1fr)",
-                    gap: "60px 40px",
                   }}
                 >
                   {paginatedAgents.map((agent) => (
@@ -972,199 +1014,244 @@ export default function AgentLibraryPage() {
 
                 {totalPages > 1 && renderPaginationControls(currentPage, totalPages, setCurrentPage)}
               </div>
-              
-              {/* Customization prompt */}
-              <div 
-                className="relative mx-auto"
-                style={{
-                  width: "1272px",
-                  height: "420px",
-                  marginTop: "293px",
-                  backgroundImage: "url('/Frame 13.png')",
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  backgroundRepeat: "no-repeat",
-                  position: "relative",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <div 
-                  className="text-center rounded-xl p-8 relative z-10"
-                  style={{
-                    width: "1232px",
-                    height: "380px",
-                    background: "linear-gradient(180deg, #E0F2FE 0%, #F0F9FF 100%)",
-                    border: "2px dashed #D1D5DB",
-                    position: "relative",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  
-                  {/* Enquire Now Button */}
-                <div className="mb-6">
-                  <button 
-                    aria-label="Enquire Now"
-                    style={{
-                      width: "100px",
-                      height: "28px",
-                      padding: "5.8px 8px 6.79px 8px",
-                      fontFamily: "Poppins, sans-serif",
-                      fontSize: "12px",
-                      fontWeight: 500,
-                      fontStyle: "normal",
-                      lineHeight: "14.4px",
-                      letterSpacing: "0%",
-                      textAlign: "center",
-                      verticalAlign: "middle",
-                      color: "#0B2B70",
-                      background: "#D0DFF7",
-                      backdropFilter: "blur(6px)",
-                      border: "none",
-                      borderRadius: "20px",
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                      outline: "none",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxSizing: "border-box",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#c0d5f5";
-                      e.currentTarget.style.transform = "translateY(-1px)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "#D0DFF7";
-                      e.currentTarget.style.transform = "translateY(0)";
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.outline = "2px solid #0B2B70";
-                      e.currentTarget.style.outlineOffset = "2px";
-                      e.currentTarget.style.boxShadow = "0 0 0 4px rgba(11, 43, 112, 0.1)";
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.outline = "none";
-                      e.currentTarget.style.boxShadow = "none";
-                    }}
-                    onMouseDown={(e) => {
-                      e.currentTarget.style.transform = "translateY(0)";
-                    }}
-                    onClick={() => window.location.href = "/contact"}
-                  >
-                    Enquire Now
-                  </button>
-                </div>
-
-                {/* Main Title */}
-                <h3 
-                  className="mb-4"
-                  style={{
-                    fontFamily: "Poppins, sans-serif",
-                    fontWeight: 600,
-                    fontStyle: "normal",
-                    fontSize: "32px",
-                    lineHeight: "44.8px",
-                    letterSpacing: "-0.64px",
-                    textAlign: "center",
-                    verticalAlign: "middle",
-                    background: "linear-gradient(270deg, #0082C0 0%, #3B60AF 100%)",
-                    WebkitBackgroundClip: "text",
-                    backgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    color: "transparent",
-                    margin: "0 0 12px 0",
-                    maxWidth: "100%",
-                  }}
-                >
-                  Want a Custom Workflow?
-                </h3>
-
-                {/* Descriptive Paragraph */}
-                <p 
-                  className="mb-6 max-w-2xl mx-auto"
-                  style={{
-                    fontFamily: "Poppins, sans-serif",
-                    fontWeight: 400,
-                    fontStyle: "normal",
-                    fontSize: "16px",
-                    lineHeight: "24px",
-                    letterSpacing: "0%",
-                    textAlign: "center",
-                    verticalAlign: "middle",
-                    color: "#4B5563",
-                    margin: "0 0 32px 0",
-                    maxWidth: "720px",
-                  }}
-                >
-                  Tangram agents can be chained into complete, composable solutions. Tell us what outcome you want — we'll build the right flow.
-                </p>
-
-                {/* Talk to a Solution Architect Button */}
-                <div>
-                  <button
-                    aria-label="Talk to a Solution Architect"
-                    style={{
-                      height: "44px",
-                      padding: "0 24px",
-                      fontFamily: "Poppins, sans-serif",
-                      fontWeight: 500,
-                      fontStyle: "normal",
-                      fontSize: "14px",
-                      lineHeight: "21px",
-                      letterSpacing: "0%",
-                      verticalAlign: "middle",
-                      color: "#FFFFFF",
-                      background: "#0b0b0b",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      boxShadow: "0 6px 18px rgba(11, 11, 11, 0.25)",
-                      transition: "all 0.2s ease",
-                      outline: "none",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxSizing: "border-box",
-                      whiteSpace: "nowrap",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow = "0 8px 24px rgba(11, 11, 11, 0.35)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = "0 6px 18px rgba(11, 11, 11, 0.25)";
-                    }}
-                    onMouseDown={(e) => {
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.background = "#000000";
-                    }}
-                    onMouseUp={(e) => {
-                      e.currentTarget.style.background = "#0b0b0b";
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.outline = "2px solid #0b0b0b";
-                      e.currentTarget.style.outlineOffset = "2px";
-                      e.currentTarget.style.boxShadow = "0 0 0 4px rgba(11, 11, 11, 0.2), 0 6px 18px rgba(11, 11, 11, 0.25)";
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.outline = "none";
-                      e.currentTarget.style.boxShadow = "0 6px 18px rgba(11, 11, 11, 0.25)";
-                    }}
-                    onClick={() => window.location.href = "/contact"}
-                  >
-                    Talk to a Solution Architect
-                  </button>
-                </div>
-                </div>
-              </div>
             </>
           )}
+        </div>
+      </section>
+
+      {/* Custom Services CTA Section */}
+      <section
+        className="py-10 px-4 md:py-[50px] md:px-5 lg:py-20 lg:px-0"
+        style={{
+          width: "100%",
+          background: "#FFFFFF",
+          position: "relative",
+          margin: "0 auto",
+          textRendering: "optimizeLegibility",
+          WebkitFontSmoothing: "antialiased",
+          boxSizing: "border-box",
+          overflow: "visible",
+          display: "block",
+          visibility: "visible",
+          minHeight: "400px",
+        }}
+      >
+        {/* Pattern Background */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            top: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            backgroundImage: "url('/img/bgpattern.svg')",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center center",
+            backgroundSize: "contain",
+            opacity: 1,
+            zIndex: 0,
+            pointerEvents: "none",
+            width: "100%",
+            maxWidth: "1356px",
+            height: "100%",
+          }}
+        />
+        
+        {/* Outer Container */}
+        <div
+          className="p-10 px-6 md:p-[60px] md:px-8 lg:p-[70px] lg:px-12"
+          style={{
+            width: "100%",
+            maxWidth: "1232px",
+            margin: "0 auto",
+            position: "relative",
+            border: "none",
+            borderRadius: 0,
+            background: "transparent",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 0,
+            boxSizing: "border-box",
+            zIndex: 1,
+            opacity: 1,
+            visibility: "visible",
+          }}
+        >
+          {/* Header Section */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "12px",
+              width: "100%",
+              marginBottom: "32px",
+              boxSizing: "border-box",
+              position: "relative",
+              zIndex: 2,
+            }}
+          >
+            {/* Top Pill Badge */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "auto",
+                height: "28px",
+                minWidth: "fit-content",
+                marginBottom: "12px",
+              }}
+            >
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  padding: "5.8px 8px 6.79px 8px",
+                  fontFamily: "Poppins, sans-serif",
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  fontStyle: "normal",
+                  lineHeight: "14.4px",
+                  letterSpacing: "0%",
+                  textAlign: "center",
+                  verticalAlign: "middle",
+                  color: "#0b2b70",
+                  background: "#d0dff7",
+                  backdropFilter: "blur(3px)",
+                  WebkitBackdropFilter: "blur(3px)",
+                  border: "none",
+                  borderRadius: "20px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxSizing: "border-box",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Enquire Now
+              </div>
+            </div>
+
+            {/* Main Heading */}
+            <h1
+              className="md:text-[28px] md:leading-[39.2px] md:tracking-[-0.56px] md:px-20 md:whitespace-normal text-[24px] leading-[33.6px] tracking-[-0.48px] px-4 whitespace-normal lg:text-[32px] lg:leading-[44.8px] lg:tracking-[-0.64px] lg:px-[165px] lg:pl-[171.34px] lg:whitespace-nowrap"
+              style={{
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 600,
+                fontStyle: "normal",
+                textAlign: "center",
+                verticalAlign: "middle",
+                background: "linear-gradient(to left, #0082c0 0%, #3b60af 100%)",
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                color: "#0082c0",
+                margin: 0,
+                width: "100%",
+                maxWidth: "100%",
+                overflow: "visible",
+                boxSizing: "border-box",
+              }}
+            >
+              Want a Custom Workflow?
+            </h1>
+
+            {/* Subtitle */}
+            <p
+              className="text-sm leading-[21px] md:text-[15px] md:leading-[22.5px] lg:text-base lg:leading-6"
+              style={{
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 400,
+                fontStyle: "normal",
+                letterSpacing: "0%",
+                textAlign: "center",
+                verticalAlign: "middle",
+                color: "#6b7280",
+                margin: 0,
+                width: "100%",
+                maxWidth: "880px",
+                position: "relative",
+              }}
+            >
+              Tangram agents can be chained into complete, composable solutions. Tell us what outcome you want — we'll build the right flow.
+            </p>
+          </div>
+
+          {/* Button Group */}
+          <div
+            className="flex-col gap-3 w-full md:flex-row md:gap-4"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              paddingTop: 0,
+              boxSizing: "border-box",
+              position: "relative",
+              zIndex: 2,
+            }}
+          >
+            <div
+              style={{
+                display: "inline-flex",
+                position: "relative",
+                background: "rgba(121, 133, 171, 0.05)",
+                borderRadius: "4px",
+                padding: "2px",
+                boxSizing: "border-box",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  inset: "-2px",
+                  background: "rgba(121, 133, 171, 0.05)",
+                  borderRadius: "4px",
+                  filter: "blur(7.5px)",
+                  zIndex: -1,
+                }}
+              />
+              <button
+                onClick={() => openModal("auth", { mode: "signup", role: "client" })}
+                style={{
+                  position: "relative",
+                  height: "44px",
+                  padding: "0 28px",
+                  zIndex: 1,
+                  fontFamily: "Poppins, sans-serif",
+                  fontWeight: 500,
+                  fontStyle: "normal",
+                  fontSize: "14px",
+                  lineHeight: "21px",
+                  letterSpacing: "0%",
+                  color: "#FFFFFF",
+                  background: "black",
+                  border: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  whiteSpace: "nowrap",
+                  boxSizing: "border-box",
+                  borderRadius: "4px",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  pointerEvents: "auto",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.opacity = "0.9";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.opacity = "1";
+                }}
+              >
+                Talk to Solution Architect
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 

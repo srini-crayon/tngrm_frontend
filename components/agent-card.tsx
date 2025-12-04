@@ -1,6 +1,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Card, CardContent } from "./ui/card"
+import { useState, useEffect, useRef } from "react"
 
 interface AgentCardProps {
   id: string
@@ -18,13 +19,83 @@ export function AgentCard({ id, title, description, tags, assetType, demoPreview
     ? { bg: "#FB923C", text: "white" } // Orange for Solution
     : { bg: "#10B981", text: "white" }; // Green for Agent
 
+  const [visibleTags, setVisibleTags] = useState<string[]>([])
+  const [overflowCount, setOverflowCount] = useState(0)
+  const [isHovered, setIsHovered] = useState(false)
+  const tagsContainerRef = useRef<HTMLDivElement>(null)
+  const tagRefs = useRef<(HTMLSpanElement | null)[]>([])
+
+  useEffect(() => {
+    if (!tags || tags.length === 0 || !tagsContainerRef.current) {
+      setVisibleTags([])
+      setOverflowCount(0)
+      return
+    }
+
+    const container = tagsContainerRef.current
+    const containerWidth = container.offsetWidth
+    let totalWidth = 0
+    const visible: string[] = []
+    let overflow = 0
+
+    // Estimate width: each tag is max 155px + 4px gap, +X pill is ~30px
+    const tagMaxWidth = 155
+    const gap = 4
+    const plusPillWidth = 30
+
+    for (let i = 0; i < tags.length; i++) {
+      const tagWidth = Math.min(tagMaxWidth, tags[i].length * 8 + 18) // Rough estimate
+      const wouldFit = totalWidth + tagWidth + (i > 0 ? gap : 0) <= containerWidth - plusPillWidth - gap
+
+      if (wouldFit) {
+        visible.push(tags[i])
+        totalWidth += tagWidth + (i > 0 ? gap : 0)
+      } else {
+        overflow = tags.length - i
+        break
+      }
+    }
+
+    // If all tags fit, show them all
+    if (visible.length === tags.length) {
+      setVisibleTags(tags)
+      setOverflowCount(0)
+    } else {
+      setVisibleTags(visible)
+      setOverflowCount(overflow)
+    }
+  }, [tags])
+
   return (
     <Link href={`/agents/${id}`} scroll>
       <Card 
-        className="transition-shadow hover:shadow-lg flex flex-col overflow-hidden bg-white rounded-xl border shadow-sm p-0 w-full"
+        className="flex flex-col overflow-hidden bg-white p-0 w-full !border-0 transition-all duration-300 ease-in-out cursor-pointer"
         style={{
           height: "378px",
           maxWidth: "442px",
+          borderRadius: "0px",
+          boxShadow: "none",
+          border: "none",
+        }}
+        onMouseEnter={(e) => {
+          const card = e.currentTarget;
+          card.style.setProperty("box-shadow", "8px -8px 16px -12px rgba(0, 0, 0, 0.08), 4px -4px 10px -10px rgba(0, 0, 0, 0.05), 1px -1px 6px -8px rgba(0, 0, 0, 0.03)", "important");
+          setIsHovered(true);
+        }}
+        onMouseLeave={(e) => {
+          const card = e.currentTarget;
+          card.style.setProperty("box-shadow", "none", "important");
+          setIsHovered(false);
+        }}
+        onMouseDown={(e) => {
+          const card = e.currentTarget;
+          card.style.setProperty("box-shadow", "4px -4px 10px -10px rgba(0, 0, 0, 0.08), 2px -2px 6px -8px rgba(0, 0, 0, 0.05), 0.5px -0.5px 4px -6px rgba(0, 0, 0, 0.03)", "important");
+          setIsHovered(true);
+        }}
+        onMouseUp={(e) => {
+          const card = e.currentTarget;
+          card.style.setProperty("box-shadow", "8px -8px 16px -12px rgba(0, 0, 0, 0.08), 4px -4px 10px -10px rgba(0, 0, 0, 0.05), 1px -1px 6px -8px rgba(0, 0, 0, 0.03)", "important");
+          setIsHovered(true);
         }}
       >
         {/* Image Section */}
@@ -112,9 +183,9 @@ export function AgentCard({ id, title, description, tags, assetType, demoPreview
 
         {/* Content Section */}
         <CardContent 
-          className="flex flex-col gap-4 p-6 flex-1 w-full" 
+          className="flex flex-col gap-4 flex-1 w-full !px-0" 
           style={{ 
-            paddingTop: "0",
+            padding: "0",
             height: "140px",
             minHeight: "140px",
             maxHeight: "140px",
@@ -122,25 +193,32 @@ export function AgentCard({ id, title, description, tags, assetType, demoPreview
         >
           {/* Title with Badge */}
           <div className="flex items-center justify-between gap-2">
-            <h3 className="line-clamp-2 flex-1" style={{
+            <h3 className="line-clamp-2 flex-1 transition-all duration-300" style={{
               fontFamily: "Poppins, sans-serif",
               fontWeight: 600,
               fontStyle: "normal",
               fontSize: "16px",
-              lineHeight: "100%",
-              letterSpacing: "0%",
-              verticalAlign: "middle",
-              color: "#101828",
+              lineHeight: "normal",
+              color: isHovered ? "transparent" : "#101828",
+              background: isHovered ? "linear-gradient(90deg, #0013A2 0%, #D00004 100%)" : "none",
+              backgroundClip: isHovered ? "text" : "unset",
+              WebkitBackgroundClip: isHovered ? "text" : "unset",
+              WebkitTextFillColor: isHovered ? "transparent" : "unset",
             }}>
               {title}
             </h3>
             {assetType && (
               <span
-                className="px-2.5 py-1 rounded text-xs font-medium flex-shrink-0"
+                className="flex-shrink-0"
                 style={{
-                  backgroundColor: badgeColor.bg,
-                  color: badgeColor.text,
-                  borderRadius: "4px",
+                  display: "inline-flex",
+                  maxWidth: "120px",
+                  padding: "2px 6px",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  background: assetType === "Solution" ? "#FFF0E0" : "#A9E9C8",
+                  fontSize: "12px",
+                  color: assetType === "Solution" ? "#A75510" : "#06552C",
                 }}
               >
                 {assetType}
@@ -149,14 +227,19 @@ export function AgentCard({ id, title, description, tags, assetType, demoPreview
           </div>
 
           {/* Description */}
-          <p className="line-clamp-3 flex-1" style={{
+          <p className="line-clamp-2 flex-1" style={{
+            marginTop: "2px",
             fontFamily: "Poppins, sans-serif",
             fontWeight: 400,
             fontStyle: "normal",
             fontSize: "14px",
             lineHeight: "140%",
-            letterSpacing: "0%",
             color: "#344054",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
           }}>
             {description}
           </p>
@@ -164,38 +247,32 @@ export function AgentCard({ id, title, description, tags, assetType, demoPreview
           {/* Tags */}
           {tags && tags.length > 0 && (
             <div 
-              className="flex flex-wrap mt-auto w-full"
+              ref={tagsContainerRef}
+              className="flex mt-auto w-full overflow-hidden"
               style={{
                 height: "24px",
-                gap: "8px",
+                gap: "4px",
               }}
             >
-              {tags.slice(0, 3).map((tag, index) => (
+              {visibleTags.map((tag, index) => (
                 <span
                   key={index}
-                  className="border bg-white"
+                  ref={(el) => { tagRefs.current[index] = el }}
+                  className="bg-white flex-shrink-0"
                   style={{
-                    height: "24px",
+                    display: "flex",
                     maxWidth: "155px",
-                    borderWidth: "1px",
-                    borderStyle: "solid",
-                    borderColor: "#E5E7EB",
-                    borderRadius: "6px",
-                    paddingTop: "3px",
-                    paddingRight: "9px",
-                    paddingBottom: "3px",
-                    paddingLeft: "9px",
+                    padding: "3px 9px",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    border: "1px solid #E5E7EB",
                     fontFamily: "Poppins, sans-serif",
                     fontWeight: 500,
                     fontStyle: "normal",
                     fontSize: "12px",
                     lineHeight: "100%",
-                    letterSpacing: "0%",
                     textAlign: "center",
                     color: "#667085",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -204,35 +281,26 @@ export function AgentCard({ id, title, description, tags, assetType, demoPreview
                   {tag}
                 </span>
               ))}
-              {tags.length > 3 && (
+              {overflowCount > 0 && (
                 <span
-                  className="border bg-white"
+                  className="bg-white flex-shrink-0"
                   style={{
-                    height: "24px",
-                    maxWidth: "155px",
-                    borderWidth: "1px",
-                    borderStyle: "solid",
-                    borderColor: "#E5E7EB",
-                    borderRadius: "6px",
-                    paddingTop: "3px",
-                    paddingRight: "9px",
-                    paddingBottom: "3px",
-                    paddingLeft: "9px",
+                    display: "flex",
+                    padding: "3px 9px",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    border: "1px solid #E5E7EB",
                     fontFamily: "Poppins, sans-serif",
                     fontWeight: 500,
                     fontStyle: "normal",
                     fontSize: "12px",
                     lineHeight: "100%",
-                    letterSpacing: "0%",
                     textAlign: "center",
                     color: "#667085",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
                     whiteSpace: "nowrap",
                   }}
                 >
-                  +{tags.length - 3}
+                  +{overflowCount}
                 </span>
               )}
             </div>

@@ -124,7 +124,7 @@ export default function AICatalystPage() {
             height: "100%",
             top: 0,
             left: 0,
-            background: "radial-gradient(100% 100% at 50% 0%, #E5E5FF 0%, #FFFFFF 100%)",
+            background: "radial-gradient(100% 100% at 50% 0%, #FFFEDA 0%, #FFF 100%)",
             opacity: 1,
             pointerEvents: "none",
             zIndex: -1,
@@ -133,22 +133,16 @@ export default function AICatalystPage() {
         <div className="w-full px-8 md:px-12 lg:px-16 py-12 md:py-20 lg:py-24 relative text-center">
             {/* Badge */}
               <span 
-                className="inline-block"
+                className="inline-block scale-in"
                 style={{
-                  width: "244px",
-                  height: "32px",
-                  borderRadius: "50px",
-                  paddingTop: "4px",
-                  paddingRight: "16px",
-                  paddingBottom: "4px",
-                  paddingLeft: "16px",
-                  gap: "8px",
-                  opacity: 1,
-                  transform: "rotate(-0.28deg)",
                   display: "inline-flex",
-                  alignItems: "center",
+                  transform: "rotate(0.282deg)",
+                  padding: "4px 16px",
                   justifyContent: "center",
-                  backgroundColor: "#CCCCFF",
+                  alignItems: "center",
+                  gap: "8px",
+                  borderRadius: "50px",
+                  background: "#FFEEC5",
                   fontFamily: "Poppins, sans-serif",
                   fontWeight: 500,
                   fontStyle: "normal",
@@ -156,16 +150,17 @@ export default function AICatalystPage() {
                   lineHeight: "140%",
                   letterSpacing: "0%",
                   textAlign: "center",
-                  color: "#2910A7",
+                  color: "#7F5A00",
                   marginBottom: "14px",
+                  willChange: "transform",
                 }}
               >
-                Independent Software Vendor
+                AI Catalyst
               </span>
 
             {/* Main Title */}
           <h1 
-            className="mb-4 text-center"
+            className="mb-4 text-center fade-in-blur"
                 style={{
               fontFamily: "Poppins",
                   fontWeight: 500,
@@ -175,15 +170,15 @@ export default function AICatalystPage() {
                   textAlign: "center",
               color: "var(--Interface-Color-Primary-900, #091917)",
               marginBottom: "18px",
+              willChange: "opacity, transform, filter",
                 }}
               >
-                Do you have an<br />
-                Innovative AI Solution?
+                From Idea to Impact — Fast
             </h1>
 
             {/* Subtitle */}
             <p
-              className="text-center"
+              className="text-center fade-in-section"
               style={{
                 fontFamily: "Poppins",
                 fontWeight: 600,
@@ -193,14 +188,15 @@ export default function AICatalystPage() {
                 textAlign: "center",
                 color: "var(--Interface-Color-Primary-900, #091917)",
                 marginBottom: "6px",
+                willChange: "opacity, transform",
               }}
             >
-              Build and Scale AI Agents That Reach Global Customers
+              Built for enterprise teams who are ready to stop experimenting and start executing.
             </p>
 
             {/* Description */}
             <p 
-              className="mx-auto max-w-2xl text-center"
+              className="mx-auto max-w-2xl text-center fade-in-section"
               style={{
                 fontFamily: "Poppins",
                 fontWeight: 400,
@@ -210,59 +206,27 @@ export default function AICatalystPage() {
                 textAlign: "center",
                 color: "var(--Interface-Color-Primary-900, #091917)",
                 marginBottom: "46px",
+                willChange: "opacity, transform",
               }}
             >
-              Independent Software Vendor (ISV) Accelerator gives you access to 1000+ new customers to grow your business
-              through one of the world's largest commercial marketplaces.
+              Whether you're just exploring GenAI or scaling real deployments — Catalyst meets you where you are, and gets you to where you need to go.
             </p>
 
-            {/* Buttons */}
-          <div className="flex justify-center">
-            <button
-              onClick={() => openModal("auth", { mode: "signup", role: "client" })}
-              className="border-gradient relative text-white rounded-[4px] px-[28px] cursor-pointer transition-all hover:opacity-90"
-            style={{
-              display: "flex",
-              height: "48px",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              fontFamily: "Poppins, sans-serif",
-              fontWeight: 500,
-              fontSize: "14px",
-              lineHeight: "normal",
-              letterSpacing: "0.5px",
-              textTransform: "uppercase",
-              position: "relative",
-              padding: "20px 28px",
-              boxShadow: "0 0 20px rgba(255, 109, 27, 0.3), 0 0 40px rgba(75, 138, 255, 0.2), 0 0 60px rgba(107, 95, 255, 0.1)",
-              "--gradient-angle": "0deg",
-              border: "none",
-              outline: "none",
-            } as React.CSSProperties & { "--gradient-angle"?: string }}
-          >
-            {/* Text */}
-            <span style={{ 
-              position: "relative", 
-              zIndex: 10,
-              color: "#FFF",
-            }}>
-              BECOME AN ISV PARTNER
-            </span>
-            {/* Animated gradient border */}
-            <span
+            {/* Image */}
+          <div className="flex justify-center mt-8 scale-in">
+            <Image
+              src="/img/catalysts.svg"
+              alt="AI Catalyst Process Diagram"
+              width={500}
+              height={500}
+              className="object-contain max-w-full h-auto transition-all duration-500 hover:scale-105 hover:drop-shadow-lg"
               style={{
-                position: "absolute",
-                inset: 0,
-                borderRadius: "4px",
-                padding: "2px",
-                background: `linear-gradient(var(--gradient-angle, 0deg), #FF6D1B, #4B8AFF, #6B5FFF)`,
-                WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-                WebkitMaskComposite: "xor",
-                maskComposite: "exclude",
+                maxWidth: "500px",
+                height: "auto",
+                willChange: "transform",
               }}
+              unoptimized
             />
-          </button>
           </div>
         </div>
       </section>
