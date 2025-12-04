@@ -1,0 +1,12 @@
+<svg width="398" height="242" viewBox="0 0 398 242" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect x="6.22504" y="6.5" width="385.72" height="229.77" fill="white"/>
+<rect x="6.22504" y="6.5" width="385.72" height="229.77" stroke="#E5E7EB"/>
+<path d="M6 230V242" stroke="black"/>
+<path d="M12 236H0" stroke="black"/>
+<path d="M6 0V12" stroke="black"/>
+<path d="M12 6H0" stroke="black"/>
+<path d="M392 230V242" stroke="black"/>
+<path d="M398 236H386" stroke="black"/>
+<path d="M392 0.5V12.5" stroke="black"/>
+<path d="M398 6.5H386" stroke="black"/>
+</svg>

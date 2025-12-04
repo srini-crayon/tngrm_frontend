@@ -1,0 +1,123 @@
+=======================================
+REPLACE THIS CODE IN chat-dialog.tsx
+=======================================
+
+FIND (lines 386-436):
+                        {/* Show Let's Build buttons if lets_build flag is true */}
+                        {m.letsBuild === true && (
+                          <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                            <Link href="/contact">
+                              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2">
+                                Contact Us to Start Building
+                              </Button>
+                            </Link>
+                            <Button 
+                              onClick={async () => {
+                                try {
+                                  // Use the BRD download URL from API if available, otherwise fall back
+                                  const downloadUrl = m.brdDownloadUrl 
+                                    ? `https://agents-store.onrender.com${m.brdDownloadUrl}`
+                                    : `https://agents-store.onrender.com/api/chat/download-brd`
+                                  
+                                  const response = await fetch(downloadUrl, {
+                                    method: m.brdDownloadUrl ? 'GET' : 'POST',
+                                    headers: m.brdDownloadUrl ? {} : {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: m.brdDownloadUrl ? undefined : JSON.stringify({
+                                      session_id: sessionId,
+                                      gathered_info: m.gatheredInfo || {}
+                                    })
+                                  })
+                                  
+                                  if (!response.ok) throw new Error('Failed to download BRD')
+                                  
+                                  // Get the blob and download it
+                                  const blob = await response.blob()
+                                  const url = window.URL.createObjectURL(blob)
+                                  const a = document.createElement('a')
+                                  a.href = url
+                                  a.download = `BRD_${sessionId}.docx`
+                                  document.body.appendChild(a)
+                                  a.click()
+                                  window.URL.revokeObjectURL(url)
+                                  document.body.removeChild(a)
+                                } catch (error) {
+                                  alert('Failed to download BRD document. Please try again or contact support.')
+                                }
+                              }}
+                              variant="outline" 
+                              className="w-full text-sm px-4 py-2 border-gray-300 hover:bg-gray-50"
+                              disabled={false}
+                            >
+                              Download BRD Document
+                            </Button>
+                          </div>
+                        )}
+
+REPLACE WITH:
+                        {/* Show Let's Build buttons if lets_build flag is true */}
+                        {m.letsBuild === true && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <Link href="/contact" className="flex-1">
+                                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 h-10">
+                                  Contact Us
+                                </Button>
+                              </Link>
+                              <Button 
+                                onClick={async () => {
+                                  try {
+                                    const downloadUrl = m.brdDownloadUrl 
+                                      ? `https://agents-store.onrender.com${m.brdDownloadUrl}`
+                                      : `https://agents-store.onrender.com/api/brd/${sessionId}`
+                                    
+                                    const response = await fetch(downloadUrl, {
+                                      method: 'GET',
+                                      headers: { 'accept': 'application/json' }
+                                    })
+                                    
+                                    const contentType = response.headers.get('content-type')
+                                    
+                                    if (contentType?.includes('application/json')) {
+                                      const data = await response.json()
+                                      if (data.status === 'generating') {
+                                        alert('BRD document is still being generated. Please wait and try again.')
+                                        return
+                                      }
+                                    }
+                                    
+                                    if (!response.ok) throw new Error('Failed to download BRD')
+                                    
+                                    const blob = await response.blob()
+                                    const url = window.URL.createObjectURL(blob)
+                                    const a = document.createElement('a')
+                                    a.href = url
+                                    a.download = `BRD_${sessionId}.docx`
+                                    document.body.appendChild(a)
+                                    a.click()
+                                    window.URL.revokeObjectURL(url)
+                                    document.body.removeChild(a)
+                                  } catch (error) {
+                                    alert('Failed to download BRD document. Please try again.')
+                                  }
+                                }}
+                                variant="outline" 
+                                className="flex-1 text-sm px-4 py-2 border-gray-300 hover:bg-gray-50 h-10"
+                              >
+                                Download BRD
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+=======================================
+CHANGES:
+1. Removed keyword-based button (lines 384-393 already deleted)
+2. Changed to flexbox layout: flex flex-col sm:flex-row
+3. Buttons show side-by-side on desktop, stacked on mobile
+4. Updated BRD endpoint to correct API
+5. Added generating status check
+6. Simplified button text: "Contact Us" and "Download BRD"
+=======================================
+
