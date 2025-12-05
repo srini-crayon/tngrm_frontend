@@ -137,7 +137,7 @@ export default function ContactPage() {
       <section
         className="relative overflow-hidden py-16"
         style={{
-          background: "radial-gradient(100% 100% at 50% 0%, #FFF1E5 0%, #FFFFFF 100%)",
+          background: "radial-gradient(100% 100% at 50% 0%, #FFF1E5 0%, #FFF 100%)",
         }}
       >
         <div className="max-w-6xl mx-auto px-6 lg:px-10">
@@ -145,51 +145,50 @@ export default function ContactPage() {
             <span
               className="inline-flex items-center justify-center uppercase tracking-wider"
               style={{
-                width: "90px",
-                height: "32px",
-                borderRadius: "50px",
+                display: "inline-flex",
+                transform: "rotate(0.282deg)",
                 padding: "4px 16px",
+                justifyContent: "center",
+                alignItems: "center",
                 gap: "8px",
-                transform: "rotate(-0.28deg)",
+                borderRadius: "50px",
                 background: "#FFE4CC",
-                fontFamily: "Poppins, sans-serif",
-                fontWeight: 500,
-                fontStyle: "normal",
-                fontSize: "14px",
-                lineHeight: "140%",
-                letterSpacing: "0%",
-                textAlign: "center",
                 color: "#A75510",
+                textAlign: "center",
+                fontFamily: "Poppins",
+                fontSize: "14px",
+                fontStyle: "normal",
+                fontWeight: 500,
+                lineHeight: "140%",
               }}
             >
               Contact
             </span>
             <h1
               style={{
-                fontFamily: "Poppins, sans-serif",
-                fontWeight: 500,
-                fontStyle: "normal",
-                fontSize: "52px",
-                lineHeight: "52px",
-                letterSpacing: "0%",
+                color: "var(--Interface-Color-Primary-900, #091917)",
                 textAlign: "center",
-                color: "#091917",
+                fontFamily: "Poppins",
+                fontSize: "52px",
+                fontStyle: "normal",
+                fontWeight: 500,
+                lineHeight: "52px",
+                marginTop: "2px",
+                marginBottom: "0",
               }}
             >
               How can we help?
             </h1>
             <p
               style={{
-                fontFamily: "Poppins, sans-serif",
-                fontWeight: 400,
-                fontStyle: "normal",
-                fontSize: "14px",
-                lineHeight: "24px",
-                letterSpacing: "0px",
+                color: "var(--Interface-Color-Primary-900, #091917)",
                 textAlign: "center",
-                verticalAlign: "middle",
-                color: "#091917",
-                whiteSpace: "nowrap",
+                fontFamily: "Poppins",
+                fontSize: "14px",
+                fontStyle: "normal",
+                fontWeight: 400,
+                lineHeight: "24px",
+                marginTop: "4px",
               }}
             >
               Get in touch with our sales and support teams for demos, onboarding support, or product questions.

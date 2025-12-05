@@ -209,19 +209,21 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
     <>
       <ScrollToTop />
       {/* Main Content */}
-      <section className="relative py-12 px-8 md:px-12 lg:px-16">
+      <section className="relative py-12">
         <div
           style={{
             position: 'absolute',
             top: 0,
             left: 0,
-            width: '1512px',
+            right: 0,
+            width: '100%',
             height: '360px',
             background: 'radial-gradient(100% 100% at 50% 0%, #E5E5FF 0%, #FFF 100%)',
             zIndex: -1,
           }}
         />
-        <div className="flex flex-col lg:flex-row gap-12 items-start">
+        <div className="w-full px-8 md:px-12 lg:px-16 mx-auto" style={{ maxWidth: "1407px" }}>
+          <div className="flex flex-col lg:flex-row gap-12 items-start w-full">
           <div style={{ flex: '0 0 40%', maxWidth: '40%' }}>
             <Link 
               href="/agents" 
@@ -444,6 +446,7 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
               <div style={{ marginTop: '42px', display: 'flex', justifyContent: 'center', width: '100%' }}>
                 <ISVPartnerButton demoLink={data?.agent?.demo_link} />
               </div>
+          </div>
       </section>
 
       {/* Features, ROI, Deployment, Docs Section */}

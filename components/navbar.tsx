@@ -563,12 +563,21 @@ export function Navbar() {
                         View Profile
                       </Link>
                     )}
+                    {/* Contact us option - visible to all users */}
+                    <Link
+                      href="/contact"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <Mail className="h-4 w-4" />
+                      Contact us
+                    </Link>
                     <hr className="my-1" />
                     <button
                       onClick={handleLogout}
-                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                     >
-                      <LogOut className="h-4 w-4" />
+                      <LogOut className="h-4 w-4 text-red-600" />
                       Log Out
                     </button>
                   </div>

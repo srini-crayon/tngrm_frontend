@@ -582,3 +582,14 @@ section:has([data-slot="tabs-list"]) [data-slot="tabs-list"]::after {
   pointer-events: none;
 }
 
+/* Override DialogContent positioning for chat dialog */
+[data-slot="dialog-content"].chat-dialog-bottom-right {
+  position: fixed !important;
+  bottom: 40vh !important;
+  right: 24px !important;
+  left: auto !important;
+  top: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+}
+

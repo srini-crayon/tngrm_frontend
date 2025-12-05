@@ -43,6 +43,7 @@ export function AgentSearchChat({ externalValue, onExternalValueChange }: AgentS
 
   const handleSubmit = () => {
     if (searchInput.trim()) {
+      console.log('Opening chat dialog with message:', searchInput)
       setChatOpen(true)
     }
   }

@@ -55,7 +55,7 @@ export default function TechStackPage() {
     {
       id: 1,
       number: "1.",
-      title: "Incentives for Sales teams",
+      title: "Plug-and-Play Agents",
       description: "Start with just one agent — for a specific use case like credit card recommendation, offer personalization, or churn prevention\n\nDeploy a bundle of agents to power complete customer journeys.",
       image: "/img/dep1.svg",
     },
@@ -63,14 +63,14 @@ export default function TechStackPage() {
       id: 2,
       number: "2.",
       title: "Ready-to-Use Solutions",
-      description: "Launch with pre-built solutions that combine agents + UI + logic — for use cases like hyper- personalization, product intelligence, and CX automation\n\nConfigure, localize, and go live in under 30 days.",
+      description: "Launch with pre-built solutions that combine agents + UI + logic — for use cases like hyper-personalization, product intelligence, and CX automation\n\nConfigure, localize, and go live in under 30 days.",
       image: "/img/dep2.svg",
     },
     {
       id: 3,
       number: "3.",
       title: "API-First Architecture",
-      description: "All agents are accessible via secure APIs. Integrate into your apps, data pipelines, CRMs, or customer portals.",
+      description: "All agents are accessible via secure APIs.\n\nIntegrate into your apps, data pipelines, CRMs, or customer portals.",
       image: "/img/dep3.svg",
     },
   ]
