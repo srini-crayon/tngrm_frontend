@@ -68,7 +68,13 @@ export function InputField({ label, placeholder, type = "text", value, onChange,
           fontSize: "14px",
           lineHeight: "28px",
           letterSpacing: "0%",
-          color: "#B3B3B3",
+          color: value ? "#181818" : "#B3B3B3",
+        }}
+        onFocus={(e) => {
+          e.target.style.color = "#181818"
+        }}
+        onBlur={(e) => {
+          e.target.style.color = e.target.value ? "#181818" : "#B3B3B3"
         }}
       />
     </div>

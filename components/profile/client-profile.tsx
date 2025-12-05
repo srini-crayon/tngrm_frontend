@@ -4,12 +4,11 @@ import { useState, useEffect } from 'react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
-import { Card } from '../ui/card'
 import { Avatar, AvatarFallback } from '../ui/avatar'
 import { ProfileService } from '../../lib/api/profile.service'
 import { ClientProfile, ClientProfileUpdate } from '../../lib/types/profile.types'
 import { useToast } from '../../hooks/use-toast'
-import { Edit, Save, X, Lock } from 'lucide-react'
+import { Edit, Save } from 'lucide-react'
 
 interface ClientProfileComponentProps {
   clientId: string
@@ -120,110 +119,129 @@ export function ClientProfileComponent({ clientId }: ClientProfileComponentProps
     )
   }
 
+  // Mock preferred tech stack - this would come from the profile data
+  const preferredTechStack = ['AWS', 'Azure']
+
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Breadcrumb */}
-      <div className="mb-6">
-        <p className="text-sm text-gray-600">Home &gt; View Profile</p>
-      </div>
-
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Personal Details</h1>
-          <p className="text-gray-600">Account Information for the enterprise users</p>
-        </div>
-        <Button variant="ghost" size="sm">
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {/* Avatar */}
-      <div className="flex justify-center mb-8">
-        <Avatar className="h-24 w-24">
-          <AvatarFallback className="bg-green-100 text-green-800 text-2xl font-bold">
-            {getInitials(profile.name || 'Client')}
-          </AvatarFallback>
-        </Avatar>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2 text-gray-900">Personal Details</h1>
+        <p className="text-gray-600">Account Information for the individual users</p>
       </div>
 
       {/* Profile Form */}
-      <Card className="p-6">
-        <div className="space-y-6">
-          {/* Name */}
-          <div>
-            <Label htmlFor="name">Name</Label>
+      <div className="space-y-6">
+        {/* Avatar - Above Name */}
+        <div className="flex justify-start">
+          <Avatar className="h-24 w-24">
+            <AvatarFallback className="bg-yellow-400 text-white text-2xl font-bold">
+              {getInitials(profile.name || 'Client')}
+            </AvatarFallback>
+          </Avatar>
+        </div>
+
+        {/* Name */}
+        <div>
+          <Label htmlFor="name" className="text-gray-900 font-medium mb-2 block">Name</Label>
             {isEditing ? (
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Full name"
+                className="bg-white border-gray-300"
               />
             ) : (
-              <Input value={profile.name || ''} readOnly className="bg-gray-50" />
+              <Input 
+                value={profile.name || ''} 
+                readOnly 
+                className="bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed" 
+              />
             )}
           </div>
 
           {/* Email */}
           <div>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-gray-900 font-medium mb-2 block">Email</Label>
             <Input 
               id="email"
               value={profile.email || ''} 
               readOnly 
-              className="bg-gray-50" 
+              className="bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed" 
             />
           </div>
 
           {/* Company */}
           <div>
-            <Label htmlFor="company">Company</Label>
+            <Label htmlFor="company" className="text-gray-900 font-medium mb-2 block">Company</Label>
             {isEditing ? (
               <Input
                 id="company"
                 value={formData.company}
                 onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                 placeholder="Company Name"
+                className="bg-white border-gray-300"
               />
             ) : (
-              <Input value={profile.company || ''} readOnly className="bg-gray-50" />
+              <Input 
+                value={profile.company || ''} 
+                readOnly 
+                className="bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed" 
+              />
             )}
           </div>
 
           {/* Contact Number */}
           <div>
-            <Label htmlFor="contact_number">Contact Number</Label>
+            <Label htmlFor="contact_number" className="text-gray-900 font-medium mb-2 block">Contact Number</Label>
             {isEditing ? (
               <Input
                 id="contact_number"
                 value={formData.contact_number}
                 onChange={(e) => setFormData({ ...formData, contact_number: e.target.value })}
                 placeholder="+91 9876543210"
+                className="bg-white border-gray-300"
               />
             ) : (
-              <Input value={profile.contact_number || ''} readOnly className="bg-gray-50" />
+              <Input 
+                value={profile.contact_number || ''} 
+                readOnly 
+                className="bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed" 
+              />
             )}
           </div>
 
           {/* Password */}
           <div>
-            <Label htmlFor="password">Password</Label>
-            <div className="relative">
-              <Input 
-                id="password"
-                type="password"
-                value="************" 
-                readOnly 
-                className="bg-gray-50 pr-10" 
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 px-2 text-blue-600 hover:text-blue-700"
-              >
-                Reset Password
-              </Button>
+            <Label htmlFor="password" className="text-gray-900 font-medium mb-2 block">Password</Label>
+            <Input 
+              id="password"
+              type="password"
+              value="************" 
+              readOnly 
+              className="bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed" 
+            />
+            <Link 
+              href="/auth/reset-password" 
+              className="text-blue-600 hover:text-blue-700 text-sm mt-2 inline-block"
+            >
+              Reset Password
+            </Link>
+          </div>
+
+          {/* Preferred Text Stack */}
+          <div>
+            <Label className="text-gray-900 font-medium mb-2 block">Preferred Text Stack</Label>
+            <div className="flex gap-2 flex-wrap">
+              {preferredTechStack.map((stack) => (
+                <span
+                  key={stack}
+                  className="px-3 py-1 bg-gray-50 border border-gray-200 rounded text-gray-700 text-sm"
+                >
+                  {stack}
+                </span>
+              ))}
             </div>
           </div>
 
@@ -231,23 +249,33 @@ export function ClientProfileComponent({ clientId }: ClientProfileComponentProps
           <div className="flex gap-3 pt-4">
             {isEditing ? (
               <>
-                <Button onClick={handleSave} disabled={isSaving}>
+                <Button 
+                  onClick={handleSave} 
+                  disabled={isSaving}
+                  className="bg-gray-800 hover:bg-gray-900 text-white"
+                >
                   <Save className="h-4 w-4 mr-2" />
                   {isSaving ? 'Saving...' : 'Save'}
                 </Button>
-                <Button variant="outline" onClick={handleCancel}>
+                <Button 
+                  variant="outline" 
+                  onClick={handleCancel}
+                  className="border-gray-300"
+                >
                   Cancel
                 </Button>
               </>
             ) : (
-              <Button onClick={() => setIsEditing(true)}>
+              <Button 
+                onClick={() => setIsEditing(true)}
+                className="bg-gray-800 hover:bg-gray-900 text-white"
+              >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Details
               </Button>
             )}
           </div>
-        </div>
-      </Card>
+      </div>
     </div>
   )
 }

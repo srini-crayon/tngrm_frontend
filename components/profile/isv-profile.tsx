@@ -5,13 +5,12 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { Textarea } from '../ui/textarea'
-import { Card } from '../ui/card'
 import { Avatar, AvatarFallback } from '../ui/avatar'
 import { FileUpload } from '../file-upload'
 import { ProfileService } from '../../lib/api/profile.service'
 import { ISVProfile, ISVProfileUpdate } from '../../lib/types/profile.types'
 import { useToast } from '../../hooks/use-toast'
-import { Download, Trash2, Edit, Save, X } from 'lucide-react'
+import { Download, Trash2, Edit, Save } from 'lucide-react'
 
 interface ISVProfileComponentProps {
   isvId: string
@@ -166,82 +165,86 @@ export function ISVProfileComponent({ isvId }: ISVProfileComponentProps) {
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Breadcrumb */}
-      <div className="mb-6">
-        <p className="text-sm text-gray-600">Home &gt; View Profile</p>
-      </div>
-
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Personal Details</h1>
-          <p className="text-gray-600">Account Information for the enterprise users</p>
-        </div>
-        <Button variant="ghost" size="sm">
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {/* Avatar */}
-      <div className="flex justify-center mb-8">
-        <Avatar className="h-24 w-24">
-          <AvatarFallback className="bg-green-100 text-green-800 text-2xl font-bold">
-            {getInitials(profile.name || profile.registered_name || 'ISV')}
-          </AvatarFallback>
-        </Avatar>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2 text-gray-900">Personal Details</h1>
+        <p className="text-gray-600">Account Information for the individual users</p>
       </div>
 
       {/* Profile Form */}
-      <Card className="p-6">
-        <div className="space-y-6">
-          {/* Name */}
-          <div>
-            <Label htmlFor="name">Name</Label>
+      <div className="space-y-6">
+        {/* Avatar - Above Name */}
+        <div className="flex justify-start">
+          <Avatar className="h-24 w-24">
+            <AvatarFallback className="bg-yellow-400 text-white text-2xl font-bold">
+              {getInitials(profile.name || profile.registered_name || 'ISV')}
+            </AvatarFallback>
+          </Avatar>
+        </div>
+
+        {/* Name */}
+        <div>
+          <Label htmlFor="name" className="text-gray-900 font-medium mb-2 block">Name</Label>
             {isEditing ? (
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Full name"
+                className="bg-white border-gray-300"
               />
             ) : (
-              <Input value={profile.name || ''} readOnly className="bg-gray-50" />
+              <Input 
+                value={profile.name || ''} 
+                readOnly 
+                className="bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed" 
+              />
             )}
           </div>
 
           {/* Position */}
           <div>
-            <Label htmlFor="position">Position</Label>
+            <Label htmlFor="position" className="text-gray-900 font-medium mb-2 block">Position</Label>
             {isEditing ? (
               <Input
                 id="position"
                 value={formData.position}
                 onChange={(e) => setFormData({ ...formData, position: e.target.value })}
                 placeholder="Position in company"
+                className="bg-white border-gray-300"
               />
             ) : (
-              <Input value={profile.position || ''} readOnly className="bg-gray-50" />
+              <Input 
+                value={profile.position || ''} 
+                readOnly 
+                className="bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed" 
+              />
             )}
           </div>
 
           {/* Registered Name */}
           <div>
-            <Label htmlFor="registered_name">Registered Name</Label>
+            <Label htmlFor="registered_name" className="text-gray-900 font-medium mb-2 block">Registered Name</Label>
             {isEditing ? (
               <Input
                 id="registered_name"
                 value={formData.registered_name}
                 onChange={(e) => setFormData({ ...formData, registered_name: e.target.value })}
                 placeholder="Registered Name"
+                className="bg-white border-gray-300"
               />
             ) : (
-              <Input value={profile.registered_name || ''} readOnly className="bg-gray-50" />
+              <Input 
+                value={profile.registered_name || ''} 
+                readOnly 
+                className="bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed" 
+              />
             )}
           </div>
 
           {/* Registered Address */}
           <div>
-            <Label htmlFor="registered_address">Registered address</Label>
+            <Label htmlFor="registered_address" className="text-gray-900 font-medium mb-2 block">Registered address</Label>
             {isEditing ? (
               <Textarea
                 id="registered_address"
@@ -249,39 +252,55 @@ export function ISVProfileComponent({ isvId }: ISVProfileComponentProps) {
                 onChange={(e) => setFormData({ ...formData, registered_address: e.target.value })}
                 placeholder="Registered address details"
                 rows={3}
+                className="bg-white border-gray-300"
               />
             ) : (
-              <Textarea value={profile.registered_address || ''} readOnly className="bg-gray-50" rows={3} />
+              <Textarea 
+                value={profile.registered_address || ''} 
+                readOnly 
+                className="bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed" 
+                rows={3} 
+              />
             )}
           </div>
 
           {/* Domain */}
           <div>
-            <Label htmlFor="domain">Domain</Label>
+            <Label htmlFor="domain" className="text-gray-900 font-medium mb-2 block">Domain</Label>
             {isEditing ? (
               <Input
                 id="domain"
                 value={formData.domain}
                 onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
                 placeholder="-"
+                className="bg-white border-gray-300"
               />
             ) : (
-              <Input value={profile.domain || '-'} readOnly className="bg-gray-50" />
+              <Input 
+                value={profile.domain || '-'} 
+                readOnly 
+                className="bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed" 
+              />
             )}
           </div>
 
           {/* Contact Number */}
           <div>
-            <Label htmlFor="contact_number">Contact Number</Label>
+            <Label htmlFor="contact_number" className="text-gray-900 font-medium mb-2 block">Contact Number</Label>
             {isEditing ? (
               <Input
                 id="contact_number"
                 value={formData.contact_number}
                 onChange={(e) => setFormData({ ...formData, contact_number: e.target.value })}
                 placeholder="+91 9876543210"
+                className="bg-white border-gray-300"
               />
             ) : (
-              <Input value={profile.contact_number || ''} readOnly className="bg-gray-50" />
+              <Input 
+                value={profile.contact_number || ''} 
+                readOnly 
+                className="bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed" 
+              />
             )}
           </div>
 
@@ -375,23 +394,33 @@ export function ISVProfileComponent({ isvId }: ISVProfileComponentProps) {
           <div className="flex gap-3 pt-4">
             {isEditing ? (
               <>
-                <Button onClick={handleSave} disabled={isSaving}>
+                <Button 
+                  onClick={handleSave} 
+                  disabled={isSaving}
+                  className="bg-gray-800 hover:bg-gray-900 text-white"
+                >
                   <Save className="h-4 w-4 mr-2" />
                   {isSaving ? 'Saving...' : 'Save'}
                 </Button>
-                <Button variant="outline" onClick={handleCancel}>
+                <Button 
+                  variant="outline" 
+                  onClick={handleCancel}
+                  className="border-gray-300"
+                >
                   Cancel
                 </Button>
               </>
             ) : (
-              <Button onClick={() => setIsEditing(true)}>
+              <Button 
+                onClick={() => setIsEditing(true)}
+                className="bg-gray-800 hover:bg-gray-900 text-white"
+              >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Details
               </Button>
             )}
           </div>
-        </div>
-      </Card>
+      </div>
     </div>
   )
 }
