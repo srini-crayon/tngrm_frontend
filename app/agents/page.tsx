@@ -7,7 +7,7 @@ import { AgentCard } from "../../components/agent-card";
 import { AgentCardSkeleton } from "../../components/agent-card-skeleton";
 import ChatDialog from "../../components/chat-dialog";
 import { Search, ChevronDown } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useChatStore } from "../../lib/store/chat.store";
 import { useModal } from "../../hooks/use-modal";
@@ -107,9 +107,13 @@ export default function AgentLibraryPage() {
   const [agentSearchChatValue, setAgentSearchChatValue] = useState("");
   const [providerFilter, setProviderFilter] = useState<string>("All");
   const [capabilityFilter, setCapabilityFilter] = useState<string>("All");
-  const [deploymentFilter, setDeploymentFilter] = useState<string>("All");
+  const [deploymentFilter, setDeploymentFilter] = useState<string>("Agent");
   const [personaFilter, setPersonaFilter] = useState<string>("All");
   const [createChatOpen, setCreateChatOpen] = useState(false);
+  const [selectedDeploymentType, setSelectedDeploymentType] = useState<string>("Agent");
+  const [indicatorStyle, setIndicatorStyle] = useState<{ left: number; width: number } | null>(null);
+  const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
   const PAGE_SIZE = 9;
   const [currentPage, setCurrentPage] = useState(1);
   const [aiCurrentPage, setAiCurrentPage] = useState(1);
@@ -186,6 +190,20 @@ export default function AgentLibraryPage() {
           });
         
         setAgents(mappedAgents.length > 0 ? mappedAgents : fallbackAgents);
+        
+        // Set default deployment type to "Agent" if it exists, otherwise first available type
+        if (mappedAgents.length > 0) {
+          const deploymentTypes = new Set<string>();
+          mappedAgents.forEach(agent => {
+            if (agent.deploymentType) deploymentTypes.add(agent.deploymentType);
+          });
+          const sortedTypes = Array.from(deploymentTypes).sort();
+          const defaultType = sortedTypes.includes("Agent") ? "Agent" : (sortedTypes[0] || "");
+          if (defaultType) {
+            setSelectedDeploymentType(defaultType);
+            setDeploymentFilter(defaultType);
+          }
+        }
       } catch (err) {
         console.error(err);
         setError("Failed to load agents");
@@ -285,6 +303,58 @@ export default function AgentLibraryPage() {
     return Array.from(types).sort();
   }, [agents]);
 
+  // Calculate counts for each deployment type
+  const deploymentTypeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    allDeploymentTypes.forEach(type => {
+      counts[type] = agents.filter(agent => agent.deploymentType === type).length;
+    });
+    return counts;
+  }, [agents, allDeploymentTypes]);
+
+  // Update indicator position when selected deployment type changes
+  useEffect(() => {
+    if (!tabsContainerRef.current || !selectedDeploymentType) {
+      setIndicatorStyle(null);
+      return;
+    }
+
+    const tabElement = tabRefs.current.get(selectedDeploymentType);
+    if (!tabElement) {
+      setIndicatorStyle(null);
+      return;
+    }
+
+    // Small delay to ensure DOM is updated
+    const timer = setTimeout(() => {
+      if (!tabsContainerRef.current || !tabElement) return;
+      
+      const containerRect = tabsContainerRef.current.getBoundingClientRect();
+      const tabRect = tabElement.getBoundingClientRect();
+      
+      setIndicatorStyle({
+        left: tabRect.left - containerRect.left,
+        width: tabRect.width,
+      });
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [selectedDeploymentType, allDeploymentTypes]);
+
+  // Update deployment filter when segment is selected
+  useEffect(() => {
+    if (selectedDeploymentType) {
+      setDeploymentFilter(selectedDeploymentType);
+    }
+  }, [selectedDeploymentType]);
+
+  // Sync selected segment when deployment filter changes from dropdown
+  useEffect(() => {
+    if (deploymentFilter !== "All" && allDeploymentTypes.includes(deploymentFilter)) {
+      setSelectedDeploymentType(deploymentFilter);
+    }
+  }, [deploymentFilter, allDeploymentTypes]);
+
   const allPersonas = useMemo(() => {
     const personas = new Set<string>();
     agents.forEach(agent => {
@@ -330,7 +400,7 @@ export default function AgentLibraryPage() {
       );
     }
     
-    if (deploymentFilter !== "All") {
+    if (deploymentFilter && deploymentFilter !== "All") {
       filtered = filtered.filter(agent => 
         agent.deploymentType === deploymentFilter
       );
@@ -770,6 +840,89 @@ export default function AgentLibraryPage() {
 
       {/* Unified Search + Filters Bar with Home search chat */}
       <section className="bg-white w-full">
+        {/* Deployment Type Segment Tabs */}
+        {allDeploymentTypes.length > 0 && (
+          <div 
+            className="w-full flex justify-center"
+            style={{
+              paddingTop: "32px",
+              paddingBottom: "32px",
+              paddingLeft: "60px",
+              paddingRight: "120px",
+              backgroundColor: "#FFFFFF",
+            }}
+          >
+            <div 
+              ref={tabsContainerRef}
+              className="relative flex gap-8 border-b border-gray-200 flex-wrap justify-center" 
+              style={{ 
+                borderBottom: "1px solid #E5E7EB", 
+                position: "relative",
+              }}
+            >
+              {/* Animated sliding indicator */}
+              {indicatorStyle && (
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: "-1px",
+                    left: `${indicatorStyle.left}px`,
+                    width: `${indicatorStyle.width}px`,
+                    height: "2px",
+                    backgroundColor: "#000",
+                    transition: "left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    willChange: "left, width",
+                    transform: "translateZ(0)",
+                    backfaceVisibility: "hidden",
+                    WebkitBackfaceVisibility: "hidden",
+                    pointerEvents: "none",
+                  }}
+                />
+              )}
+              
+              {/* Deployment type tabs */}
+              {allDeploymentTypes.map((type) => {
+                const count = deploymentTypeCounts[type] || 0;
+                const isSelected = selectedDeploymentType === type;
+                
+                return (
+                  <button
+                    key={type}
+                    ref={(el) => {
+                      if (el) {
+                        tabRefs.current.set(type, el);
+                      } else {
+                        tabRefs.current.delete(type);
+                      }
+                    }}
+                    onClick={() => setSelectedDeploymentType(type)}
+                    className="relative pb-2 px-4"
+                    style={{
+                      fontFamily: "Poppins",
+                      fontSize: "14px",
+                      fontWeight: isSelected ? 600 : 500,
+                      color: isSelected ? "#000" : "#344054",
+                      paddingBottom: "8px",
+                      whiteSpace: "nowrap",
+                      opacity: 1,
+                      cursor: "pointer",
+                      display: "inline-block",
+                      visibility: "visible",
+                      transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-weight 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      willChange: "transform",
+                      backfaceVisibility: "hidden",
+                      WebkitBackfaceVisibility: "hidden",
+                      transform: "translateZ(0)",
+                    }}
+                  >
+                    {type} ({count})
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Additional Filters */}
         <div 
           className="w-full"
@@ -778,17 +931,18 @@ export default function AgentLibraryPage() {
           }}
         >
           <div 
-            className="flex flex-col lg:flex-row gap-4 items-center w-full"
+            className="flex flex-col lg:flex-row gap-4 items-center mx-auto"
             style={{
               width: "100%",
+              maxWidth: "1360px",
               height: "64px",
               backgroundColor: "#FFFFFF",
-              borderTop: "1px solid #DFDFDF",
+              borderTop: "none",
               borderBottom: "1px solid #DFDFDF",
               borderLeft: "none",
               borderRight: "none",
-              paddingLeft: "60px",
-              paddingRight: "120px",
+              paddingLeft: "8px",
+              paddingRight: "8px",
             }}
           >
             {/* Quick Search Input */}
@@ -816,8 +970,8 @@ export default function AgentLibraryPage() {
             </div>
             
             {/* Filters */}
-            <div className="flex flex-nowrap items-center w-full lg:basis-[40%] lg:justify-end lg:pl-4 gap-2 lg:gap-6">
-              <div className="relative inline-flex items-center" style={{ borderLeft: "1px solid #DFDFDF", paddingLeft: "8px" }}>
+            <div className="flex flex-nowrap items-center justify-end w-full lg:basis-[40%] lg:pl-4 gap-2 lg:gap-6">
+              <div className="relative inline-flex items-center" style={{ borderLeft: "1px solid #DFDFDF", paddingLeft: "32px", paddingRight: "0px" }}>
                 <span
                   style={{
                     fontFamily: "Poppins, sans-serif",
@@ -889,37 +1043,6 @@ export default function AgentLibraryPage() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {deploymentFilter === "All" ? "Asset Type" : deploymentFilter}
-                </span>
-                <ChevronDown 
-                  className="pointer-events-none"
-                  style={{
-                    width: "16px",
-                    height: "16px",
-                    color: "#344054",
-                  }}
-                />
-                <select
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                  value={deploymentFilter}
-                  onChange={(e) => setDeploymentFilter(e.target.value)}
-                >
-                  <option value="All">Asset Type</option>
-                  {allDeploymentTypes.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="relative inline-flex items-center" style={{ paddingLeft: "8px" }}>
-                <span
-                  style={{
-                    fontFamily: "Poppins, sans-serif",
-                    fontSize: "14px",
-                    color: "#344054",
-                    marginRight: "4px",
-                    whiteSpace: "nowrap",
-                  }}
-                >
                   {personaFilter === "All" ? "Persona" : personaFilter}
                 </span>
                 <ChevronDown 
@@ -947,7 +1070,6 @@ export default function AgentLibraryPage() {
                 const hasActiveFilters = 
                   providerFilter !== "All" ||
                   capabilityFilter !== "All" ||
-                  deploymentFilter !== "All" ||
                   personaFilter !== "All" ||
                   search !== "";
                 
@@ -958,7 +1080,8 @@ export default function AgentLibraryPage() {
                     onClick={() => {
                       setProviderFilter("All");
                       setCapabilityFilter("All");
-                      setDeploymentFilter("All");
+                      setDeploymentFilter("Agent");
+                      setSelectedDeploymentType("Agent");
                       setPersonaFilter("All");
                       setSearch("");
                     }}
@@ -988,11 +1111,9 @@ export default function AgentLibraryPage() {
             </div>
           </div>
         </div>
-      </section>
 
-      {/* Agent Grid */}
-      <section className="pt-4 pb-12 md:pt-6 md:pb-16 lg:pt-8 lg:pb-20">
-        <div className="w-full mx-auto" style={{ maxWidth: "auto", paddingLeft: "70px", paddingRight: "70px" }}>
+        {/* Agent Grid */}
+        <div className="w-full mx-auto" style={{ maxWidth: "1360px", paddingLeft: "12px", paddingRight: "12px", marginTop: "28px" }}>
           {loading && (
             <div 
               className="grid gap-4 md:gap-6 lg:gap-10"

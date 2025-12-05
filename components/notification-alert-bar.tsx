@@ -26,8 +26,11 @@ export function NotificationAlertBar() {
                   fontFamily: 'Poppins, sans-serif',
                 }}
               >
+                <span className="font-bold">
+                  Limited Availability.
+                </span>
                 <span className="font-normal">
-                  Limited Availability. You may experience some disruption during this time.
+                  {" "}This application is optimized for viewing on desktop and laptop computers.
                 </span>
               </span>
             </div>

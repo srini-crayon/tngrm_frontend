@@ -209,11 +209,10 @@ export default function DashboardPage() {
 
   return (
     <div 
-      className="w-full px-8 md:px-12 lg:px-16 py-12 md:py-16 lg:py-20"
+      className="w-full px-8 md:px-12 lg:px-16 py-12 md:py-16 lg:py-20 min-h-screen"
       style={{
         background: 'radial-gradient(100% 100% at 50% 0%, #E5E5FF 0%, #FFF 100%)',
-        width: '100%',
-        height: '229px'
+        width: '100%'
       }}
     >
       {isCheckingAuth ? (
