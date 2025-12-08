@@ -11,7 +11,7 @@
     "prebuild": "npm install --force lightningcss@^1.29.0 || echo 'Warning: lightningcss reinstall failed, continuing...'",
     "build": "next build",
     "build:render": "npm ci --legacy-peer-deps && npm rebuild lightningcss --build-from-source && npm run build",
-    "dev": "next dev",
+    "dev": "node server.js",
     "lint": "eslint .",
     "start": "next start",
     "check-versions": "npm list lightningcss || true"

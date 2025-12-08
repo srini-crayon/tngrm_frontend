@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Badge } from "../../components/ui/badge"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "../../components/ui/dropdown-menu"
-import { Search, SlidersHorizontal, MoreVertical, Eye, Edit, CheckCircle, XCircle, Trash2, ExternalLink, MessageSquare, Users, User, Mail, Building2, Phone, Calendar, UserCircle, ChevronDown, ChevronUp } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../../components/ui/dialog"
+import { Search, SlidersHorizontal, MoreVertical, Eye, Edit, CheckCircle, XCircle, Trash2, ExternalLink, MessageSquare, Users, User, Mail, Building2, Phone, Calendar, UserCircle } from "lucide-react"
 import { AgentPreviewModal } from "../../components/agent-preview-modal"
 import { EditAgentModal } from "../../components/edit-agent-modal"
 import { RejectAgentModal } from "../../components/reject-agent-modal"
@@ -47,6 +49,16 @@ export default function AdminPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "approved" | "pending">("all")
   const [assetTypeFilter, setAssetTypeFilter] = useState<string>("all")
+
+  // Pagination States
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
+  // Multi-select States
+  const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set())
+  const [selectedISVs, setSelectedISVs] = useState<Set<string>>(new Set())
+  const [selectedResellers, setSelectedResellers] = useState<Set<string>>(new Set())
+  const [selectedEnquiries, setSelectedEnquiries] = useState<Set<string>>(new Set())
 
   // Authentication and Role Check
   useEffect(() => {
@@ -102,24 +114,22 @@ export default function AdminPage() {
   const [editResellerModalOpen, setEditResellerModalOpen] = useState(false)
   const [editAgentModalOpen, setEditAgentModalOpen] = useState(false)
   
-  // Expanded rows state for enquiries
-  const [expandedEnquiries, setExpandedEnquiries] = useState<Set<string>>(new Set())
+  // Message modal state for enquiries
+  const [messageModalOpen, setMessageModalOpen] = useState(false)
+  const [selectedMessage, setSelectedMessage] = useState<{name: string, message: string, email?: string} | null>(null)
   
-  const toggleEnquiryExpansion = (enquiryId: string) => {
-    setExpandedEnquiries(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(enquiryId)) {
-        newSet.delete(enquiryId)
-      } else {
-        newSet.add(enquiryId)
-      }
-      return newSet
+  const handleShowMessage = (enquiry: any) => {
+    setSelectedMessage({
+      name: enquiry.full_name || 'Unknown',
+      message: enquiry.message || 'No message provided',
+      email: enquiry.email
     })
+    setMessageModalOpen(true)
   }
 
   // Fetch functions
-  const fetchAgents = async () => {
-    setIsLoading(true)
+  const fetchAgents = async (showLoading = true) => {
+    if (showLoading) setIsLoading(true)
     setError(null)
     try {
       const apiAgents = await adminService.fetchAgents()
@@ -127,17 +137,19 @@ export default function AdminPage() {
     } catch (err: any) {
       console.error('Error fetching agents:', err)
       setError(err.message || 'Failed to fetch agents')
-      toast({
-        description: err.message || 'Failed to fetch agents',
-        variant: "destructive",
-      })
+      if (showLoading) {
+        toast({
+          description: err.message || 'Failed to fetch agents',
+          variant: "destructive",
+        })
+      }
     } finally {
-      setIsLoading(false)
+      if (showLoading) setIsLoading(false)
     }
   }
 
-  const fetchISVs = async () => {
-    setIsLoading(true)
+  const fetchISVs = async (showLoading = true) => {
+    if (showLoading) setIsLoading(true)
     setError(null)
     try {
       const apiISVs = await adminService.fetchISVs()
@@ -145,17 +157,19 @@ export default function AdminPage() {
     } catch (err: any) {
       console.error('Error fetching ISVs:', err)
       setError(err.message || 'Failed to fetch ISVs')
-      toast({
-        description: err.message || 'Failed to fetch ISVs',
-        variant: "destructive",
-      })
+      if (showLoading) {
+        toast({
+          description: err.message || 'Failed to fetch ISVs',
+          variant: "destructive",
+        })
+      }
     } finally {
-      setIsLoading(false)
+      if (showLoading) setIsLoading(false)
     }
   }
 
-  const fetchResellers = async () => {
-    setIsLoading(true)
+  const fetchResellers = async (showLoading = true) => {
+    if (showLoading) setIsLoading(true)
     setError(null)
     try {
       const apiResellers = await adminService.fetchResellers()
@@ -163,17 +177,19 @@ export default function AdminPage() {
     } catch (err: any) {
       console.error('Error fetching resellers:', err)
       setError(err.message || 'Failed to fetch resellers')
-      toast({
-        description: err.message || 'Failed to fetch resellers',
-        variant: "destructive",
-      })
+      if (showLoading) {
+        toast({
+          description: err.message || 'Failed to fetch resellers',
+          variant: "destructive",
+        })
+      }
     } finally {
-      setIsLoading(false)
+      if (showLoading) setIsLoading(false)
     }
   }
 
-  const fetchEnquiries = async () => {
-    setIsLoading(true)
+  const fetchEnquiries = async (showLoading = true) => {
+    if (showLoading) setIsLoading(true)
     setError(null)
     try {
       const response = await fetch('https://agents-store.onrender.com/api/enquiries', {
@@ -194,30 +210,49 @@ export default function AdminPage() {
     } catch (err: any) {
       console.error('Error fetching enquiries:', err)
       setError(err.message || 'Failed to fetch enquiries')
-      toast({
-        description: err.message || 'Failed to fetch enquiries',
-        variant: "destructive",
-      })
+      if (showLoading) {
+        toast({
+          description: err.message || 'Failed to fetch enquiries',
+          variant: "destructive",
+        })
+      }
     } finally {
-      setIsLoading(false)
+      if (showLoading) setIsLoading(false)
     }
   }
 
-  // Fetch data when tab changes
+  // Fetch all data on initial load (after auth check) - without loading state
   useEffect(() => {
-    if (activeTab === "agents") {
-      fetchAgents()
-    } else if (activeTab === "isvs") {
-      fetchISVs()
-    } else if (activeTab === "resellers") {
-      fetchResellers()
-    } else if (activeTab === "enquiries") {
-      fetchEnquiries()
+    if (!isCheckingAuth) {
+      // Fetch all data in parallel to show counts immediately (without showing loading state)
+      Promise.all([
+        fetchAgents(false),
+        fetchISVs(false),
+        fetchResellers(false),
+        fetchEnquiries(false)
+      ]).catch(err => {
+        console.error('Error fetching initial data:', err)
+      })
     }
-  }, [activeTab])
+  }, [isCheckingAuth])
 
-  // Filter functions
-  const getFilteredAgents = () => {
+  // Fetch data when tab changes (for refreshing) - with loading state
+  useEffect(() => {
+    if (!isCheckingAuth) {
+      if (activeTab === "agents") {
+        fetchAgents(true)
+      } else if (activeTab === "isvs") {
+        fetchISVs(true)
+      } else if (activeTab === "resellers") {
+        fetchResellers(true)
+      } else if (activeTab === "enquiries") {
+        fetchEnquiries(true)
+      }
+    }
+  }, [activeTab, isCheckingAuth])
+
+  // Filter functions with useMemo
+  const filteredAgents = useMemo(() => {
     let filtered = agents
 
     // Search filter
@@ -242,9 +277,9 @@ export default function AdminPage() {
     }
 
     return filtered
-  }
+  }, [agents, searchTerm, statusFilter, assetTypeFilter])
 
-  const getFilteredISVs = () => {
+  const filteredISVs = useMemo(() => {
     let filtered = isvs
 
     // Search filter
@@ -264,9 +299,9 @@ export default function AdminPage() {
     }
 
     return filtered
-  }
+  }, [isvs, searchTerm, statusFilter])
 
-  const getFilteredResellers = () => {
+  const filteredResellers = useMemo(() => {
     let filtered = resellers
 
     // Search filter
@@ -286,9 +321,9 @@ export default function AdminPage() {
     }
 
     return filtered
-  }
+  }, [resellers, searchTerm, statusFilter])
 
-  const getFilteredEnquiries = () => {
+  const filteredEnquiries = useMemo(() => {
     let filtered = enquiries
 
     // Search filter
@@ -314,6 +349,98 @@ export default function AdminPage() {
     }
 
     return filtered
+  }, [enquiries, searchTerm, enquiryStatusFilter, enquiryUserTypeFilter])
+
+  // Reset to page 1 when filters or search change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, statusFilter, assetTypeFilter, enquiryStatusFilter, enquiryUserTypeFilter, activeTab])
+
+  // Pagination calculations
+  const getPaginatedData = (data: any[]) => {
+    const totalPages = Math.ceil(data.length / itemsPerPage)
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    const paginatedData = data.slice(startIndex, endIndex)
+    return { paginatedData, totalPages, startIndex, endIndex }
+  }
+
+  const agentsPagination = getPaginatedData(filteredAgents)
+  const isvsPagination = getPaginatedData(filteredISVs)
+  const resellersPagination = getPaginatedData(filteredResellers)
+  const enquiriesPagination = getPaginatedData(filteredEnquiries)
+
+  // Multi-select handlers
+  const handleSelectAllAgents = (checked: boolean) => {
+    if (checked) {
+      setSelectedAgents(new Set(agentsPagination.paginatedData.map(a => a.agent_id)))
+    } else {
+      setSelectedAgents(new Set())
+    }
+  }
+
+  const handleSelectAgent = (agentId: string, checked: boolean) => {
+    const newSelected = new Set(selectedAgents)
+    if (checked) {
+      newSelected.add(agentId)
+    } else {
+      newSelected.delete(agentId)
+    }
+    setSelectedAgents(newSelected)
+  }
+
+  const handleSelectAllISVs = (checked: boolean) => {
+    if (checked) {
+      setSelectedISVs(new Set(isvsPagination.paginatedData.map(i => i.isv_id)))
+    } else {
+      setSelectedISVs(new Set())
+    }
+  }
+
+  const handleSelectISV = (isvId: string, checked: boolean) => {
+    const newSelected = new Set(selectedISVs)
+    if (checked) {
+      newSelected.add(isvId)
+    } else {
+      newSelected.delete(isvId)
+    }
+    setSelectedISVs(newSelected)
+  }
+
+  const handleSelectAllResellers = (checked: boolean) => {
+    if (checked) {
+      setSelectedResellers(new Set(resellersPagination.paginatedData.map(r => r.reseller_id)))
+    } else {
+      setSelectedResellers(new Set())
+    }
+  }
+
+  const handleSelectReseller = (resellerId: string, checked: boolean) => {
+    const newSelected = new Set(selectedResellers)
+    if (checked) {
+      newSelected.add(resellerId)
+    } else {
+      newSelected.delete(resellerId)
+    }
+    setSelectedResellers(newSelected)
+  }
+
+  const handleSelectAllEnquiries = (checked: boolean) => {
+    if (checked) {
+      setSelectedEnquiries(new Set(enquiriesPagination.paginatedData.map(e => e.enquiry_id)))
+    } else {
+      setSelectedEnquiries(new Set())
+    }
+  }
+
+  const handleSelectEnquiry = (enquiryId: string, checked: boolean) => {
+    const newSelected = new Set(selectedEnquiries)
+    if (checked) {
+      newSelected.add(enquiryId)
+    } else {
+      newSelected.delete(enquiryId)
+    }
+    setSelectedEnquiries(newSelected)
   }
 
   // Format date to readable format
@@ -485,24 +612,28 @@ export default function AdminPage() {
   const getStatusBadge = (approved: "yes" | "no") => {
     if (approved === "yes") {
       return (
-        <Badge className="bg-green-100 text-green-800 border-green-200">
-          <CheckCircle className="h-3 w-3 mr-1" />
+        <span className="inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-medium bg-green-100 text-black">
           Approved
-        </Badge>
+        </span>
       )
     }
     return (
-      <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
-        <XCircle className="h-3 w-3 mr-1" />
+      <span className="inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-medium bg-yellow-100 text-black">
         Pending
-      </Badge>
+      </span>
     )
   }
 
   // Show loading screen while checking authentication
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{
+          background: 'radial-gradient(100% 100% at 50% 0%, #FFFEDA 0%, #FFF 100%)',
+          width: '100%'
+        }}
+      >
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
           <p className="text-gray-600">Verifying access...</p>
@@ -512,12 +643,20 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="w-full px-8 md:px-12 lg:px-16 py-12 md:py-16 lg:py-20">
+    <div 
+      className="w-full px-8 md:px-12 lg:px-16 py-12 md:py-16 lg:py-20 min-h-screen"
+      style={{
+        background: 'radial-gradient(100% 100% at 50% 0%, #FFFEDA 0%, #FFF 100%)',
+        width: '100%'
+      }}
+    >
+      <div className="w-full">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-2">Manage agents, ISVs, and resellers</p>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">Admin Dashboard</h1>
+          <p className="text-base text-gray-600">
+            Manage agents, ISVs, and resellers
+          </p>
         </div>
 
         {/* Tabs */}
@@ -525,24 +664,25 @@ export default function AdminPage() {
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
               {[
-                { id: "agents", label: "Agents", icon: MessageSquare },
-                { id: "isvs", label: "ISVs", icon: Users },
-                { id: "resellers", label: "Resellers", icon: User },
-                { id: "enquiries", label: "Enquiries", icon: Mail },
+                { id: "agents", label: "Agents", icon: MessageSquare, count: agents.length },
+                { id: "isvs", label: "ISVs", icon: Users, count: isvs.length },
+                { id: "resellers", label: "Resellers", icon: User, count: resellers.length },
+                { id: "enquiries", label: "Enquiries", icon: Mail, count: enquiries.length },
               ].map((tab) => {
                 const Icon = tab.icon
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as TabType)}
-                    className={`flex items-center gap-2 py-2 px-1 border-b-2 font-medium text-sm ${
+                    className={`flex items-center gap-2 py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                       activeTab === tab.id
-                        ? "border-black text-black"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                        ? "border-gray-900 text-gray-900"
+                        : "border-transparent text-gray-600 hover:text-gray-900"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
                     {tab.label}
+                    <span className="text-xs font-normal opacity-70">({tab.count})</span>
                   </button>
                 )
               })}
@@ -670,356 +810,583 @@ export default function AdminPage() {
             </Button>
           </div>
         ) : (
-          <>
+          <React.Fragment>
             {/* Agents Table */}
             {activeTab === "agents" && (
-              <div className="bg-white rounded-lg shadow">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold">Agents ({getFilteredAgents().length})</h2>
-                </div>
+              <div className="mt-4">
                 <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agent Name</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset Type</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ISV ID</th>
-                        
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {getFilteredAgents().map((agent) => (
-                        <tr key={agent.agent_id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{agent.agent_name}</div>
-                            <div className="text-sm text-gray-500">ID: {agent.agent_id}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{agent.asset_type}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{agent.isv_id}</td>
-                          
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {getStatusBadge(agent.admin_approved)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div className="flex items-center gap-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => {
-                                  router.push(`/agents/${agent.agent_id}`)
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-b border-gray-200">
+                        <TableHead className="w-12">
+                          <input
+                            type="checkbox"
+                            checked={selectedAgents.size === agentsPagination.paginatedData.length && agentsPagination.paginatedData.length > 0 && agentsPagination.paginatedData.every(a => selectedAgents.has(a.agent_id))}
+                            onChange={(e) => handleSelectAllAgents(e.target.checked)}
+                            className="rounded"
+                            style={{
+                              accentColor: '#E5E7EB',
+                              borderColor: '#E5E7EB'
+                            }}
+                          />
+                        </TableHead>
+                        <TableHead className="font-medium w-16">S. No</TableHead>
+                        <TableHead className="font-medium min-w-[120px]">Agent ID</TableHead>
+                        <TableHead className="font-medium min-w-[200px]">Agent Name</TableHead>
+                        <TableHead className="font-medium min-w-[120px]">Asset Type</TableHead>
+                        <TableHead className="font-medium min-w-[120px]">ISV ID</TableHead>
+                        <TableHead className="font-medium w-32">Status</TableHead>
+                        <TableHead className="font-medium w-20 text-right"></TableHead>
+                        <TableHead className="font-medium w-20 text-right"></TableHead>
+                        <TableHead className="w-12 text-right"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {agentsPagination.paginatedData.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={10} className="text-center py-8 text-gray-500">
+                            No agents found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        agentsPagination.paginatedData.map((agent, idx) => (
+                          <TableRow key={agent.agent_id} className="border-b border-gray-100">
+                            <TableCell>
+                              <input
+                                type="checkbox"
+                                checked={selectedAgents.has(agent.agent_id)}
+                                onChange={(e) => handleSelectAgent(agent.agent_id, e.target.checked)}
+                                className="rounded"
+                                style={{
+                                  accentColor: '#E5E7EB',
+                                  borderColor: '#E5E7EB'
                                 }}
-                              >
-                                View
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedAgent(agent)
-                                  setEditAgentModalOpen(true)
-                                }}
-                              >
-                                Edit
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
+                              />
+                            </TableCell>
+                            <TableCell className="w-16">{agentsPagination.startIndex + idx + 1}</TableCell>
+                            <TableCell className="min-w-[120px] text-sm text-gray-900">{agent.agent_id}</TableCell>
+                            <TableCell className="font-medium min-w-[200px] text-sm text-gray-900">{agent.agent_name}</TableCell>
+                            <TableCell className="min-w-[120px] text-sm text-gray-900">{agent.asset_type || "-"}</TableCell>
+                            <TableCell className="min-w-[120px] text-sm text-gray-900">{agent.isv_id}</TableCell>
+                            <TableCell className="w-32">
+                              {getStatusBadge(agent.admin_approved)}
+                            </TableCell>
+                            <TableCell className="p-1 w-20 text-right">
+                              <button
                                 onClick={() => handleApproveAgent(agent)}
-                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                className="text-green-600 hover:text-green-700 hover:underline text-sm"
                               >
-                                <CheckCircle className="mr-1 h-3 w-3" />
                                 Approve
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
+                              </button>
+                            </TableCell>
+                            <TableCell className="p-1 w-20 text-right">
+                              <button
                                 onClick={() => {
                                   setSelectedAgent(agent)
                                   setRejectAgentModalOpen(true)
                                 }}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="text-red-600 hover:text-red-700 hover:underline text-sm"
                               >
-                                <XCircle className="mr-1 h-3 w-3" />
                                 Reject
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                              </button>
+                            </TableCell>
+                            <TableCell className="p-1 w-12 text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button className="text-gray-400 hover:text-gray-600">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem 
+                                    onClick={() => {
+                                      router.push(`/agents/${agent.agent_id}`)
+                                    }}
+                                  >
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    View
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => {
+                                      setSelectedAgent(agent)
+                                      setEditAgentModalOpen(true)
+                                    }}
+                                  >
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
+                {/* Pagination */}
+                {agentsPagination.totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-8 px-2">
+                    <div className="text-sm text-gray-600">
+                      Showing {agentsPagination.startIndex + 1} to {Math.min(agentsPagination.endIndex, filteredAgents.length)} of {filteredAgents.length} results
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: agentsPagination.totalPages }, (_, i) => i + 1).map((page) => {
+                          if (
+                            page === 1 ||
+                            page === agentsPagination.totalPages ||
+                            (page >= currentPage - 1 && page <= currentPage + 1)
+                          ) {
+                            return (
+                              <Button
+                                key={page}
+                                variant={currentPage === page ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(page)}
+                                className="min-w-[40px]"
+                              >
+                                {page}
+                              </Button>
+                            )
+                          } else if (page === currentPage - 2 || page === currentPage + 2) {
+                            return <span key={page} className="px-2">...</span>
+                          }
+                          return null
+                        })}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(agentsPagination.totalPages, prev + 1))}
+                        disabled={currentPage === agentsPagination.totalPages}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {/* ISVs Table */}
             {activeTab === "isvs" && (
-              <div className="bg-white rounded-lg shadow">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold">ISVs ({getFilteredISVs().length})</h2>
-                </div>
+              <div className="mt-4">
                 <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ISV Name</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agents</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Domain</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {getFilteredISVs().map((isv) => (
-                        <tr key={isv.isv_id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{isv.isv_name}</div>
-                            <div className="text-sm text-gray-500">ID: {isv.isv_id}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{isv.isv_email_no}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            <span className="font-medium">{isv.approved_agent_count}</span>
-                            <span className="text-gray-500">/{isv.agent_count}</span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{isv.isv_domain}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {getStatusBadge(isv.admin_approved)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem 
-                                  onClick={() => {
-                                    setSelectedISV(isv)
-                                    setISVModalOpen(true)
-                                  }}
-                                >
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  View
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => {
-                                    setSelectedISV(isv)
-                                    handleEditISV()
-                                  }}
-                                >
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  onClick={() => handleApproveISV(isv)}
-                                  className="text-green-600"
-                                >
-                                  <CheckCircle className="mr-2 h-4 w-4" />
-                                  Approve
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => {
-                                    setSelectedISV(isv)
-                                    setRejectISVModalOpen(true)
-                                  }}
-                                  className="text-red-600"
-                                >
-                                  <XCircle className="mr-2 h-4 w-4" />
-                                  Reject
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-b border-gray-200">
+                        <TableHead className="w-12">
+                          <input
+                            type="checkbox"
+                            checked={selectedISVs.size === isvsPagination.paginatedData.length && isvsPagination.paginatedData.length > 0 && isvsPagination.paginatedData.every(i => selectedISVs.has(i.isv_id))}
+                            onChange={(e) => handleSelectAllISVs(e.target.checked)}
+                            className="rounded"
+                            style={{
+                              accentColor: '#E5E7EB',
+                              borderColor: '#E5E7EB'
+                            }}
+                          />
+                        </TableHead>
+                        <TableHead className="font-medium w-16">S. No</TableHead>
+                        <TableHead className="font-medium min-w-[120px]">ISV ID</TableHead>
+                        <TableHead className="font-medium min-w-[200px]">ISV Name</TableHead>
+                        <TableHead className="font-medium min-w-[180px]">Email</TableHead>
+                        <TableHead className="font-medium min-w-[100px]">Agents</TableHead>
+                        <TableHead className="font-medium min-w-[150px]">Domain</TableHead>
+                        <TableHead className="font-medium w-32">Status</TableHead>
+                        <TableHead className="font-medium w-20 text-right"></TableHead>
+                        <TableHead className="font-medium w-20 text-right"></TableHead>
+                        <TableHead className="w-12 text-right"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {isvsPagination.paginatedData.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={10} className="text-center py-8 text-gray-500">
+                            No ISVs found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        isvsPagination.paginatedData.map((isv, idx) => (
+                          <TableRow key={isv.isv_id} className="border-b border-gray-100">
+                            <TableCell>
+                              <input
+                                type="checkbox"
+                                checked={selectedISVs.has(isv.isv_id)}
+                                onChange={(e) => handleSelectISV(isv.isv_id, e.target.checked)}
+                                className="rounded"
+                                style={{
+                                  accentColor: '#E5E7EB',
+                                  borderColor: '#E5E7EB'
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell className="w-16">{isvsPagination.startIndex + idx + 1}</TableCell>
+                            <TableCell className="min-w-[120px] text-sm text-gray-900">{isv.isv_id}</TableCell>
+                            <TableCell className="font-medium min-w-[200px] text-sm text-gray-900">{isv.isv_name}</TableCell>
+                            <TableCell className="min-w-[180px] text-sm text-gray-900">{isv.isv_email_no}</TableCell>
+                            <TableCell className="min-w-[100px] text-sm text-gray-900">
+                              <span className="font-medium">{isv.approved_agent_count}</span>
+                              <span className="text-gray-500">/{isv.agent_count}</span>
+                            </TableCell>
+                            <TableCell className="min-w-[150px] text-sm text-gray-900">{isv.isv_domain}</TableCell>
+                            <TableCell className="w-32">
+                              {getStatusBadge(isv.admin_approved)}
+                            </TableCell>
+                            <TableCell className="p-1 w-20 text-right">
+                              <button
+                                onClick={() => handleApproveISV(isv)}
+                                className="text-green-600 hover:text-green-700 hover:underline text-sm"
+                              >
+                                Approve
+                              </button>
+                            </TableCell>
+                            <TableCell className="p-1 w-20 text-right">
+                              <button
+                                onClick={() => {
+                                  setSelectedISV(isv)
+                                  setRejectISVModalOpen(true)
+                                }}
+                                className="text-red-600 hover:text-red-700 hover:underline text-sm"
+                              >
+                                Reject
+                              </button>
+                            </TableCell>
+                            <TableCell className="p-1 w-12 text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button className="text-gray-400 hover:text-gray-600">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem 
+                                    onClick={() => {
+                                      setSelectedISV(isv)
+                                      setISVModalOpen(true)
+                                    }}
+                                  >
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    View
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => {
+                                      setSelectedISV(isv)
+                                      handleEditISV()
+                                    }}
+                                  >
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
+                {/* Pagination */}
+                {isvsPagination.totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-8 px-2">
+                    <div className="text-sm text-gray-600">
+                      Showing {isvsPagination.startIndex + 1} to {Math.min(isvsPagination.endIndex, filteredISVs.length)} of {filteredISVs.length} results
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: isvsPagination.totalPages }, (_, i) => i + 1).map((page) => {
+                          if (
+                            page === 1 ||
+                            page === isvsPagination.totalPages ||
+                            (page >= currentPage - 1 && page <= currentPage + 1)
+                          ) {
+                            return (
+                              <Button
+                                key={page}
+                                variant={currentPage === page ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(page)}
+                                className="min-w-[40px]"
+                              >
+                                {page}
+                              </Button>
+                            )
+                          } else if (page === currentPage - 2 || page === currentPage + 2) {
+                            return <span key={page} className="px-2">...</span>
+                          }
+                          return null
+                        })}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(isvsPagination.totalPages, prev + 1))}
+                        disabled={currentPage === isvsPagination.totalPages}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Resellers Table */}
             {activeTab === "resellers" && (
-              <div className="bg-white rounded-lg shadow">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold">Resellers ({getFilteredResellers().length})</h2>
-                </div>
+              <div className="mt-4">
                 <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reseller Name</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Whitelisted Domain</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {getFilteredResellers().map((reseller) => (
-                        <tr key={reseller.reseller_id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{reseller.reseller_name}</div>
-                            <div className="text-sm text-gray-500">ID: {reseller.reseller_id}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{reseller.reseller_email_no}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{reseller.whitelisted_domain}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {getStatusBadge(reseller.admin_approved)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem 
-                                  onClick={() => {
-                                    setSelectedReseller(reseller)
-                                    setResellerModalOpen(true)
-                                  }}
-                                >
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  View
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => {
-                                    setSelectedReseller(reseller)
-                                    handleEditReseller()
-                                  }}
-                                >
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  onClick={() => handleApproveReseller(reseller)}
-                                  className="text-green-600"
-                                >
-                                  <CheckCircle className="mr-2 h-4 w-4" />
-                                  Approve
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => {
-                                    setSelectedReseller(reseller)
-                                    setRejectResellerModalOpen(true)
-                                  }}
-                                  className="text-red-600"
-                                >
-                                  <XCircle className="mr-2 h-4 w-4" />
-                                  Reject
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-b border-gray-200">
+                        <TableHead className="w-12">
+                          <input
+                            type="checkbox"
+                            checked={selectedResellers.size === resellersPagination.paginatedData.length && resellersPagination.paginatedData.length > 0 && resellersPagination.paginatedData.every(r => selectedResellers.has(r.reseller_id))}
+                            onChange={(e) => handleSelectAllResellers(e.target.checked)}
+                            className="rounded"
+                            style={{
+                              accentColor: '#E5E7EB',
+                              borderColor: '#E5E7EB'
+                            }}
+                          />
+                        </TableHead>
+                        <TableHead className="font-medium w-16">S. No</TableHead>
+                        <TableHead className="font-medium min-w-[120px]">Reseller ID</TableHead>
+                        <TableHead className="font-medium min-w-[200px]">Reseller Name</TableHead>
+                        <TableHead className="font-medium min-w-[180px]">Email</TableHead>
+                        <TableHead className="font-medium min-w-[180px]">Whitelisted Domain</TableHead>
+                        <TableHead className="font-medium w-32">Status</TableHead>
+                        <TableHead className="font-medium w-20 text-right"></TableHead>
+                        <TableHead className="font-medium w-20 text-right"></TableHead>
+                        <TableHead className="w-12 text-right"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {resellersPagination.paginatedData.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={10} className="text-center py-8 text-gray-500">
+                            No resellers found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        resellersPagination.paginatedData.map((reseller, idx) => (
+                          <TableRow key={reseller.reseller_id} className="border-b border-gray-100">
+                            <TableCell>
+                              <input
+                                type="checkbox"
+                                checked={selectedResellers.has(reseller.reseller_id)}
+                                onChange={(e) => handleSelectReseller(reseller.reseller_id, e.target.checked)}
+                                className="rounded"
+                                style={{
+                                  accentColor: '#E5E7EB',
+                                  borderColor: '#E5E7EB'
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell className="w-16">{resellersPagination.startIndex + idx + 1}</TableCell>
+                            <TableCell className="min-w-[120px] text-sm text-gray-900">{reseller.reseller_id}</TableCell>
+                            <TableCell className="font-medium min-w-[200px] text-sm text-gray-900">{reseller.reseller_name}</TableCell>
+                            <TableCell className="min-w-[180px] text-sm text-gray-900">{reseller.reseller_email_no}</TableCell>
+                            <TableCell className="min-w-[180px] text-sm text-gray-900">{reseller.whitelisted_domain}</TableCell>
+                            <TableCell className="w-32">
+                              {getStatusBadge(reseller.admin_approved)}
+                            </TableCell>
+                            <TableCell className="p-1 w-20 text-right">
+                              <button
+                                onClick={() => handleApproveReseller(reseller)}
+                                className="text-green-600 hover:text-green-700 hover:underline text-sm"
+                              >
+                                Approve
+                              </button>
+                            </TableCell>
+                            <TableCell className="p-1 w-20 text-right">
+                              <button
+                                onClick={() => {
+                                  setSelectedReseller(reseller)
+                                  setRejectResellerModalOpen(true)
+                                }}
+                                className="text-red-600 hover:text-red-700 hover:underline text-sm"
+                              >
+                                Reject
+                              </button>
+                            </TableCell>
+                            <TableCell className="p-1 w-12 text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button className="text-gray-400 hover:text-gray-600">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem 
+                                    onClick={() => {
+                                      setSelectedReseller(reseller)
+                                      setResellerModalOpen(true)
+                                    }}
+                                  >
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    View
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => {
+                                      setSelectedReseller(reseller)
+                                      handleEditReseller()
+                                    }}
+                                  >
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Empty State */}
-        {!isLoading && !error && (
-          <>
-            {activeTab === "agents" && getFilteredAgents().length === 0 && (
-              <div className="text-center py-12">
-                <MessageSquare className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No agents found</h3>
-                <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
-              </div>
-            )}
-            {activeTab === "isvs" && getFilteredISVs().length === 0 && (
-              <div className="text-center py-12">
-                <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No ISVs found</h3>
-                <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
-              </div>
-            )}
-            {activeTab === "resellers" && getFilteredResellers().length === 0 && (
-              <div className="text-center py-12">
-                <User className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No resellers found</h3>
-                <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
+                {/* Pagination */}
+                {resellersPagination.totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-8 px-2">
+                    <div className="text-sm text-gray-600">
+                      Showing {resellersPagination.startIndex + 1} to {Math.min(resellersPagination.endIndex, filteredResellers.length)} of {filteredResellers.length} results
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: resellersPagination.totalPages }, (_, i) => i + 1).map((page) => {
+                          if (
+                            page === 1 ||
+                            page === resellersPagination.totalPages ||
+                            (page >= currentPage - 1 && page <= currentPage + 1)
+                          ) {
+                            return (
+                              <Button
+                                key={page}
+                                variant={currentPage === page ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(page)}
+                                className="min-w-[40px]"
+                              >
+                                {page}
+                              </Button>
+                            )
+                          } else if (page === currentPage - 2 || page === currentPage + 2) {
+                            return <span key={page} className="px-2">...</span>
+                          }
+                          return null
+                        })}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(resellersPagination.totalPages, prev + 1))}
+                        disabled={currentPage === resellersPagination.totalPages}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Enquiries Table */}
             {activeTab === "enquiries" && (
-              <div className="bg-white rounded-lg shadow">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold">Contact Enquiries ({getFilteredEnquiries().length})</h2>
-                </div>
+              <div className="mt-4">
                 <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Type</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {getFilteredEnquiries().map((enquiry) => {
-                        const isExpanded = expandedEnquiries.has(enquiry.enquiry_id)
-                        return (
-                          <>
-                            <tr 
-                              key={enquiry.enquiry_id} 
-                              className={`hover:bg-gray-50 cursor-pointer transition-colors ${enquiry.status === 'new' ? 'bg-blue-50/30' : ''}`}
-                              onClick={() => toggleEnquiryExpansion(enquiry.enquiry_id)}
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-b border-gray-200">
+                        <TableHead className="w-12">
+                          <input
+                            type="checkbox"
+                            checked={selectedEnquiries.size === enquiriesPagination.paginatedData.length && enquiriesPagination.paginatedData.length > 0 && enquiriesPagination.paginatedData.every(e => selectedEnquiries.has(e.enquiry_id))}
+                            onChange={(e) => handleSelectAllEnquiries(e.target.checked)}
+                            className="rounded"
+                            style={{
+                              accentColor: '#E5E7EB',
+                              borderColor: '#E5E7EB'
+                            }}
+                          />
+                        </TableHead>
+                        <TableHead className="font-medium w-16">S. No</TableHead>
+                        <TableHead className="font-medium min-w-[150px]">Name</TableHead>
+                        <TableHead className="font-medium min-w-[150px]">Company</TableHead>
+                        <TableHead className="font-medium min-w-[180px]">Email</TableHead>
+                        <TableHead className="font-medium min-w-[120px]">Phone</TableHead>
+                        <TableHead className="font-medium min-w-[100px]">User Type</TableHead>
+                        <TableHead className="font-medium w-32">Status</TableHead>
+                        <TableHead className="font-medium min-w-[120px]">Date</TableHead>
+                        <TableHead className="font-medium min-w-[200px]">Message</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {enquiriesPagination.paginatedData.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={10} className="text-center py-8 text-gray-500">
+                            No enquiries found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        enquiriesPagination.paginatedData.map((enquiry, idx) => {
+                          return (
+                            <TableRow 
+                              key={enquiry.enquiry_id}
+                              className={`border-b border-gray-100 cursor-pointer transition-colors ${enquiry.status === 'new' ? 'bg-blue-50/30' : ''}`}
+                              onClick={() => handleShowMessage(enquiry)}
                             >
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="flex items-center gap-2">
-                                  {isExpanded ? (
-                                    <ChevronUp className="h-4 w-4 text-gray-400" />
-                                  ) : (
-                                    <ChevronDown className="h-4 w-4 text-gray-400" />
-                                  )}
-                                  <Mail className="h-4 w-4 text-blue-600" />
-                                  <div className="text-sm font-medium text-gray-900">
-                                    {enquiry.full_name || 'Unknown'}
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="flex items-center gap-1">
-                                  {enquiry.company_name ? (
-                                    <>
-                                      <Building2 className="h-3 w-3 text-gray-400" />
-                                      <span className="text-sm text-gray-900">{enquiry.company_name}</span>
-                                    </>
-                                  ) : (
-                                    <span className="text-sm text-gray-400">-</span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm text-gray-900 truncate max-w-[200px]">
-                                  {enquiry.email || '-'}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm text-gray-900">
-                                  {enquiry.phone || '-'}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
+                              <TableCell onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedEnquiries.has(enquiry.enquiry_id)}
+                                  onChange={(e) => handleSelectEnquiry(enquiry.enquiry_id, e.target.checked)}
+                                  className="rounded"
+                                  style={{
+                                    accentColor: '#E5E7EB',
+                                    borderColor: '#E5E7EB'
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell className="w-16">{enquiriesPagination.startIndex + idx + 1}</TableCell>
+                              <TableCell className="font-medium min-w-[150px] text-sm text-gray-900">
+                                {enquiry.full_name || 'Unknown'}
+                              </TableCell>
+                              <TableCell className="min-w-[150px] text-sm text-gray-900">
+                                {enquiry.company_name || '-'}
+                              </TableCell>
+                              <TableCell className="min-w-[180px] text-sm text-gray-900 truncate max-w-[180px]">
+                                {enquiry.email || '-'}
+                              </TableCell>
+                              <TableCell className="min-w-[120px] text-sm text-gray-900">
+                                {enquiry.phone || '-'}
+                              </TableCell>
+                              <TableCell className="min-w-[100px]">
                                 {enquiry.user_type && enquiry.user_type !== 'anonymous' ? (
                                   <Badge variant="outline" className="text-xs">
                                     {enquiry.user_type.toUpperCase()}
@@ -1027,8 +1394,8 @@ export default function AdminPage() {
                                 ) : (
                                   <span className="text-sm text-gray-400">Anonymous</span>
                                 )}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
+                              </TableCell>
+                              <TableCell className="w-32">
                                 {enquiry.status === 'new' ? (
                                   <Badge variant="default" className="bg-blue-600 text-white text-xs">
                                     New
@@ -1038,48 +1405,94 @@ export default function AdminPage() {
                                     Read
                                   </Badge>
                                 )}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="flex items-center gap-1 text-sm text-gray-500">
-                                  <Calendar className="h-3 w-3" />
-                                  <span>{getRelativeTime(enquiry.created_at)}</span>
+                              </TableCell>
+                              <TableCell className="min-w-[120px] text-sm text-gray-500">
+                                {getRelativeTime(enquiry.created_at)}
+                              </TableCell>
+                              <TableCell className="min-w-[200px]" onClick={(e) => e.stopPropagation()}>
+                                <div className="text-sm text-gray-700 line-clamp-2">
+                                  {enquiry.message ? (
+                                    enquiry.message.length > 100 ? (
+                                      <>
+                                        {enquiry.message.substring(0, 100)}...
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleShowMessage(enquiry)
+                                          }}
+                                          className="text-blue-600 hover:text-blue-700 hover:underline text-sm ml-1"
+                                        >
+                                          more
+                                        </button>
+                                      </>
+                                    ) : (
+                                      enquiry.message
+                                    )
+                                  ) : (
+                                    'No message provided'
+                                  )}
                                 </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="text-sm text-gray-700 line-clamp-2 max-w-[300px]">
-                                  {enquiry.message || 'No message provided'}
-                                </div>
-                              </td>
-                            </tr>
-                            {isExpanded && (
-                              <tr className="bg-gray-50">
-                                <td colSpan={8} className="px-6 py-4">
-                                  <div>
-                                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-3">Message</h4>
-                                    <div className="bg-white border rounded-lg p-4 md:p-6">
-                                      <p className="text-sm md:text-base text-gray-700 whitespace-pre-wrap leading-relaxed">
-                                        {enquiry.message || 'No message provided'}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                  {getFilteredEnquiries().length === 0 && (
-                    <div className="text-center py-12">
-                      <Mail className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                      <p className="text-gray-600">No enquiries found</p>
-                    </div>
-                  )}
+                              </TableCell>
+                              </TableRow>
+                          )
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
+                {/* Pagination */}
+                {enquiriesPagination.totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-8 px-2">
+                    <div className="text-sm text-gray-600">
+                      Showing {enquiriesPagination.startIndex + 1} to {Math.min(enquiriesPagination.endIndex, filteredEnquiries.length)} of {filteredEnquiries.length} results
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: enquiriesPagination.totalPages }, (_, i) => i + 1).map((page) => {
+                          if (
+                            page === 1 ||
+                            page === enquiriesPagination.totalPages ||
+                            (page >= currentPage - 1 && page <= currentPage + 1)
+                          ) {
+                            return (
+                              <Button
+                                key={page}
+                                variant={currentPage === page ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(page)}
+                                className="min-w-[40px]"
+                              >
+                                {page}
+                              </Button>
+                            )
+                          } else if (page === currentPage - 2 || page === currentPage + 2) {
+                            return <span key={page} className="px-2">...</span>
+                          }
+                          return null
+                        })}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(enquiriesPagination.totalPages, prev + 1))}
+                        disabled={currentPage === enquiriesPagination.totalPages}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-          </>
+          </React.Fragment>
         )}
       </div>
 
@@ -1161,6 +1574,27 @@ export default function AdminPage() {
           />
         </>
       )}
+
+      {/* Message Modal for Enquiries */}
+      <Dialog open={messageModalOpen} onOpenChange={setMessageModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Message from {selectedMessage?.name}</DialogTitle>
+            {selectedMessage?.email && (
+              <DialogDescription>
+                {selectedMessage.email}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          <div className="mt-4">
+            <div className="bg-gray-50 border rounded-lg p-4 md:p-6 max-h-[60vh] overflow-y-auto">
+              <p className="text-sm md:text-base text-gray-700 whitespace-pre-wrap leading-relaxed">
+                {selectedMessage?.message || 'No message provided'}
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Toaster />
     </div>
