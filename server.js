@@ -3,7 +3,7 @@ const { parse } = require('url')
 const next = require('next')
 
 const dev = process.env.NODE_ENV !== 'production'
-const hostname = '127.0.0.1'
+const hostname = process.env.HOSTNAME || (dev ? '127.0.0.1' : '0.0.0.0')
 const port = process.env.PORT || 4000
 
 const app = next({ dev, hostname, port })
@@ -19,8 +19,8 @@ app.prepare().then(() => {
       res.statusCode = 500
       res.end('internal server error')
     }
-  }).listen(port, '127.0.0.1', (err) => {
+  }).listen(port, hostname, (err) => {
     if (err) throw err
-    console.log(`> Ready on http://127.0.0.1:${port}`)
+    console.log(`> Ready on http://${hostname}:${port}`)
   })
 })
