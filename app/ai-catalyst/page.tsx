@@ -173,7 +173,7 @@ export default function AICatalystPage() {
               willChange: "opacity, transform, filter",
                 }}
               >
-                From Idea to Impact — Fast
+                Introducing AI CATALYST
             </h1>
 
             {/* Subtitle */}
@@ -191,7 +191,7 @@ export default function AICatalystPage() {
                 willChange: "opacity, transform",
               }}
             >
-              Built for enterprise teams who are ready to stop experimenting and start executing.
+              Catalyst — The Engine That Delivers Outcomes
             </p>
 
             {/* Description */}
@@ -209,209 +209,1196 @@ export default function AICatalystPage() {
                 willChange: "opacity, transform",
               }}
             >
-              Whether you're just exploring GenAI or scaling real deployments — Catalyst meets you where you are, and gets you to where you need to go.
+              Catalyst is Crayon's services and execution model — built to help clients unlock value from Tangram quickly and at scale. It brings together and giving you a structured yet flexible path to success.
             </p>
 
-            {/* Image */}
-          <div className="flex justify-center mt-8 scale-in">
-            <Image
-              src="/img/catalysts.svg"
-              alt="AI Catalyst Process Diagram"
-              width={500}
-              height={500}
-              className="object-contain max-w-full h-auto transition-all duration-500 hover:scale-105 hover:drop-shadow-lg"
-              style={{
-                maxWidth: "500px",
-                height: "auto",
-                willChange: "transform",
-              }}
-              unoptimized
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Introducing AI CATALYST Section */}
-      <section className="pt-0 md:pt-2 lg:pt-4 pb-12 md:pb-16 lg:pb-20 bg-white fade-in-section" style={{ willChange: "transform", transform: "translateZ(0)" }}>
-        <div className="w-full px-8 md:px-12 lg:px-16">
-          <div className="max-w-7xl mx-auto">
-            {/* Heading */}
-            <div className="text-center mb-8">
-              <h2
-                className="fade-in-blur"
+            {/* Flow Image */}
+            <div className="flex justify-center mt-8 mb-12 scale-in">
+              <div
+                className="object-contain max-w-full h-auto"
                 style={{
-                  fontFamily: "Poppins",
-                  fontSize: "28px",
-                  fontWeight: 600,
-                  lineHeight: "33.6px",
-                  letterSpacing: "-0.56px",
-                  textAlign: "center",
-                  background: "linear-gradient(270deg, #FF9231 0%, #F05283 100%)",
-                  backgroundClip: "text",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  marginBottom: "16px",
+                  maxWidth: "100%",
+                  height: "auto",
                 }}
               >
-                Introducing AI CATALYST
-              </h2>
-              <p
-                style={{
-                  fontFamily: "Poppins",
-                  fontWeight: 500,
-                  fontSize: "16px",
-                  lineHeight: "24px",
-                  textAlign: "center",
-                  color: "var(--Interface-Color-Primary-900, #091917)",
-                  marginBottom: "8px",
-                }}
-              >
-                Modular agents. Real data. Expert-led delivery. From whiteboard to working product — in weeks, not months
-              </p>
-              <p
-                style={{
-                  fontFamily: "Poppins",
-                  fontWeight: 400,
-                  fontSize: "16px",
-                  lineHeight: "24px",
-                  textAlign: "center",
-                  color: "var(--Interface-Color-Primary-900, #091917)",
-                  maxWidth: "913px",
-                  margin: "0 auto",
-                }}
-              >
-                Because turning GenAI ambition into enterprise impact needs more than tech — it needs traction. With tngrm.ai as your GenAI platform and AI Catalyst as your services engine, we bridge the gap between ideas and outcomes — fast, flexibly, and at scale.
-              </p>
+                <Image
+                  src="/img/flow.svg"
+                  alt="Flow diagram"
+                  width={602}
+                  height={89}
+                  className="object-contain"
+                  style={{
+                    maxWidth: "100%",
+                    height: "auto",
+                  }}
+                />
+              </div>
             </div>
 
             {/* Three Track Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12 max-w-7xl mx-auto">
               {/* Labs Card */}
-              <div className="bg-white border border-[#E4E4E7] rounded-[4px] overflow-hidden">
-                <div
-                  className="h-[341px] flex items-end justify-center pb-0 pt-[50px] px-[50px]"
-                  style={{
-                    background: "linear-gradient(to bottom, rgba(240, 82, 131, 0.21), #FFFFFF)",
-                  }}
-                >
-                  <div className="relative w-[286px] h-[291px]">
-                    <Image
-                      src="https://www.figma.com/api/mcp/asset/ae9a57a8-0413-4cf5-9a75-bf5bef926ef0"
-                      alt="Labs"
-                      fill
-                      className="object-contain rounded-tl-[16px] rounded-tr-[16px]"
-                    />
+              <div className="flip-card scale-in" style={{ height: "500px" }}>
+                <div className="flip-card-inner">
+                  {/* Front Face */}
+                  <div className="flip-card-front bg-white border border-[#E4E4E7] rounded-[4px] overflow-hidden h-full">
+                    <div
+                      className="h-[341px] flex items-end justify-center pb-0 pt-[50px] px-[50px]"
+                      style={{
+                        background: "linear-gradient(to bottom, rgba(240, 82, 131, 0.21), #FFFFFF)",
+                      }}
+                    >
+                      <div className="relative w-[286px] h-[291px]">
+                        <Image
+                          src="https://www.figma.com/api/mcp/asset/ae9a57a8-0413-4cf5-9a75-bf5bef926ef0"
+                          alt="Labs"
+                          fill
+                          className="object-contain rounded-tl-[16px] rounded-tr-[16px]"
+                        />
+                      </div>
+                    </div>
+                    <div className="p-6 space-y-2">
+                      <h3
+                        style={{
+                          fontFamily: "Poppins",
+                          fontWeight: 500,
+                          fontSize: "18px",
+                          lineHeight: "27px",
+                          color: "#111827",
+                        }}
+                      >
+                        Labs
+                      </h3>
+                      <p
+                        style={{
+                          fontFamily: "Poppins",
+                          fontWeight: 400,
+                          fontSize: "14px",
+                          lineHeight: "21px",
+                          color: "#6B7280",
+                        }}
+                      >
+                        Discover high-impact use cases and get working prototypes in 2 weeks — perfect for early-stage exploration.
+                      </p>
+                    </div>
                   </div>
-          </div>
-                <div className="p-6 space-y-2">
-                  <h3
-                    style={{
-                      fontFamily: "Poppins",
-                      fontWeight: 500,
-                      fontSize: "18px",
-                      lineHeight: "27px",
-                      color: "#111827",
-                    }}
-                  >
-                    Labs
-                  </h3>
-                  <p
-                    style={{
-                      fontFamily: "Poppins",
-                      fontWeight: 400,
-                      fontSize: "14px",
-                      lineHeight: "21px",
-                      color: "#6B7280",
-                    }}
-                  >
-                    Discover high-impact use cases and get working prototypes in 2 weeks — perfect for early-stage exploration.
-                  </p>
+                  {/* Back Face */}
+                  <div className="flip-card-back bg-white overflow-hidden h-full relative" style={{
+                    borderRadius: "4px",
+                    border: "1px solid #E4E4E7",
+                    background: "radial-gradient(58.46% 58.46% at 50% 108.46%, #FBD5E1 0%, #FFF 100%)",
+                  }}>
+                    <div className="p-6 h-full flex flex-col">
+                      <h3
+                        style={{
+                          color: "#ED407B",
+                          textAlign: "center",
+                          fontFamily: "Poppins",
+                          fontSize: "24px",
+                          fontStyle: "normal",
+                          fontWeight: 500,
+                          lineHeight: "27px",
+                          marginBottom: "24px",
+                        }}
+                      >
+                        LABS.
+                      </h3>
+                      <div className="flex-1 space-y-6">
+                        <div>
+                          <h4
+                            style={{
+                              color: "#111827",
+                              textAlign: "center",
+                              fontFamily: "Poppins",
+                              fontSize: "18px",
+                              fontStyle: "normal",
+                              fontWeight: 500,
+                              lineHeight: "27px",
+                              marginBottom: "8px",
+                            }}
+                          >
+                            Purpose
+                          </h4>
+                          <p
+                            style={{
+                              color: "#091917",
+                              textAlign: "center",
+                              fontFamily: "Poppins",
+                              fontSize: "15px",
+                              fontStyle: "normal",
+                              fontWeight: 400,
+                              lineHeight: "21px",
+                            }}
+                          >
+                            Discover & Validate Opportunities
+                          </p>
+                        </div>
+                        <div className="border-t border-dotted border-[#D1D5DB]" style={{ borderStyle: "dotted" }}></div>
+                        <div>
+                          <h4
+                            style={{
+                              color: "#111827",
+                              textAlign: "center",
+                              fontFamily: "Poppins",
+                              fontSize: "18px",
+                              fontStyle: "normal",
+                              fontWeight: 500,
+                              lineHeight: "27px",
+                              marginBottom: "8px",
+                            }}
+                          >
+                            What we do together
+                          </h4>
+                          <p
+                            style={{
+                              color: "#091917",
+                              textAlign: "center",
+                              fontFamily: "Poppins",
+                              fontSize: "15px",
+                              fontStyle: "normal",
+                              fontWeight: 400,
+                              lineHeight: "21px",
+                            }}
+                          >
+                            Identify your high-impact GenAI use cases and run rapid pilots to test value.
+                          </p>
+                        </div>
+                        <div className="border-t border-dotted border-[#D1D5DB]" style={{ borderStyle: "dotted" }}></div>
+                        <div>
+                          <h4
+                            style={{
+                              color: "#111827",
+                              textAlign: "center",
+                              fontFamily: "Poppins",
+                              fontSize: "18px",
+                              fontStyle: "normal",
+                              fontWeight: 500,
+                              lineHeight: "27px",
+                              marginBottom: "8px",
+                            }}
+                          >
+                            Your Outcome
+                          </h4>
+                          <p
+                            style={{
+                              color: "#091917",
+                              textAlign: "center",
+                              fontFamily: "Poppins",
+                              fontSize: "15px",
+                              fontStyle: "normal",
+                              fontWeight: 400,
+                              lineHeight: "21px",
+                            }}
+                          >
+                            Clear, validated roadmap for GenAI adoption.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Foundry Card */}
-              <div className="bg-white border border-[#E4E4E7] rounded-[4px] overflow-hidden">
-                <div
-                  className="h-[341px] flex items-end justify-center pb-0 pt-[50px] px-[50px]"
-                  style={{
-                    background: "linear-gradient(to bottom, rgba(59, 96, 175, 0.21), #FFFFFF)",
-                  }}
-                >
-                  <div className="relative w-[286px] h-[291px]">
-                    <Image
-                      src="https://www.figma.com/api/mcp/asset/5daf3d3f-be18-4775-8ebe-1d388a5942bf"
-                      alt="Foundry"
-                      fill
-                      className="object-contain rounded-tl-[16px] rounded-tr-[16px]"
-                    />
+              <div className="flip-card scale-in" style={{ height: "500px" }}>
+                <div className="flip-card-inner">
+                  {/* Front Face */}
+                  <div className="flip-card-front bg-white border border-[#E4E4E7] rounded-[4px] overflow-hidden h-full">
+                    <div
+                      className="h-[341px] flex items-end justify-center pb-0 pt-[50px] px-[50px]"
+                      style={{
+                        background: "linear-gradient(to bottom, rgba(59, 96, 175, 0.21), #FFFFFF)",
+                      }}
+                    >
+                      <div className="relative w-[286px] h-[291px]">
+                        <Image
+                          src="https://www.figma.com/api/mcp/asset/5daf3d3f-be18-4775-8ebe-1d388a5942bf"
+                          alt="Foundry"
+                          fill
+                          className="object-contain rounded-tl-[16px] rounded-tr-[16px]"
+                        />
+                      </div>
+                    </div>
+                    <div className="p-6 space-y-2">
+                      <h3
+                        style={{
+                          fontFamily: "Poppins",
+                          fontWeight: 500,
+                          fontSize: "18px",
+                          lineHeight: "27px",
+                          color: "#111827",
+                        }}
+                      >
+                        Foundry
+                      </h3>
+                      <p
+                        style={{
+                          fontFamily: "Poppins",
+                          fontWeight: 400,
+                          fontSize: "14px",
+                          lineHeight: "21px",
+                          color: "#6B7280",
+                        }}
+                      >
+                        Build pilots on your data systems and go live in real environments — ideal for fast, secure deployments.
+                      </p>
+                    </div>
+                  </div>
+                  {/* Back Face */}
+                  <div className="flip-card-back bg-white overflow-hidden h-full relative" style={{
+                    borderRadius: "4px",
+                    border: "1px solid #E4E4E7",
+                    background: "radial-gradient(58.46% 58.46% at 50% 108.46%, rgba(59, 96, 175, 0.15) 0%, #FFF 100%)",
+                  }}>
+                    <div className="p-6 h-full flex flex-col">
+                      <h3
+                        style={{
+                          color: "#3B60AF",
+                          textAlign: "center",
+                          fontFamily: "Poppins",
+                          fontSize: "24px",
+                          fontStyle: "normal",
+                          fontWeight: 500,
+                          lineHeight: "27px",
+                          marginBottom: "24px",
+                        }}
+                      >
+                        Foundry.
+                      </h3>
+                      <div className="flex-1 space-y-6">
+                        <div>
+                          <h4
+                            style={{
+                              color: "#111827",
+                              textAlign: "center",
+                              fontFamily: "Poppins",
+                              fontSize: "18px",
+                              fontStyle: "normal",
+                              fontWeight: 500,
+                              lineHeight: "27px",
+                              marginBottom: "8px",
+                            }}
+                          >
+                            Purpose
+                          </h4>
+                          <p
+                            style={{
+                              color: "#091917",
+                              textAlign: "center",
+                              fontFamily: "Poppins",
+                              fontSize: "15px",
+                              fontStyle: "normal",
+                              fontWeight: 400,
+                              lineHeight: "21px",
+                            }}
+                          >
+                            Build & Integrate Solutions
+                          </p>
+                        </div>
+                        <div className="border-t border-dotted border-[#D1D5DB]" style={{ borderStyle: "dotted" }}></div>
+                        <div>
+                          <h4
+                            style={{
+                              color: "#111827",
+                              textAlign: "center",
+                              fontFamily: "Poppins",
+                              fontSize: "18px",
+                              fontStyle: "normal",
+                              fontWeight: 500,
+                              lineHeight: "27px",
+                              marginBottom: "8px",
+                            }}
+                          >
+                            What we do together
+                          </h4>
+                          <p
+                            style={{
+                              color: "#091917",
+                              textAlign: "center",
+                              fontFamily: "Poppins",
+                              fontSize: "15px",
+                              fontStyle: "normal",
+                              fontWeight: 400,
+                              lineHeight: "21px",
+                            }}
+                          >
+                            Design, test, and deploy AI with Tangram's modular components.
+                          </p>
+                        </div>
+                        <div className="border-t border-dotted border-[#D1D5DB]" style={{ borderStyle: "dotted" }}></div>
+                        <div>
+                          <h4
+                            style={{
+                              color: "#111827",
+                              textAlign: "center",
+                              fontFamily: "Poppins",
+                              fontSize: "18px",
+                              fontStyle: "normal",
+                              fontWeight: 500,
+                              lineHeight: "27px",
+                              marginBottom: "8px",
+                            }}
+                          >
+                            Your Outcome
+                          </h4>
+                          <p
+                            style={{
+                              color: "#091917",
+                              textAlign: "center",
+                              fontFamily: "Poppins",
+                              fontSize: "15px",
+                              fontStyle: "normal",
+                              fontWeight: 400,
+                              lineHeight: "21px",
+                            }}
+                          >
+                            Proven prototypes and working solutions in real use.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="p-6 space-y-2">
-                  <h3
-                    style={{
-                      fontFamily: "Poppins",
-                      fontWeight: 500,
-                      fontSize: "18px",
-                      lineHeight: "27px",
-                      color: "#111827",
-                    }}
-                  >
-                    Foundry
-                  </h3>
-                  <p
-                    style={{
-                      fontFamily: "Poppins",
-                      fontWeight: 400,
-                      fontSize: "14px",
-                      lineHeight: "21px",
-                      color: "#6B7280",
-                    }}
-                  >
-                    Build pilots on your data systems and go live in real environments — ideal for fast, secure deployments.
-                  </p>
-                </div>
-            </div>
+              </div>
 
               {/* Factory Card */}
-              <div className="bg-white border border-[#E4E4E7] rounded-[4px] overflow-hidden">
-                <div
-                  className="h-[342px] flex items-end justify-center pb-0 pt-[50px] px-[50px]"
-                  style={{
-                    background: "linear-gradient(to bottom, rgba(255, 196, 50, 0.21), #FFFFFF)",
-                  }}
+              <div className="flip-card scale-in" style={{ height: "500px" }}>
+                <div className="flip-card-inner">
+                  {/* Front Face */}
+                  <div className="flip-card-front bg-white border border-[#E4E4E7] rounded-[4px] overflow-hidden h-full">
+                    <div
+                      className="h-[342px] flex items-end justify-center pb-0 pt-[50px] px-[50px]"
+                      style={{
+                        background: "linear-gradient(to bottom, rgba(255, 196, 50, 0.21), #FFFFFF)",
+                      }}
+                    >
+                      <div className="relative w-[282px] h-[292px]">
+                        <Image
+                          src="https://www.figma.com/api/mcp/asset/8e57fd80-15f8-4270-b9bf-2cbb434ce2d4"
+                          alt="Factory"
+                          fill
+                          className="object-contain rounded-tl-[16px] rounded-tr-[16px]"
+                        />
+                      </div>
+                    </div>
+                    <div className="p-6 space-y-2">
+                      <h3
+                        style={{
+                          fontFamily: "Poppins",
+                          fontWeight: 500,
+                          fontSize: "18px",
+                          lineHeight: "27px",
+                          color: "#111827",
+                        }}
+                      >
+                        Factory
+                      </h3>
+                      <p
+                        style={{
+                          fontFamily: "Poppins",
+                          fontWeight: 400,
+                          fontSize: "14px",
+                          lineHeight: "21px",
+                          color: "#6B7280",
+                        }}
+                      >
+                        Build pilots on your data systems and go live in real environments — ideal for fast, secure deployments.
+                      </p>
+                    </div>
+                  </div>
+                  {/* Back Face */}
+                  <div className="flip-card-back bg-white overflow-hidden h-full relative" style={{
+                    borderRadius: "4px",
+                    border: "1px solid #E4E4E7",
+                    background: "radial-gradient(58.46% 58.46% at 50% 108.46%, rgba(255, 196, 50, 0.2) 0%, #FFF 100%)",
+                  }}>
+                    <div className="p-6 h-full flex flex-col">
+                      <h3
+                        style={{
+                          color: "#FF9231",
+                          textAlign: "center",
+                          fontFamily: "Poppins",
+                          fontSize: "24px",
+                          fontStyle: "normal",
+                          fontWeight: 500,
+                          lineHeight: "27px",
+                          marginBottom: "24px",
+                        }}
+                      >
+                        Factory.
+                      </h3>
+                      <div className="flex-1 space-y-6">
+                        <div>
+                          <h4
+                            style={{
+                              color: "#111827",
+                              textAlign: "center",
+                              fontFamily: "Poppins",
+                              fontSize: "18px",
+                              fontStyle: "normal",
+                              fontWeight: 500,
+                              lineHeight: "27px",
+                              marginBottom: "8px",
+                            }}
+                          >
+                            Purpose
+                          </h4>
+                          <p
+                            style={{
+                              color: "#091917",
+                              textAlign: "center",
+                              fontFamily: "Poppins",
+                              fontSize: "15px",
+                              fontStyle: "normal",
+                              fontWeight: 400,
+                              lineHeight: "21px",
+                            }}
+                          >
+                            Scale & Govern Enterprise AI
+                          </p>
+                        </div>
+                        <div className="border-t border-dotted border-[#D1D5DB]" style={{ borderStyle: "dotted" }}></div>
+                        <div>
+                          <h4
+                            style={{
+                              color: "#111827",
+                              textAlign: "center",
+                              fontFamily: "Poppins",
+                              fontSize: "18px",
+                              fontStyle: "normal",
+                              fontWeight: 500,
+                              lineHeight: "27px",
+                              marginBottom: "8px",
+                            }}
+                          >
+                            What we do together
+                          </h4>
+                          <p
+                            style={{
+                              color: "#091917",
+                              textAlign: "center",
+                              fontFamily: "Poppins",
+                              fontSize: "15px",
+                              fontStyle: "normal",
+                              fontWeight: 400,
+                              lineHeight: "21px",
+                            }}
+                          >
+                            Securely scale deployments, enforce governance, and build repeatable frameworks
+                          </p>
+                        </div>
+                        <div className="border-t border-dotted border-[#D1D5DB]" style={{ borderStyle: "dotted" }}></div>
+                        <div>
+                          <h4
+                            style={{
+                              color: "#111827",
+                              textAlign: "center",
+                              fontFamily: "Poppins",
+                              fontSize: "18px",
+                              fontStyle: "normal",
+                              fontWeight: 500,
+                              lineHeight: "27px",
+                              marginBottom: "8px",
+                            }}
+                          >
+                            Your Outcome
+                          </h4>
+                          <p
+                            style={{
+                              color: "#091917",
+                              textAlign: "center",
+                              fontFamily: "Poppins",
+                              fontSize: "15px",
+                              fontStyle: "normal",
+                              fontWeight: 400,
+                              lineHeight: "21px",
+                            }}
+                          >
+                            Enterprise-grade, measurable business impact.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+        </div>
+      </section>
+
+      {/* Start Anywhere, Scale Everywhere Section */}
+      <section className="py-16 md:py-20 lg:py-24 fade-in-section" style={{ background: "linear-gradient(180deg, #FFF 0%, #FFFFF7 76.44%, #FAFAFA 100%)" }}>
+        <div className="w-full px-8 md:px-12 lg:px-16">
+          <div className="max-w-7xl mx-auto text-center">
+            <h2 
+              className="text-balance fade-in-blur"
+              style={{
+                textAlign: "center",
+                fontFamily: "Poppins",
+                fontSize: "28px",
+                fontStyle: "normal",
+                fontWeight: 600,
+                lineHeight: "39.2px",
+                letterSpacing: "-0.56px",
+                background: "linear-gradient(270deg, #F05283 0%, #8F2B8C 100%)",
+                backgroundClip: "text",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                marginBottom: "6px",
+              }}
+            >
+              Start Anywhere, Scale Everywhere
+            </h2>
+            <p 
+              style={{
+                display: "flex",
+                width: "680.673px",
+                height: "24px",
+                flexDirection: "column",
+                justifyContent: "center",
+                color: "#111827",
+                textAlign: "center",
+                fontFamily: "Poppins",
+                fontSize: "16px",
+                fontStyle: "normal",
+                fontWeight: 500,
+                lineHeight: "24px",
+                margin: "0 auto",
+                marginBottom: "0px",
+              }}
+            >
+              Every enterprise's GenAI journey is unique
+            </p>
+            <p 
+              style={{
+                display: "flex",
+                width: "680.673px",
+                height: "24px",
+                flexDirection: "column",
+                justifyContent: "center",
+                color: "#091917",
+                textAlign: "center",
+                fontFamily: "Poppins",
+                fontSize: "14px",
+                fontStyle: "normal",
+                fontWeight: 400,
+                lineHeight: "24px",
+                margin: "0 auto",
+                marginBottom: "58px",
+              }}
+            >
+              With Catalyst, you can start where you are — and scale as you go:
+            </p>
+
+            {/* Three Stage Cards */}
+            <div className="flex flex-col md:flex-row items-center justify-center" style={{ maxWidth: "716px", margin: "0 auto", gap: "48px", marginBottom: "58px" }}>
+              {/* Stage 1: Labs */}
+              <div className="flex flex-col items-center stagger-item" style={{ maxWidth: "206px", width: "100%" }}>
+                <div 
+                  className="flex items-center justify-center mb-6"
+                  style={{ background: "transparent" }}
                 >
-                  <div className="relative w-[282px] h-[292px]">
+                  <div className="relative" style={{ width: "60px", height: "60px", maxWidth: "60px" }}>
                     <Image
-                      src="https://www.figma.com/api/mcp/asset/8e57fd80-15f8-4270-b9bf-2cbb434ce2d4"
-                      alt="Factory"
+                      src="/img/labs-ico.svg"
+                      alt="Labs"
                       fill
-                      className="object-contain rounded-tl-[16px] rounded-tr-[16px]"
+                      className="object-contain"
                     />
                   </div>
                 </div>
-                <div className="p-6 space-y-2">
-                  <h3
-                    style={{
-                      fontFamily: "Poppins",
-                      fontWeight: 500,
-                      fontSize: "18px",
-                      lineHeight: "27px",
-                      color: "#111827",
-                    }}
-                  >
-                    Factory
-                  </h3>
-                  <p
-                    style={{
-                      fontFamily: "Poppins",
-                      fontWeight: 400,
-                      fontSize: "14px",
-                      lineHeight: "21px",
-                      color: "#6B7280",
-                    }}
-                  >
-                    Build pilots on your data systems and go live in real environments — ideal for fast, secure deployments.
-                  </p>
+                <p
+                  style={{
+                    color: "#111827",
+                    textAlign: "center",
+                    fontFamily: "Poppins",
+                    fontSize: "14px",
+                    fontStyle: "normal",
+                    fontWeight: 500,
+                    lineHeight: "normal",
+                  }}
+                >
+                  Begin in <span style={{ fontWeight: 600 }}>Labs</span> to explore new opportunities.
+                </p>
+              </div>
+
+              {/* Stage 2: Foundry */}
+              <div className="flex flex-col items-center stagger-item" style={{ maxWidth: "206px", width: "100%" }}>
+                <div 
+                  className="flex items-center justify-center mb-6"
+                  style={{ background: "transparent" }}
+                >
+                  <div className="relative" style={{ width: "60px", height: "60px", maxWidth: "60px" }}>
+                    <Image
+                      src="/img/foundry-ico.svg"
+                      alt="Foundry"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                </div>
+                <p
+                  style={{
+                    color: "#111827",
+                    textAlign: "center",
+                    fontFamily: "Poppins",
+                    fontSize: "14px",
+                    fontStyle: "normal",
+                    fontWeight: 500,
+                    lineHeight: "normal",
+                  }}
+                >
+                  Move into <span style={{ fontWeight: 600 }}>Foundry</span> to bring solutions to life.
+                </p>
+              </div>
+
+              {/* Stage 3: Factory */}
+              <div className="flex flex-col items-center stagger-item" style={{ maxWidth: "206px", width: "100%" }}>
+                <div 
+                  className="flex items-center justify-center mb-6"
+                  style={{ background: "transparent" }}
+                >
+                  <div className="relative" style={{ width: "60px", height: "60px", maxWidth: "60px" }}>
+                    <Image
+                      src="/img/factory-ico.svg"
+                      alt="Factory"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                </div>
+                <p
+                  style={{
+                    color: "#111827",
+                    textAlign: "center",
+                    fontFamily: "Poppins",
+                    fontSize: "14px",
+                    fontStyle: "normal",
+                    fontWeight: 500,
+                    lineHeight: "normal",
+                  }}
+                >
+                  Expand through <span style={{ fontWeight: 600 }}>Factory</span> to scale with governance and consistency.
+                </p>
+              </div>
+            </div>
+
+            {/* Concluding Statement */}
+            <p 
+              className="max-w-3xl mx-auto"
+              style={{
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 400,
+                fontStyle: "normal",
+                fontSize: "16px",
+                lineHeight: "24px",
+                letterSpacing: "0%",
+                textAlign: "center",
+                color: "#111827",
+                marginTop: "58px",
+              }}
+            >
+              Each stage connects seamlessly through the <strong>Tangram.ai platform</strong> — ensuring speed, safety, and repeatability across your AI initiatives.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* From Idea to Impact — Your Journey with Crayon Section */}
+      <section className="py-16 md:py-20 lg:py-24 bg-white fade-in-section">
+        <div className="w-full px-8 md:px-12 lg:px-16">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-12">
+              <h2
+                className="fade-in-blur"
+                style={{
+                  textAlign: "center",
+                  fontFamily: "Poppins",
+                  fontSize: "28px",
+                  fontStyle: "normal",
+                  fontWeight: 600,
+                  lineHeight: "normal",
+                  background: "linear-gradient(90deg, #2F0368 0%, #5E04D2 100%)",
+                  backgroundClip: "text",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  marginBottom: "8px",
+                }}
+              >
+                From Idea to Impact — Your Journey with Crayon
+              </h2>
+              <p
+                className="mx-auto"
+                style={{
+                  color: "#091917",
+                  textAlign: "center",
+                  fontFamily: "Poppins",
+                  fontSize: "14px",
+                  fontStyle: "normal",
+                  fontWeight: 400,
+                  lineHeight: "24px",
+                  maxWidth: "560px",
+                }}
+              >
+                Whether you're exploring, building, or scaling, Crayon Data helps you move from <span style={{ fontWeight: 500 }}>possibility</span> → <span style={{ fontWeight: 500 }}>prototype</span> → <span style={{ fontWeight: 500 }}>production</span>.
+              </p>
+            </div>
+
+            {/* Four Journey Stage Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Discovery Card */}
+              <div className="stagger-item">
+                <div className="bg-white border border-[#E4E4E7] rounded-lg p-6 h-full relative">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3
+                      style={{
+                        fontFamily: "Poppins",
+                        fontSize: "28px",
+                        fontStyle: "normal",
+                        fontWeight: 600,
+                        lineHeight: "normal",
+                        background: "linear-gradient(0deg, rgba(57, 79, 161, 0.00) -28.57%, #394FA1 75%)",
+                        backgroundClip: "text",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                      }}
+                    >
+                      Discovery
+                    </h3>
+                    <div className="relative" style={{ width: "48px", height: "48px" }}>
+                      <Image
+                        src="/img/Compass.svg"
+                        alt="Discovery"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <h4
+                        style={{
+                          color: "#111827",
+                          fontFamily: "Poppins",
+                          fontSize: "16px",
+                          fontStyle: "normal",
+                          fontWeight: 500,
+                          lineHeight: "normal",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        Format
+                      </h4>
+                      <p
+                        style={{
+                          color: "#4B5563",
+                          fontFamily: "Poppins",
+                          fontSize: "14px",
+                          fontStyle: "normal",
+                          fontWeight: 400,
+                          lineHeight: "normal",
+                        }}
+                      >
+                        Online or in-person
+                      </p>
+                    </div>
+                    <div>
+                      <h4
+                        style={{
+                          color: "#111827",
+                          fontFamily: "Poppins",
+                          fontSize: "16px",
+                          fontStyle: "normal",
+                          fontWeight: 500,
+                          lineHeight: "normal",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        Focus
+                      </h4>
+                      <p
+                        style={{
+                          color: "#4B5563",
+                          fontFamily: "Poppins",
+                          fontSize: "14px",
+                          fontStyle: "normal",
+                          fontWeight: 400,
+                          lineHeight: "normal",
+                        }}
+                      >
+                        Understand goals, challenges and data landscape
+                      </p>
+                    </div>
+                    <div>
+                      <h4
+                        style={{
+                          color: "#111827",
+                          fontFamily: "Poppins",
+                          fontSize: "16px",
+                          fontStyle: "normal",
+                          fontWeight: 500,
+                          lineHeight: "normal",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        What You Get
+                      </h4>
+                      <p
+                        style={{
+                          color: "#4B5563",
+                          fontFamily: "Poppins",
+                          fontSize: "14px",
+                          fontStyle: "normal",
+                          fontWeight: 400,
+                          lineHeight: "normal",
+                        }}
+                      >
+                        Defined use case and success metrics.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ideation Card */}
+              <div className="stagger-item">
+                <div className="bg-white border border-[#E4E4E7] rounded-lg p-6 h-full relative">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3
+                      style={{
+                        fontFamily: "Poppins",
+                        fontSize: "28px",
+                        fontStyle: "normal",
+                        fontWeight: 600,
+                        lineHeight: "normal",
+                        background: "linear-gradient(0deg, rgba(255, 146, 49, 0.00) -28.57%, #FF9231 75%)",
+                        backgroundClip: "text",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                      }}
+                    >
+                      Ideation
+                    </h3>
+                    <div className="relative" style={{ width: "48px", height: "48px" }}>
+                      <Image
+                        src="/img/LightbulbFilament.svg"
+                        alt="Ideation"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <h4
+                        style={{
+                          color: "#111827",
+                          fontFamily: "Poppins",
+                          fontSize: "16px",
+                          fontStyle: "normal",
+                          fontWeight: 500,
+                          lineHeight: "normal",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        Format
+                      </h4>
+                      <p
+                        style={{
+                          color: "#4B5563",
+                          fontFamily: "Poppins",
+                          fontSize: "14px",
+                          fontStyle: "normal",
+                          fontWeight: 400,
+                          lineHeight: "normal",
+                        }}
+                      >
+                        Co-creation sprint
+                      </p>
+                    </div>
+                    <div>
+                      <h4
+                        style={{
+                          color: "#111827",
+                          fontFamily: "Poppins",
+                          fontSize: "16px",
+                          fontStyle: "normal",
+                          fontWeight: 500,
+                          lineHeight: "normal",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        Focus
+                      </h4>
+                      <p
+                        style={{
+                          color: "#4B5563",
+                          fontFamily: "Poppins",
+                          fontSize: "14px",
+                          fontStyle: "normal",
+                          fontWeight: 400,
+                          lineHeight: "normal",
+                        }}
+                      >
+                        Design your first GenAI agent or workflow.
+                      </p>
+                    </div>
+                    <div>
+                      <h4
+                        style={{
+                          color: "#111827",
+                          fontFamily: "Poppins",
+                          fontSize: "16px",
+                          fontStyle: "normal",
+                          fontWeight: 500,
+                          lineHeight: "normal",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        What You Get
+                      </h4>
+                      <p
+                        style={{
+                          color: "#4B5563",
+                          fontFamily: "Poppins",
+                          fontSize: "14px",
+                          fontStyle: "normal",
+                          fontWeight: 400,
+                          lineHeight: "normal",
+                        }}
+                      >
+                        Prototype concept and solution design.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pilot Card */}
+              <div className="stagger-item">
+                <div className="bg-white border border-[#E4E4E7] rounded-lg p-6 h-full relative">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3
+                      style={{
+                        fontFamily: "Poppins",
+                        fontSize: "28px",
+                        fontStyle: "normal",
+                        fontWeight: 600,
+                        lineHeight: "normal",
+                        background: "linear-gradient(0deg, rgba(240, 82, 131, 0.00) -28.57%, #F05283 75%)",
+                        backgroundClip: "text",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                      }}
+                    >
+                      Pilot
+                    </h3>
+                    <div className="relative" style={{ width: "48px", height: "48px" }}>
+                      <Image
+                        src="/img/CursorClick.svg"
+                        alt="Pilot"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <h4
+                        style={{
+                          color: "#111827",
+                          fontFamily: "Poppins",
+                          fontSize: "16px",
+                          fontStyle: "normal",
+                          fontWeight: 500,
+                          lineHeight: "normal",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        Format
+                      </h4>
+                      <p
+                        style={{
+                          color: "#4B5563",
+                          fontFamily: "Poppins",
+                          fontSize: "14px",
+                          fontStyle: "normal",
+                          fontWeight: 400,
+                          lineHeight: "normal",
+                        }}
+                      >
+                        Proof of Concept
+                      </p>
+                    </div>
+                    <div>
+                      <h4
+                        style={{
+                          color: "#111827",
+                          fontFamily: "Poppins",
+                          fontSize: "16px",
+                          fontStyle: "normal",
+                          fontWeight: 500,
+                          lineHeight: "normal",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        Focus
+                      </h4>
+                      <p
+                        style={{
+                          color: "#4B5563",
+                          fontFamily: "Poppins",
+                          fontSize: "14px",
+                          fontStyle: "normal",
+                          fontWeight: 400,
+                          lineHeight: "normal",
+                        }}
+                      >
+                        Run pilots that show measurable impact and ROI.
+                      </p>
+                    </div>
+                    <div>
+                      <h4
+                        style={{
+                          color: "#111827",
+                          fontFamily: "Poppins",
+                          fontSize: "16px",
+                          fontStyle: "normal",
+                          fontWeight: 500,
+                          lineHeight: "normal",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        What You Get
+                      </h4>
+                      <p
+                        style={{
+                          color: "#4B5563",
+                          fontFamily: "Poppins",
+                          fontSize: "14px",
+                          fontStyle: "normal",
+                          fontWeight: 400,
+                          lineHeight: "normal",
+                        }}
+                      >
+                        Validated MVP and business case.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Deploy Card */}
+              <div className="stagger-item">
+                <div className="bg-white border border-[#E4E4E7] rounded-lg p-6 h-full relative">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3
+                      style={{
+                        fontFamily: "Poppins",
+                        fontSize: "28px",
+                        fontStyle: "normal",
+                        fontWeight: 600,
+                        lineHeight: "normal",
+                        background: "linear-gradient(0deg, rgba(0, 174, 142, 0.00) -28.57%, #00AE8E 75%)",
+                        backgroundClip: "text",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                      }}
+                    >
+                      Deploy
+                    </h3>
+                    <div className="relative" style={{ width: "48px", height: "48px" }}>
+                      <Image
+                        src="/img/CloudCheck.svg"
+                        alt="Deploy"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <h4
+                        style={{
+                          color: "#111827",
+                          fontFamily: "Poppins",
+                          fontSize: "16px",
+                          fontStyle: "normal",
+                          fontWeight: 500,
+                          lineHeight: "normal",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        Format
+                      </h4>
+                      <p
+                        style={{
+                          color: "#4B5563",
+                          fontFamily: "Poppins",
+                          fontSize: "14px",
+                          fontStyle: "normal",
+                          fontWeight: 400,
+                          lineHeight: "normal",
+                        }}
+                      >
+                        Production rollout
+                      </p>
+                    </div>
+                    <div>
+                      <h4
+                        style={{
+                          color: "#111827",
+                          fontFamily: "Poppins",
+                          fontSize: "16px",
+                          fontStyle: "normal",
+                          fontWeight: 500,
+                          lineHeight: "normal",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        Focus
+                      </h4>
+                      <p
+                        style={{
+                          color: "#4B5563",
+                          fontFamily: "Poppins",
+                          fontSize: "14px",
+                          fontStyle: "normal",
+                          fontWeight: 400,
+                          lineHeight: "normal",
+                        }}
+                      >
+                        Integrate into your systems and scale securely.
+                      </p>
+                    </div>
+                    <div>
+                      <h4
+                        style={{
+                          color: "#111827",
+                          fontFamily: "Poppins",
+                          fontSize: "16px",
+                          fontStyle: "normal",
+                          fontWeight: 500,
+                          lineHeight: "normal",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        What You Get
+                      </h4>
+                      <p
+                        style={{
+                          color: "#4B5563",
+                          fontFamily: "Poppins",
+                          fontSize: "14px",
+                          fontStyle: "normal",
+                          fontWeight: 400,
+                          lineHeight: "normal",
+                        }}
+                      >
+                        Live solution delivering sustained value.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -426,18 +1413,16 @@ export default function AICatalystPage() {
             <h2 
               className="mb-2 text-balance fade-in-blur"
               style={{
-                fontFamily: "Poppins, sans-serif",
-                fontWeight: 600,
+                fontFamily: "Poppins",
+                fontSize: "32px",
                 fontStyle: "normal",
-                fontSize: "28px",
-                lineHeight: "39.2px",
-                letterSpacing: "-0.56px",
+                fontWeight: 600,
+                lineHeight: "normal",
                 textAlign: "center",
-                verticalAlign: "middle",
-                background: "linear-gradient(to left, #f05283, #8f2b8c)",
+                background: "linear-gradient(90deg, #2D8E0C 0%, #77C402 100%)",
+                backgroundClip: "text",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
               }}
             >
               Who is it for?
@@ -671,335 +1656,7 @@ export default function AICatalystPage() {
         </div>
       </section>
 
-      {/* Each track is tailored Section */}
-      <section className="pt-16 md:pt-20 lg:pt-24 pb-12 md:pb-16 lg:pb-20 bg-white fade-in-section" style={{ willChange: "transform", transform: "translateZ(0)" }}>
-        <div className="w-full px-8 md:px-12 lg:px-16">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-12">
-              <h2
-                className="fade-in-blur"
-                style={{
-                  textAlign: "center",
-                  fontFamily: "Poppins",
-                  fontSize: "28px",
-                  fontStyle: "normal",
-                  fontWeight: 600,
-                  lineHeight: "normal",
-                  background: "linear-gradient(90deg, #2F0368 0%, #5E04D2 100%)",
-                  backgroundClip: "text",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  marginBottom: "6px",
-                }}
-              >
-                Each track is tailored to where you are in your AI journey
-              </h2>
-              <p
-                style={{
-                  color: "#111827",
-                  textAlign: "center",
-                  fontFamily: "Poppins",
-                  fontSize: "16px",
-                  fontStyle: "normal",
-                  fontWeight: 400,
-                  lineHeight: "24px",
-                  maxWidth: "913px",
-                  margin: "0 auto",
-                }}
-              >
-                Because turning GenAI ambition into enterprise impact needs more than tech — it needs traction. With tngrm.ai as your GenAI platform and AI Catalyst as your services engine, we bridge the gap between ideas and outcomes — fast, flexibly, and at scale.
-              </p>
-            </div>
-
-            {/* Three Detailed Track Cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Labs Track */}
-              <div className="relative bg-white overflow-hidden" style={{ minHeight: "404px", maxWidth: "411px" }}>
-                {/* Background Image */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    backgroundImage: "url('/img/catalystcardbg.svg')",
-                    backgroundSize: "contain",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat",
-                    width: "100%",
-                    height: "100%",
-                    willChange: "transform",
-                    transform: "translateZ(0)",
-                    backfaceVisibility: "hidden",
-                  }}
-                />
-                <div className="relative" style={{ padding: "40px" }}>
-                  <div className="mb-4">
-                    <span
-                      style={{
-                        fontFamily: "Poppins",
-                        fontSize: "64px",
-                        fontStyle: "normal",
-                        fontWeight: 600,
-                        lineHeight: "64px",
-                        letterSpacing: "-4px",
-                        background: "linear-gradient(0deg, rgba(240, 82, 131, 0.00) 0%, #F05283 100%)",
-                        backgroundClip: "text",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                      }}
-                    >
-                      01
-                    </span>
-                  </div>
-                  <h3
-                    style={{
-                      color: "#101828",
-                      fontFamily: "Poppins",
-                      fontSize: "16px",
-                      fontStyle: "normal",
-                      fontWeight: 600,
-                      lineHeight: "normal",
-                      marginBottom: "12px",
-                    }}
-                  >
-                    From Idea to Working Prototype
-            </h3>
-                  <p
-                    style={{
-                      color: "#344054",
-                      fontFamily: "Poppins",
-                      fontSize: "14px",
-                      fontStyle: "normal",
-                      fontWeight: 400,
-                      lineHeight: "140%",
-                      marginBottom: "16px",
-                    }}
-                  >
-                    Quick sprints to explore use cases, validate ideas, and show early wins.
-                  </p>
-                  <ul className="space-y-2 mb-4" style={{ listStyle: "none", padding: 0 }}>
-                    {["Ideation workshops", "Tangram agent configuration", "Data feasibility check", "ROI framing"].map((item, idx) => (
-                      <li
-                        key={idx}
-                        style={{
-                          color: "#344054",
-                          fontFamily: "Poppins",
-                          fontSize: "14px",
-                          fontStyle: "normal",
-                          fontWeight: 400,
-                          lineHeight: "140%",
-                        }}
-                      >
-                        • {item}
-                      </li>
-                    ))}
-                  </ul>
-                  <p
-                    style={{
-                      color: "#000",
-                      fontFamily: "Poppins",
-                      fontSize: "14px",
-                      fontStyle: "normal",
-                      fontWeight: 400,
-                      lineHeight: "190%",
-                    }}
-                  >
-                    2 weeks | 📍 Low-commitment, high-impact
-                  </p>
-          </div>
-              </div>
-
-              {/* Foundry Track */}
-              <div className="relative bg-white overflow-hidden scale-in" style={{ minHeight: "404px", maxWidth: "411px" }}>
-                {/* Background Image */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    backgroundImage: "url('/img/catalystcardbg.svg')",
-                    backgroundSize: "contain",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat",
-                    width: "100%",
-                    height: "100%",
-                    willChange: "transform",
-                    transform: "translateZ(0)",
-                    backfaceVisibility: "hidden",
-                  }}
-                />
-                <div className="relative" style={{ padding: "40px" }}>
-                  <div className="mb-4">
-                    <span
-                      style={{
-                        fontFamily: "Poppins",
-                        fontSize: "64px",
-                        fontStyle: "normal",
-                        fontWeight: 600,
-                        lineHeight: "64px",
-                        letterSpacing: "-4px",
-                        background: "linear-gradient(0deg, rgba(59, 96, 175, 0.00) 0%, #3B60AF 100%)",
-                        backgroundClip: "text",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                      }}
-                    >
-                      02
-                    </span>
-                  </div>
-                  <h3
-                    style={{
-                      color: "#101828",
-                      fontFamily: "Poppins",
-                      fontSize: "16px",
-                      fontStyle: "normal",
-                      fontWeight: 600,
-                      lineHeight: "normal",
-                      marginBottom: "12px",
-                    }}
-                  >
-                    From Prototype to Pilot
-                  </h3>
-                  <p
-                    style={{
-                      color: "#344054",
-                      fontFamily: "Poppins",
-                      fontSize: "14px",
-                      fontStyle: "normal",
-                      fontWeight: 400,
-                      lineHeight: "140%",
-                      marginBottom: "16px",
-                    }}
-                  >
-                    Build secure, customized workflows that plug into your data and systems.
-                  </p>
-                  <ul className="space-y-2 mb-4" style={{ listStyle: "none", padding: 0 }}>
-                    {["Custom agent workflows", "Real-time data integrations", "Human-in-loop controls", "Pilot dashboards & feedback"].map((item, idx) => (
-                      <li
-                        key={idx}
-                        style={{
-                          color: "#344054",
-                          fontFamily: "Poppins",
-                          fontSize: "14px",
-                          fontStyle: "normal",
-                          fontWeight: 400,
-                          lineHeight: "140%",
-                        }}
-                      >
-                        • {item}
-                      </li>
-                    ))}
-                  </ul>
-                  <p
-                    style={{
-                      color: "#000",
-                      fontFamily: "Poppins",
-                      fontSize: "14px",
-                      fontStyle: "normal",
-                      fontWeight: 400,
-                      lineHeight: "190%",
-                    }}
-                  >
-                    4–6 weeks | 📍 Tangram meets your tech stack
-                  </p>
-            </div>
-              </div>
-
-              {/* Factory Track */}
-              <div className="relative bg-white overflow-hidden scale-in" style={{ minHeight: "404px", maxWidth: "411px" }}>
-                {/* Background Image */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    backgroundImage: "url('/img/catalystcardbg.svg')",
-                    backgroundSize: "contain",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat",
-                    width: "100%",
-                    height: "100%",
-                    willChange: "transform",
-                    transform: "translateZ(0)",
-                    backfaceVisibility: "hidden",
-                  }}
-                />
-                <div className="relative" style={{ padding: "40px" }}>
-                  <div className="mb-4">
-                    <span
-                      style={{
-                        fontFamily: "Poppins",
-                        fontSize: "64px",
-                        fontStyle: "normal",
-                        fontWeight: 600,
-                        lineHeight: "64px",
-                        letterSpacing: "-4px",
-                        background: "linear-gradient(0deg, rgba(255, 146, 49, 0.00) 0%, #FF9231 100%)",
-                        backgroundClip: "text",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                      }}
-                    >
-                      03
-                    </span>
-            </div>
-                  <h3
-                    style={{
-                      color: "#101828",
-                      fontFamily: "Poppins",
-                      fontSize: "16px",
-                      fontStyle: "normal",
-                      fontWeight: 600,
-                      lineHeight: "normal",
-                      marginBottom: "12px",
-                    }}
-                  >
-                    From Pilot to Production
-                  </h3>
-                  <p
-                    style={{
-                      color: "#344054",
-                      fontFamily: "Poppins",
-                      fontSize: "14px",
-                      fontStyle: "normal",
-                      fontWeight: 400,
-                      lineHeight: "140%",
-                      marginBottom: "16px",
-                    }}
-                  >
-                    Enterprise-grade deployments that scale — with security, analytics, and impact tracking.
-                  </p>
-                  <ul className="space-y-2 mb-4" style={{ listStyle: "none", padding: 0 }}>
-                    {["Full-stack implementation", "Governance and compliance", "Agent performance monitoring", "Ongoing support + updates"].map((item, idx) => (
-                      <li
-                        key={idx}
-                        style={{
-                          color: "#344054",
-                          fontFamily: "Poppins",
-                          fontSize: "14px",
-                          fontStyle: "normal",
-                          fontWeight: 400,
-                          lineHeight: "140%",
-                        }}
-                      >
-                        • {item}
-                      </li>
-                    ))}
-                  </ul>
-                  <p
-                    style={{
-                      color: "#000",
-                      fontFamily: "Poppins",
-                      fontSize: "14px",
-                      fontStyle: "normal",
-                      fontWeight: 400,
-                      lineHeight: "190%",
-                    }}
-                  >
-                    6–10 weeks | 📍 Built for scale
-                  </p>
-            </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Why it Works Section */}
+{/* Why it Works Section */}
       <section className="py-16 md:py-20 lg:py-24 min-h-[80vh] bg-white fade-in-section" style={{ willChange: "transform", transform: "translateZ(0)" }}>
         <div className="w-full px-8 md:px-12 lg:px-16">
           <div className="max-w-7xl mx-auto">

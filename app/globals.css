@@ -375,6 +375,53 @@
   51%, 100% { opacity: 0; }
 }
 
+/* Flowing pipes animation - slow vertical flow */
+@keyframes flow {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 2000;
+  }
+}
+
+.flowing-path {
+  stroke-dasharray: 30 15;
+  animation: flow 8s linear infinite;
+}
+
+.flowing-path-2 {
+  stroke-dasharray: 30 15;
+  animation: flow 8s linear infinite;
+  animation-delay: 0.5s;
+}
+
+/* Glowing stroke animation - flows from top center outward */
+@keyframes flowStroke {
+  0% {
+    stroke-dashoffset: 1200;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Center path animation (shorter path) */
+@keyframes flowStrokeCenter {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.flowing-stroke-center {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: flowStrokeCenter 8s linear infinite 0.15s;
+}
+
 /* Staggered card animation */
 @keyframes fadeInUp {
   from {
@@ -591,5 +638,37 @@ section:has([data-slot="tabs-list"]) [data-slot="tabs-list"]::after {
   top: auto !important;
   transform: none !important;
   margin: 0 !important;
+}
+
+/* Flip card animation */
+.flip-card {
+  perspective: 1000px;
+  width: 100%;
+  height: 100%;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.flip-card:hover .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flip-card-back {
+  transform: rotateY(180deg);
 }
 
