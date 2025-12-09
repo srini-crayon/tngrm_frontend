@@ -4,6 +4,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { AgentSearchChat } from "../../components/agent-search-chat";
 import { AgentCard } from "../../components/agent-card";
+import { ModelCard } from "../../components/model-card";
 import { AgentCardSkeleton } from "../../components/agent-card-skeleton";
 import ChatDialog from "../../components/chat-dialog";
 import { Search, ChevronDown } from "lucide-react";
@@ -58,6 +59,37 @@ type ApiAgent = {
   agents_ordering?: string | number | null;
 };
 
+type Model = {
+  id: string;
+  title: string;
+  description: string;
+  tags: string[];
+  demoPreview?: string;
+};
+
+type ApiModel = {
+  model_id?: string;
+  id?: string;
+  model_name?: string;
+  name?: string;
+  blog_title?: string;
+  preview_text?: string;
+  tag_line?: string;
+  long_description?: string;
+  description?: string;
+  model_icon?: string;
+  model_type_1?: string;
+  model_type_2?: string;
+  training_data_1?: string;
+  training_data_2?: string;
+  training_data_3?: string;
+  training_data_4?: string;
+  tags?: string | null;
+  demo_preview?: string | null;
+  admin_approved?: string | null;
+  [key: string]: any;
+};
+
 async function fetchAgents() {
   try {
     const res = await fetch("https://agents-store.onrender.com/api/agents", {
@@ -101,7 +133,9 @@ async function fetchAgents() {
 export default function AgentLibraryPage() {
   const { openModal } = useModal();
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [models, setModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(true);
+  const [modelsLoading, setModelsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [agentSearchChatValue, setAgentSearchChatValue] = useState("");
@@ -216,6 +250,86 @@ export default function AgentLibraryPage() {
     fetchData();
   }, []);
 
+  // Fetch models
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        setModelsLoading(true);
+        const res = await fetch("https://agents-store.onrender.com/api/models", {
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          console.warn(`Failed to fetch models: ${res.status}`);
+          setModels([]);
+          return;
+        }
+        const data = await res.json();
+        
+        // Handle API response structure: { success: true, data: [...] }
+        const apiModels: ApiModel[] = data?.data || data?.models || data || [];
+        const mappedModels = apiModels
+          .filter((m: ApiModel) => !m.admin_approved || m.admin_approved === "yes") // Only show approved models if field exists
+          .map((m: ApiModel) => {
+            const modelId = m.model_id || m.id || "";
+            const modelName = m.blog_title || m.model_name || m.name || "";
+            
+            // Use preview_text or tag_line for description, fallback to long_description or description
+            const description = m.preview_text || m.tag_line || m.long_description || m.description || "";
+            
+            // Use model_icon for preview image, fallback to demo_preview
+            let previewImage: string | undefined = undefined;
+            if (m.model_icon) {
+              previewImage = m.model_icon;
+            } else if (m.demo_preview) {
+              const demoPreviewUrls = m.demo_preview
+                .split(",")
+                .map((item: string) => item.trim())
+                .filter((item: string) => {
+                  return item && (item.startsWith("http://") || item.startsWith("https://"));
+                });
+              previewImage = demoPreviewUrls.length > 0 ? demoPreviewUrls[0] : undefined;
+            }
+            
+            // Extract tags from model_type fields and training_data fields
+            const tags: string[] = [];
+            if (m.model_type_1) tags.push(m.model_type_1);
+            if (m.model_type_2) tags.push(m.model_type_2);
+            if (m.training_data_1) tags.push(m.training_data_1);
+            if (m.training_data_2) tags.push(m.training_data_2);
+            if (m.training_data_3) tags.push(m.training_data_3);
+            if (m.training_data_4) tags.push(m.training_data_4);
+            
+            // Also add tags from tags field if it exists
+            if (m.tags) {
+              const additionalTags = m.tags
+                .split(",")
+                .map((t: string) => t.trim())
+                .filter(Boolean);
+              tags.push(...additionalTags);
+            }
+            
+            return {
+              id: modelId,
+              title: modelName,
+              description: description,
+              tags: tags,
+              demoPreview: previewImage,
+            };
+          })
+          .filter((m: Model) => m.id && m.title); // Filter out invalid models
+        
+        setModels(mappedModels);
+      } catch (err) {
+        console.error("Error fetching models:", err);
+        setModels([]);
+      } finally {
+        setModelsLoading(false);
+      }
+    };
+    
+    fetchModels();
+  }, []);
+
   // Scroll animations with IntersectionObserver - Optimized for performance
   useEffect(() => {
     // Use requestIdleCallback for better performance, fallback to setTimeout
@@ -300,17 +414,26 @@ export default function AgentLibraryPage() {
     agents.forEach(agent => {
       if (agent.deploymentType) types.add(agent.deploymentType);
     });
-    return Array.from(types).sort();
+    // Always include "Model" tab even if no agents have that type
+    types.add("Model");
+    // Sort with custom order: Agent, Solution, Model, then others
+    const orderedTypes = ["Agent", "Solution", "Model"];
+    const otherTypes = Array.from(types).filter(t => !orderedTypes.includes(t)).sort();
+    return [...orderedTypes.filter(t => types.has(t)), ...otherTypes];
   }, [agents]);
 
   // Calculate counts for each deployment type
   const deploymentTypeCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     allDeploymentTypes.forEach(type => {
-      counts[type] = agents.filter(agent => agent.deploymentType === type).length;
+      if (type === "Model") {
+        counts[type] = models.length;
+      } else {
+        counts[type] = agents.filter(agent => agent.deploymentType === type).length;
+      }
     });
     return counts;
-  }, [agents, allDeploymentTypes]);
+  }, [agents, models, allDeploymentTypes]);
 
   // Update indicator position when selected deployment type changes
   useEffect(() => {
@@ -415,6 +538,25 @@ export default function AgentLibraryPage() {
     return filtered;
   };
 
+  // Helper function to apply manual filters to models
+  const applyModelFilters = (modelList: Model[]) => {
+    let filtered = modelList;
+    
+    if (search) {
+      const q = search.toLowerCase();
+      filtered = filtered.filter(model => 
+        model.title.toLowerCase().includes(q) ||
+        model.description.toLowerCase().includes(q) ||
+        model.tags.some(tag => tag.toLowerCase().includes(q))
+      );
+    }
+    
+    // Note: Models don't have provider, capability, or persona filters
+    // But we keep the function structure for consistency
+    
+    return filtered;
+  };
+
   // AI searched agents (filtered by manual filters)
   const aiSearchedAgents = useMemo(() => {
     if (!aiSearchedAgentIds) return [];
@@ -457,6 +599,31 @@ export default function AgentLibraryPage() {
     const start = (currentPage - 1) * PAGE_SIZE;
     return allFilteredAgents.slice(start, start + PAGE_SIZE);
   }, [allFilteredAgents, currentPage, PAGE_SIZE]);
+
+  // Filtered models
+  const filteredModels = useMemo(() => {
+    return applyModelFilters(models);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [models, search]);
+
+  const modelsTotalPages = Math.max(1, Math.ceil(filteredModels.length / PAGE_SIZE));
+  const [modelsCurrentPage, setModelsCurrentPage] = useState(1);
+
+  const paginatedModels = useMemo(() => {
+    const start = (modelsCurrentPage - 1) * PAGE_SIZE;
+    return filteredModels.slice(start, start + PAGE_SIZE);
+  }, [filteredModels, modelsCurrentPage, PAGE_SIZE]);
+
+  useEffect(() => {
+    setModelsCurrentPage(1);
+  }, [search, selectedDeploymentType]);
+
+  useEffect(() => {
+    const maxPages = Math.max(1, Math.ceil(filteredModels.length / PAGE_SIZE));
+    if (modelsCurrentPage > maxPages) {
+      setModelsCurrentPage(maxPages);
+    }
+  }, [filteredModels.length, modelsCurrentPage, PAGE_SIZE]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -1133,7 +1300,48 @@ export default function AgentLibraryPage() {
             </div>
           )}
           
-          {!loading && !error && (
+          {!loading && !error && selectedDeploymentType === "Model" ? (
+            <>
+              {/* Models Section */}
+              {(modelsLoading || models.length > 0) && (
+                <div>
+                  {modelsLoading ? (
+                    <div 
+                      className="grid gap-4 md:gap-6 lg:gap-10"
+                      style={{
+                        gridTemplateColumns: "repeat(3, 1fr)",
+                      }}
+                    >
+                      {Array.from({ length: 9 }).map((_, index) => (
+                        <AgentCardSkeleton key={index} />
+                      ))}
+                    </div>
+                  ) : (
+                    <>
+                      <div 
+                        className="grid gap-4 md:gap-6 lg:gap-10"
+                        style={{
+                          gridTemplateColumns: "repeat(3, 1fr)",
+                        }}
+                      >
+                        {paginatedModels.map((model) => (
+                          <ModelCard key={model.id} {...model} />
+                        ))}
+                      </div>
+
+                      {filteredModels.length === 0 && (
+                        <div className="text-center py-12">
+                          <div className="text-muted-foreground">No models found matching your criteria.</div>
+                        </div>
+                      )}
+
+                      {modelsTotalPages > 1 && renderPaginationControls(modelsCurrentPage, modelsTotalPages, setModelsCurrentPage)}
+                    </>
+                  )}
+                </div>
+              )}
+            </>
+          ) : !loading && !error && (
             <>
               {/* AI Search Results Section */}
               {aiSearchedAgentIds && aiSearchedAgentIds.length > 0 && (
