@@ -75,20 +75,21 @@ export function UploadAgentModal({ isOpen, onClose }: UploadAgentModalProps) {
     }
   }
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
     // Validate file type
     const validTypes = [
       "text/csv",
       "application/vnd.ms-excel",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/plain", // Allow .txt files as per API sample
     ]
 
-    if (!validTypes.includes(file.type) && !file.name.endsWith(".csv") && !file.name.endsWith(".xlsx")) {
+    if (!validTypes.includes(file.type) && !file.name.endsWith(".csv") && !file.name.endsWith(".xlsx") && !file.name.endsWith(".txt")) {
       setUploadedFile({
         name: file.name,
         size: file.size,
         state: "error",
-        errorMessage: "Invalid file format. Please upload CSV or Excel file.",
+        errorMessage: "Invalid file format. Please upload CSV, Excel, or text file.",
       })
       return
     }
@@ -111,30 +112,25 @@ export function UploadAgentModal({ isOpen, onClose }: UploadAgentModalProps) {
       state: "uploading",
     })
 
-    // Simulate upload process
-    setTimeout(() => {
-      // Randomly simulate different outcomes for demo
-      const random = Math.random()
+    try {
+      // Create FormData for file upload
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('dry_run', 'false')
 
-      if (random < 0.33) {
-        // Upload error
-        setUploadedFile({
-          name: file.name,
-          size: file.size,
-          state: "error",
-          errorMessage: "Error while uploading",
-        })
-      } else if (random < 0.66) {
-        // Validation error
-        setUploadedFile({
-          name: file.name,
-          size: file.size,
-          state: "validation-error",
-          errorMessage: "Please add the missing details such as Asset Type and Demo link and upload the file again",
-          missingColumns: ["Asset Type", "Demo Link"],
-        })
-      } else {
-        // Success
+      // Make API call to bulk upload endpoint
+      const response = await fetch('https://agents-store.onrender.com/api/admin/bulk-upload', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+        },
+        body: formData,
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        // Success - show success message
         setUploadedFile({
           name: file.name,
           size: file.size,
@@ -142,8 +138,26 @@ export function UploadAgentModal({ isOpen, onClose }: UploadAgentModalProps) {
         })
         setShowSuccessToast(true)
         setTimeout(() => setShowSuccessToast(false), 5000)
+      } else {
+        // Handle API error
+        const errorMessage = data.message || data.error || "Error while uploading file. Please try again."
+        setUploadedFile({
+          name: file.name,
+          size: file.size,
+          state: "error",
+          errorMessage: errorMessage,
+        })
       }
-    }, 2000)
+    } catch (error: any) {
+      // Handle network or other errors
+      console.error('Upload error:', error)
+      setUploadedFile({
+        name: file.name,
+        size: file.size,
+        state: "error",
+        errorMessage: error.message || "Network error. Please check your connection and try again.",
+      })
+    }
   }
 
   const handleRetry = () => {
@@ -269,7 +283,7 @@ export function UploadAgentModal({ isOpen, onClose }: UploadAgentModalProps) {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".csv,.xlsx,.xls"
+              accept=".csv,.xlsx,.xls,.txt"
               onChange={handleFileSelect}
               className="hidden"
             />
@@ -338,7 +352,7 @@ export function UploadAgentModal({ isOpen, onClose }: UploadAgentModalProps) {
                     marginTop: "4px",
                   }}
                 >
-                  Supports PDF,Word document file (max. 25MB file size)
+                  Supports CSV, Excel, or text files (max. 25MB file size)
                 </p>
               </div>
             </div>
