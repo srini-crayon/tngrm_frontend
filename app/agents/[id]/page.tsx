@@ -15,6 +15,7 @@ import { DocumentationSection } from "../../../components/documentation-section"
 import { DemoAccessLink } from "../../../components/demo-access-link"
 import { AgentIcon } from "../../../components/agent-icon"
 import { ISVPartnerButton } from "../../../components/isv-partner-button"
+import { slugifyAgentName } from "../../../lib/utils"
 
 type AgentDetailApiResponse = {
   agent?: {

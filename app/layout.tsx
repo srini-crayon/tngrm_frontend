@@ -5,7 +5,7 @@ import { GeistMono } from "geist/font/mono"
 import { Poppins } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Navbar } from "../components/navbar"
-import { Footer } from "../components/footer"
+import { ConditionalFooter } from "../components/conditional-footer"
 import { ModalProvider } from "../components/modal-provider"
 import { Suspense } from "react"
 import "./globals.css"
@@ -33,7 +33,7 @@ export default function RootLayout({
         <Suspense fallback={<div>Loading...</div>}>
           <Navbar />
           <main className="min-h-screen">{children}</main>
-          <Footer />
+          <ConditionalFooter />
           <ModalProvider />
         </Suspense>
         <Analytics />

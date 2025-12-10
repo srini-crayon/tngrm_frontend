@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { formatTime } from '../utils'
 
 // Safari-safe localStorage wrapper
 const safeLocalStorage = {
@@ -64,7 +65,7 @@ const initialMessage: ChatMessage = {
   id: "m1",
   role: "assistant",
   text: "Hi! Tell me what you want to search.",
-  time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+  time: formatTime(),
 }
 
 export const useChatStore = create<ChatState>()(

@@ -672,3 +672,27 @@ section:has([data-slot="tabs-list"]) [data-slot="tabs-list"]::after {
   transform: rotateY(180deg);
 }
 
+/* Smooth fade in and slide up animation for chat interface */
+@keyframes fadeInSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+  }
+}
+
+/* Fade out animation for smooth exit */
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px) translateZ(0);
+  }
+}
+

@@ -1,15 +1,13 @@
 "use client";
 
 import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
 import { AgentSearchChat } from "../../components/agent-search-chat";
 import { AgentCard } from "../../components/agent-card";
 import { ModelCard } from "../../components/model-card";
 import { AgentCardSkeleton } from "../../components/agent-card-skeleton";
-import ChatDialog from "../../components/chat-dialog";
-import { Search, ChevronDown } from "lucide-react";
+import { ChevronDown, Filter } from "lucide-react";
 import { useEffect, useMemo, useState, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useChatStore } from "../../lib/store/chat.store";
 import { useModal } from "../../hooks/use-modal";
 
@@ -143,7 +141,6 @@ export default function AgentLibraryPage() {
   const [capabilityFilter, setCapabilityFilter] = useState<string>("All");
   const [deploymentFilter, setDeploymentFilter] = useState<string>("Agent");
   const [personaFilter, setPersonaFilter] = useState<string>("All");
-  const [createChatOpen, setCreateChatOpen] = useState(false);
   const [selectedDeploymentType, setSelectedDeploymentType] = useState<string>("Agent");
   const [indicatorStyle, setIndicatorStyle] = useState<{ left: number; width: number } | null>(null);
   const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
@@ -151,10 +148,19 @@ export default function AgentLibraryPage() {
   const PAGE_SIZE = 9;
   const [currentPage, setCurrentPage] = useState(1);
   const [aiCurrentPage, setAiCurrentPage] = useState(1);
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const { messages } = useChatStore();
+  const { messages, clearChat } = useChatStore();
   const agentIdFromUrl = searchParams.get('agentId');
+  
+  // Check if we should redirect to chat route
+  useEffect(() => {
+    if (searchParams.get('chat') === 'true') {
+      router.replace('/agents/chat');
+    }
+  }, [searchParams, router]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -414,10 +420,10 @@ export default function AgentLibraryPage() {
     agents.forEach(agent => {
       if (agent.deploymentType) types.add(agent.deploymentType);
     });
-    // Always include "Model" tab even if no agents have that type
-    types.add("Model");
-    // Sort with custom order: Agent, Solution, Model, then others
-    const orderedTypes = ["Agent", "Solution", "Model"];
+    // Exclude "Model" from the deployment types menu
+    types.delete("Model");
+    // Sort with custom order: Agent, Solution, then others
+    const orderedTypes = ["Agent", "Solution"];
     const otherTypes = Array.from(types).filter(t => !orderedTypes.includes(t)).sort();
     return [...orderedTypes.filter(t => types.has(t)), ...otherTypes];
   }, [agents]);
@@ -464,13 +470,6 @@ export default function AgentLibraryPage() {
     return () => clearTimeout(timer);
   }, [selectedDeploymentType, allDeploymentTypes]);
 
-  // Update deployment filter when segment is selected
-  useEffect(() => {
-    if (selectedDeploymentType) {
-      setDeploymentFilter(selectedDeploymentType);
-    }
-  }, [selectedDeploymentType]);
-
   // Sync selected segment when deployment filter changes from dropdown
   useEffect(() => {
     if (deploymentFilter !== "All" && allDeploymentTypes.includes(deploymentFilter)) {
@@ -485,6 +484,58 @@ export default function AgentLibraryPage() {
     });
     return Array.from(personas).sort();
   }, [agents]);
+
+  // Filter options based on selected deployment type
+  const filteredProviders = useMemo(() => {
+    if (selectedDeploymentType === "All" || !selectedDeploymentType) return allProviders;
+    const providers = new Set<string>();
+    agents
+      .filter(agent => agent.deploymentType === selectedDeploymentType)
+      .forEach(agent => {
+        agent.providers.forEach(provider => providers.add(provider));
+      });
+    return Array.from(providers).sort();
+  }, [agents, selectedDeploymentType, allProviders]);
+
+  const filteredCapabilities = useMemo(() => {
+    if (selectedDeploymentType === "All" || !selectedDeploymentType) return allCapabilities;
+    const capabilities = new Set<string>();
+    agents
+      .filter(agent => agent.deploymentType === selectedDeploymentType)
+      .forEach(agent => {
+        agent.capabilities.forEach(capability => capabilities.add(capability));
+      });
+    return Array.from(capabilities).sort();
+  }, [agents, selectedDeploymentType, allCapabilities]);
+
+  const filteredPersonas = useMemo(() => {
+    if (selectedDeploymentType === "All" || !selectedDeploymentType) return allPersonas;
+    const personas = new Set<string>();
+    agents
+      .filter(agent => agent.deploymentType === selectedDeploymentType)
+      .forEach(agent => {
+        if (agent.persona) personas.add(agent.persona);
+      });
+    return Array.from(personas).sort();
+  }, [agents, selectedDeploymentType, allPersonas]);
+
+  // Update deployment filter when segment is selected and reset filters if needed
+  useEffect(() => {
+    if (selectedDeploymentType) {
+      setDeploymentFilter(selectedDeploymentType);
+      
+      // Reset filters if they're not available for the new deployment type
+      if (!filteredProviders.includes(providerFilter) && providerFilter !== "All") {
+        setProviderFilter("All");
+      }
+      if (!filteredCapabilities.includes(capabilityFilter) && capabilityFilter !== "All") {
+        setCapabilityFilter("All");
+      }
+      if (!filteredPersonas.includes(personaFilter) && personaFilter !== "All") {
+        setPersonaFilter("All");
+      }
+    }
+  }, [selectedDeploymentType, filteredProviders, filteredCapabilities, filteredPersonas, providerFilter, capabilityFilter, personaFilter]);
 
   // Get AI searched agent IDs from the latest chat message
   const aiSearchedAgentIds = useMemo(() => {
@@ -647,6 +698,16 @@ export default function AgentLibraryPage() {
     }
   }, [aiSearchedAgents.length, aiCurrentPage, PAGE_SIZE]);
 
+  // Handle entering chat mode
+  const handleEnterChat = (message: string) => {
+    // Navigate to chat route
+    if (message.trim()) {
+      // Store message in sessionStorage to send after navigation
+      sessionStorage.setItem('pendingChatMessage', message.trim());
+    }
+    router.push('/agents/chat');
+  }
+
   const renderPaginationControls = (
     current: number,
     total: number,
@@ -700,23 +761,24 @@ export default function AgentLibraryPage() {
 
   return (
     <div className="flex flex-col relative" style={{ scrollBehavior: "smooth" }}>
-      {/* Top radial gradient banner fixed to top (no whitespace) */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          width: "100%",
-          height: "360px",
-          top: 0,
-          left: 0,
-          background: "radial-gradient(100% 100% at 50% 0%, #FED1E6 0%, #FFFFFF 100%)",
-          opacity: 1,
-          pointerEvents: "none",
-          zIndex: -1,
-        }}
-      />
-      {/* Hero Section */}
-      <section className="pt-8 pb-12 md:pt-12 md:pb-16 lg:pt-16 lg:pb-20 fade-in-section" style={{ transform: "translateZ(0)", willChange: "scroll-position", contain: "layout style paint" }}>
+      <>
+          {/* Top radial gradient banner fixed to top (no whitespace) */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              width: "100%",
+              height: "360px",
+              top: 0,
+              left: 0,
+              background: "radial-gradient(100% 100% at 50% 0%, #FED1E6 0%, #FFFFFF 100%)",
+              opacity: 1,
+              pointerEvents: "none",
+              zIndex: -1,
+            }}
+          />
+          {/* Hero Section */}
+          <section className="fade-in-section" style={{ transform: "translateZ(0)", willChange: "scroll-position", contain: "layout style paint", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className="w-full px-8 md:px-12 lg:px-16">
           <div className="text-center">
             <div className="flex justify-center mb-4">
@@ -749,7 +811,7 @@ export default function AgentLibraryPage() {
               </span>
             </div>
 
-            <h1 className="mb-4 text-center fade-in-blur">
+            <h1 className="mb-3 text-center fade-in-blur">
               <span
                 style={{
                   fontFamily: "Poppins, sans-serif",
@@ -764,11 +826,11 @@ export default function AgentLibraryPage() {
                   willChange: "opacity, transform, filter",
                 }}
               >
-                The One-Stop Store.
+                The One-Stop Agent Store.
               </span>
             </h1>
             <p
-              className="mb-2 text-center fade-in-section"
+              className="text-center fade-in-section"
               style={{
                 fontFamily: "Poppins, sans-serif",
                 fontWeight: 600,
@@ -778,314 +840,88 @@ export default function AgentLibraryPage() {
                 textAlign: "center",
                 color: "#091917",
                 willChange: "opacity, transform",
+                marginBottom: "64px",
               }}
             >
               Discover.Try. Deploy.
             </p>
 
-            <p 
-              className="mx-auto mb-8 max-w-2xl text-center fade-in-section"
-              style={{
-                fontFamily: "Poppins, sans-serif",
-                fontWeight: 400,
-                fontStyle: "normal",
-                fontSize: "14px",
-                lineHeight: "24px",
-                textAlign: "center",
-                color: "#091917",
-                willChange: "opacity, transform",
-              }}
-            >
-              Start referring or integrating agents from Tangram.ai store with your clients today to unlock new revenue opportunities, accelerate growth, and deliver intelligent AI solutions at scale.
-            </p>
-
-            {/* Centered search bar under subheader */}
-            <div className="flex w-full justify-center mb-0 scale-in">
+            {/* Search bar */}
+            <div className="flex w-full justify-center scale-in mb-8">
               <div className="w-full max-w-5xl" style={{ willChange: "transform" }}>
-                {/* reuse same search-chat as home */}
                 <AgentSearchChat 
                   externalValue={agentSearchChatValue}
                   onExternalValueChange={setAgentSearchChatValue}
+                  onEnterChat={handleEnterChat}
                 />
               </div>
             </div>
 
-            {/* Category tags - Two Row Scrolling */}
-            <div className="mb-4 mx-auto max-w-5xl overflow-hidden fade-in-section" style={{ minHeight: "80px", willChange: "opacity, transform" }}>
-              {(() => {
-                // Get unique agent names from API for first row
-                const agentNames = [...new Set(agents.map(agent => agent.title))].slice(0, 20); // Limit to 20 unique names
-                const iconColors = ["#7DD3FC", "#3B82F6", "#FCD34D", "#1E40AF", "#FDE047", "#F472B6", "#A855F7", "#FB923C", "#14B8A6"];
-                const iconTypes = ["circle", "triangle", "square"];
-
-                // Create agent name tags for first row
-                // Use placeholder tags if no agents loaded yet to prevent layout shift
-                const agentNameTags = agentNames.length > 0 
-                  ? agentNames.map((name, idx) => ({
-                      text: name,
-                      icon: iconTypes[idx % iconTypes.length] as "circle" | "triangle" | "square",
-                      color: iconColors[idx % iconColors.length],
-                    }))
-                  : [
-                      // Placeholder tags to maintain layout until agents load
-                      { text: "Agent 1", icon: "circle" as const, color: "#E5E7EB" },
-                      { text: "Agent 2", icon: "triangle" as const, color: "#E5E7EB" },
-                      { text: "Agent 3", icon: "square" as const, color: "#E5E7EB" },
-                    ];
-
-                // Capability tags for second row
-                const tagDefinitions = [
-                  { icon: "circle", color: "#7DD3FC", text: "Conversational AI & Advisory", capability: "Conversational AI & Advisory" },
-                  { icon: "triangle", color: "#3B82F6", text: "Document Passing & Analysis", capability: "Document Passing & Analysis" },
-                  { icon: "square", color: "#FCD34D", text: "Image processing", capability: "Image processing" },
-                  { icon: "circle", color: "#1E40AF", text: "Video Processing", capability: "Video Processing" },
-                  { icon: "triangle", color: "#FDE047", text: "Voice and Meeting", capability: "Voice and Meeting" },
-                  { icon: "square", color: "#F472B6", text: "Data Analysis and Insights", capability: "Data Analysis and Insights" },
-                  { icon: "circle", color: "#A855F7", text: "Content generation", capability: "Content generation" },
-                  { icon: "triangle", color: "#FB923C", text: "Process Automation", capability: "Process Automation" },
-                  { icon: "square", color: "#14B8A6", text: "Data Transformation", capability: "Data Transformation" },
-                ];
-
-                // Find matching capability from API or use the tag's capability name
-                const findMatchingCapability = (tagCapability: string) => {
-                  // First try exact match
-                  if (allCapabilities.includes(tagCapability)) {
-                    return tagCapability;
-                  }
-                  // Try case-insensitive match
-                  const lowerTag = tagCapability.toLowerCase();
-                  const match = allCapabilities.find(cap => cap.toLowerCase() === lowerTag);
-                  if (match) return match;
-                  // Try partial match
-                  const partialMatch = allCapabilities.find(cap => 
-                    cap.toLowerCase().includes(lowerTag) || lowerTag.includes(cap.toLowerCase())
-                  );
-                  return partialMatch || tagCapability;
-                };
-
-                const renderAgentNameTag = (tag: { text: string; icon: "circle" | "triangle" | "square"; color: string }, key: string) => {
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => setAgentSearchChatValue(tag.text)}
-                      className="flex items-center bg-white whitespace-nowrap shrink-0 shadow-sm cursor-pointer transition-all hover:shadow-md"
-                      style={{
-                        height: "32px",
-                        paddingTop: "5.5px",
-                        paddingRight: "9px",
-                        paddingBottom: "6.5px",
-                        paddingLeft: "9px",
-                        gap: "5px",
-                        borderRadius: "999px",
-                        borderWidth: "1px",
-                        borderStyle: "solid",
-                        borderColor: "#E5E7EB",
-                        backgroundColor: "#FFFFFF",
-                      }}
-                    >
-                      {tag.icon === "circle" && <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: tag.color }}></div>}
-                      {tag.icon === "triangle" && <div className="h-3 w-3 shrink-0" style={{ backgroundColor: tag.color, clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}></div>}
-                      {tag.icon === "square" && <div className="h-3 w-3 rounded shrink-0" style={{ backgroundColor: tag.color }}></div>}
-                      <span style={{
-                        fontFamily: "Poppins, sans-serif",
-                        fontWeight: 400,
-                        fontStyle: "normal",
-                        fontSize: "14px",
-                        lineHeight: "20px",
-                        letterSpacing: "0%",
-                        verticalAlign: "middle",
-                        color: "#344054",
-                      }}>
-                        {tag.text}
-                      </span>
-                    </button>
-                  );
-                };
-
-                const renderCapabilityTag = (tag: typeof tagDefinitions[0], key: string) => {
-                  const matchingCapability = findMatchingCapability(tag.capability);
-                  const isSelected = capabilityFilter === matchingCapability;
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => {
-                        setAgentSearchChatValue(tag.text);
-                        // Also set the filter
-                        setCapabilityFilter(isSelected ? "All" : matchingCapability);
-                      }}
-                      className="flex items-center bg-white whitespace-nowrap shrink-0 shadow-sm cursor-pointer transition-all hover:shadow-md"
-                      style={{
-                        height: "32px",
-                        paddingTop: "5.5px",
-                        paddingRight: "9px",
-                        paddingBottom: "6.5px",
-                        paddingLeft: "9px",
-                        gap: "5px",
-                        borderRadius: "999px",
-                        borderWidth: "1px",
-                        borderStyle: "solid",
-                        borderColor: isSelected ? "#3B82F6" : "#E5E7EB",
-                        backgroundColor: isSelected ? "#EFF6FF" : "#FFFFFF",
-                      }}
-                    >
-                      {tag.icon === "circle" && <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: tag.color }}></div>}
-                      {tag.icon === "triangle" && <div className="h-3 w-3 shrink-0" style={{ backgroundColor: tag.color, clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}></div>}
-                      {tag.icon === "square" && <div className="h-3 w-3 rounded shrink-0" style={{ backgroundColor: tag.color }}></div>}
-                      <span style={{
-                        fontFamily: "Poppins, sans-serif",
-                        fontWeight: 400,
-                        fontStyle: "normal",
-                        fontSize: "14px",
-                        lineHeight: "20px",
-                        letterSpacing: "0%",
-                        verticalAlign: "middle",
-                        color: isSelected ? "#3B82F6" : "#344054",
-                      }}>
-                        {tag.text}
-                      </span>
-                    </button>
-                  );
-                };
-
-                // Duplicate items multiple times for seamless scrolling
-                const duplicatedAgentNames = [...agentNameTags, ...agentNameTags, ...agentNameTags];
-                const duplicatedCapabilityTags = [...tagDefinitions, ...tagDefinitions, ...tagDefinitions];
-
-                return (
-                  <div className="flex flex-col gap-3" style={{ minHeight: "80px" }}>
-                    {/* First Row - Left to Right - Agent Names from API */}
-                    <div className="overflow-hidden relative" style={{ height: "44px", minHeight: "44px" }}>
-                      <div className="flex gap-3 animate-scroll-tags" style={{ width: "fit-content", animationDuration: "240s" }}>
-                        {duplicatedAgentNames.map((tag, idx) => renderAgentNameTag(tag, `row1-${idx}`))}
-                      </div>
-                    </div>
-                    {/* Second Row - Right to Left - Capability Tags */}
-                    <div className="overflow-hidden relative" style={{ height: "44px", minHeight: "44px" }}>
-                      <div className="flex gap-3 animate-scroll-tags-reverse" style={{ width: "fit-content", animationDuration: "200s" }}>
-                        {duplicatedCapabilityTags.map((tag, idx) => renderCapabilityTag(tag, `row2-${idx}`))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-
-
-            {/* Enterprise Partners Row */}
-            <div className="mt-6 flex flex-col items-center gap-3">
-              <div className="text-sm font-medium">Our Enterprise AI Partners</div>
-              <div className="flex items-center gap-6">
-                <img
-                  src="/crayon_bw.png"
-                  alt="crayon"
-                  width={113}
-                  height={24}
-                  className="bg-transparent object-contain grayscale opacity-80"
-                  style={{ transform: "rotate(0deg)" }}
-                />
-                <img
-                  src="/veehive_bw.png"
-                  alt="veehive"
-                  width={113}
-                  height={24}
-                  className="bg-transparent object-contain grayscale opacity-80"
-                  style={{ transform: "rotate(0deg)" }}
-                />
-                <img
-                  src="/mozak_bw.png"
-                  alt="mozak"
-                  width={113}
-                  height={24}
-                  className="bg-transparent object-contain grayscale opacity-80"
-                  style={{ transform: "rotate(0deg)" }}
-                />
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
       {/* Unified Search + Filters Bar with Home search chat */}
       <section className="bg-white w-full">
-        {/* Deployment Type Segment Tabs */}
-        {allDeploymentTypes.length > 0 && (
-          <div 
-            className="w-full flex justify-center"
-            style={{
-              paddingTop: "32px",
-              paddingBottom: "32px",
-              paddingLeft: "60px",
-              paddingRight: "120px",
-              backgroundColor: "#FFFFFF",
-            }}
-          >
-            <div 
-              ref={tabsContainerRef}
-              className="relative flex gap-8 border-b border-gray-200 flex-wrap justify-center" 
-              style={{ 
-                borderBottom: "1px solid #E5E7EB", 
-                position: "relative",
-              }}
-            >
-              {/* Animated sliding indicator */}
-              {indicatorStyle && (
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: "-1px",
-                    left: `${indicatorStyle.left}px`,
-                    width: `${indicatorStyle.width}px`,
-                    height: "2px",
-                    backgroundColor: "#000",
-                    transition: "left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                    willChange: "left, width",
-                    transform: "translateZ(0)",
-                    backfaceVisibility: "hidden",
-                    WebkitBackfaceVisibility: "hidden",
-                    pointerEvents: "none",
+        {/* AI Search Results Section */}
+        {aiSearchedAgentIds && aiSearchedAgentIds.length > 0 && (
+          <div className="w-full" style={{ backgroundColor: "#F8F8F8", paddingTop: "32px", paddingBottom: "32px" }}>
+            <div className="w-full mx-auto" style={{ maxWidth: "1360px", paddingLeft: "12px", paddingRight: "12px" }}>
+              <div className="mb-12">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">AI Search Results</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Showing {aiSearchedAgents.length} of {aiSearchedAgentIds.length} AI-recommended agents
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    // Clear the chat to remove AI search results
+                    const { clearChat } = useChatStore.getState();
+                    clearChat();
                   }}
-                />
-              )}
+                  style={{
+                    fontFamily: "Poppins, sans-serif",
+                    fontSize: "14px",
+                    color: "#344054",
+                    background: "transparent",
+                    border: "1px solid #E5E7EB",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    padding: "8px 16px",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "#344054";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "#E5E7EB";
+                  }}
+                >
+                  Clear AI Search
+                </button>
+              </div>
               
-              {/* Deployment type tabs */}
-              {allDeploymentTypes.map((type) => {
-                const count = deploymentTypeCounts[type] || 0;
-                const isSelected = selectedDeploymentType === type;
-                
-                return (
-                  <button
-                    key={type}
-                    ref={(el) => {
-                      if (el) {
-                        tabRefs.current.set(type, el);
-                      } else {
-                        tabRefs.current.delete(type);
-                      }
-                    }}
-                    onClick={() => setSelectedDeploymentType(type)}
-                    className="relative pb-2 px-4"
-                    style={{
-                      fontFamily: "Poppins",
-                      fontSize: "14px",
-                      fontWeight: isSelected ? 600 : 500,
-                      color: isSelected ? "#000" : "#344054",
-                      paddingBottom: "8px",
-                      whiteSpace: "nowrap",
-                      opacity: 1,
-                      cursor: "pointer",
-                      display: "inline-block",
-                      visibility: "visible",
-                      transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-weight 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                      willChange: "transform",
-                      backfaceVisibility: "hidden",
-                      WebkitBackfaceVisibility: "hidden",
-                      transform: "translateZ(0)",
-                    }}
-                  >
-                    {type} ({count})
-                  </button>
-                );
-              })}
+              <div 
+                className="grid gap-4 md:gap-6 lg:gap-10"
+                style={{
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                }}
+              >
+                {paginatedAiAgents.map((agent) => (
+                  <AgentCard key={agent.id} {...agent} assetType={agent.assetType} demoPreview={agent.demoPreview} />
+                ))}
+              </div>
+
+              {aiSearchedAgents.length === 0 && (
+                <div className="text-center py-12">
+                  <div className="text-muted-foreground">No AI-recommended agents match your current filters.</div>
+                </div>
+              )}
+
+              {aiTotalPages > 1 && renderPaginationControls(aiCurrentPage, aiTotalPages, setAiCurrentPage)}
+              </div>
             </div>
           </div>
         )}
@@ -1098,189 +934,438 @@ export default function AgentLibraryPage() {
           }}
         >
           <div 
-            className="flex flex-col lg:flex-row gap-4 items-center mx-auto"
+            className="flex flex-col lg:flex-row gap-4 items-end mx-auto"
             style={{
               width: "100%",
               maxWidth: "1360px",
               height: "64px",
               backgroundColor: "#FFFFFF",
               borderTop: "none",
-              borderBottom: "1px solid #DFDFDF",
+              borderBottom: "none",
               borderLeft: "none",
               borderRight: "none",
               paddingLeft: "8px",
               paddingRight: "8px",
             }}
           >
-            {/* Quick Search Input */}
-            <div className="relative w-full lg:basis-[60%]">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                type="text"
-                placeholder="Quick search by name, tags, or description..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border-0 shadow-none focus-visible:ring-0"
-                style={{
-                  border: "none",
-                  boxShadow: "none",
-                  fontFamily: "Poppins, sans-serif",
-                  fontWeight: 400,
-                  fontStyle: "normal",
-                  fontSize: "16px",
-                  lineHeight: "100%",
-                  letterSpacing: "0%",
-                  verticalAlign: "middle",
-                  color: "#667085",
-                }}
-              />
-            </div>
+            {/* Deployment Type Segment Tabs */}
+            {allDeploymentTypes.length > 0 && (
+              <div className="relative w-full lg:basis-[60%] flex justify-start items-end">
+                <div 
+                  ref={tabsContainerRef}
+                  className="relative flex gap-8" 
+                  style={{ 
+                    position: "relative",
+                  }}
+                >
+                  {/* Animated sliding indicator */}
+                  {indicatorStyle && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: "-1px",
+                        left: `${indicatorStyle.left}px`,
+                        width: `${indicatorStyle.width}px`,
+                        height: "2px",
+                        backgroundColor: "#000",
+                        transition: "left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                        willChange: "left, width",
+                        transform: "translateZ(0)",
+                        backfaceVisibility: "hidden",
+                        WebkitBackfaceVisibility: "hidden",
+                        pointerEvents: "none",
+                      }}
+                    />
+                  )}
+                  
+                  {/* Deployment type tabs */}
+                  {allDeploymentTypes.map((type) => {
+                    const count = deploymentTypeCounts[type] || 0;
+                    const isSelected = selectedDeploymentType === type;
+                    
+                    return (
+                      <button
+                        key={type}
+                        ref={(el) => {
+                          if (el) {
+                            tabRefs.current.set(type, el);
+                          } else {
+                            tabRefs.current.delete(type);
+                          }
+                        }}
+                        onClick={() => setSelectedDeploymentType(type)}
+                        className="relative pb-2 px-4"
+                        style={{
+                          fontFamily: "Poppins",
+                          fontSize: "14px",
+                          fontWeight: isSelected ? 600 : 500,
+                          color: isSelected ? "#000" : "#344054",
+                          paddingBottom: "12px",
+                          whiteSpace: "nowrap",
+                          opacity: 1,
+                          cursor: "pointer",
+                          display: "inline-block",
+                          visibility: "visible",
+                          transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-weight 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                          willChange: "transform",
+                          backfaceVisibility: "hidden",
+                          WebkitBackfaceVisibility: "hidden",
+                          transform: "translateZ(0)",
+                        }}
+                      >
+                        {type} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             
-            {/* Filters */}
-            <div className="flex flex-nowrap items-center justify-end w-full lg:basis-[40%] lg:pl-4 gap-2 lg:gap-6">
-              <div className="relative inline-flex items-center" style={{ borderLeft: "1px solid #DFDFDF", paddingLeft: "32px", paddingRight: "0px" }}>
-                <span
-                  style={{
-                    fontFamily: "Poppins, sans-serif",
-                    fontSize: "14px",
-                    color: "#344054",
-                    marginRight: "4px",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {providerFilter === "All" ? "Provider" : providerFilter}
-                </span>
+            {/* Filter Button */}
+            <div className="flex items-center justify-end w-full lg:basis-[40%] lg:pl-4">
+              <button
+                onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
+                style={{
+                  fontFamily: "Poppins, sans-serif",
+                  fontSize: "14px",
+                  color: "#344054",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "8px 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  whiteSpace: "nowrap",
+                  position: "relative",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.opacity = "0.7";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.opacity = "1";
+                }}
+              >
+                <div style={{ position: "relative", display: "inline-flex" }}>
+                  <Filter className="h-4 w-4" />
+                  {(providerFilter !== "All" || capabilityFilter !== "All" || personaFilter !== "All" || search !== "") && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: "-2px",
+                        right: "-2px",
+                        width: "6px",
+                        height: "6px",
+                        borderRadius: "50%",
+                        backgroundColor: "#EF4444",
+                        border: "1px solid #FFFFFF",
+                      }}
+                    />
+                  )}
+                </div>
+                <span>Filter</span>
                 <ChevronDown 
-                  className="pointer-events-none"
+                  className="h-4 w-4 transition-transform duration-200"
                   style={{
-                    width: "16px",
-                    height: "16px",
-                    color: "#344054",
+                    transform: isFilterPanelOpen ? "rotate(180deg)" : "rotate(0deg)",
                   }}
                 />
-                <select
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                  value={providerFilter}
-                  onChange={(e) => setProviderFilter(e.target.value)}
-                >
-                  <option value="All">Provider</option>
-                  {allProviders.map(provider => (
-                    <option key={provider} value={provider}>{provider}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="relative inline-flex items-center" style={{ paddingLeft: "8px" }}>
-                <span
-                  style={{
-                    fontFamily: "Poppins, sans-serif",
-                    fontSize: "14px",
-                    color: "#344054",
-                    marginRight: "4px",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {capabilityFilter === "All" ? "Capability" : capabilityFilter}
-                </span>
-                <ChevronDown 
-                  className="pointer-events-none"
-                  style={{
-                    width: "16px",
-                    height: "16px",
-                    color: "#344054",
-                  }}
-                />
-                <select
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                  value={capabilityFilter}
-                  onChange={(e) => setCapabilityFilter(e.target.value)}
-                >
-                  <option value="All">Capability</option>
-                  {allCapabilities.map(capability => (
-                    <option key={capability} value={capability}>{capability}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="relative inline-flex items-center" style={{ paddingLeft: "8px" }}>
-                <span
-                  style={{
-                    fontFamily: "Poppins, sans-serif",
-                    fontSize: "14px",
-                    color: "#344054",
-                    marginRight: "4px",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {personaFilter === "All" ? "Persona" : personaFilter}
-                </span>
-                <ChevronDown 
-                  className="pointer-events-none"
-                  style={{
-                    width: "16px",
-                    height: "16px",
-                    color: "#344054",
-                  }}
-                />
-                <select
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                  value={personaFilter}
-                  onChange={(e) => setPersonaFilter(e.target.value)}
-                >
-                  <option value="All">Persona</option>
-                  {allPersonas.map(persona => (
-                    <option key={persona} value={persona}>{persona}</option>
-                  ))}
-                </select>
-              </div>
-              
-              {/* Clear All Filters Button */}
-              {(() => {
-                const hasActiveFilters = 
-                  providerFilter !== "All" ||
-                  capabilityFilter !== "All" ||
-                  personaFilter !== "All" ||
-                  search !== "";
-                
-                if (!hasActiveFilters) return null;
-                
-                return (
-                  <button
-                    onClick={() => {
-                      setProviderFilter("All");
-                      setCapabilityFilter("All");
-                      setDeploymentFilter("Agent");
-                      setSelectedDeploymentType("Agent");
-                      setPersonaFilter("All");
-                      setSearch("");
-                    }}
+              </button>
+            </div>
+          </div>
+          {/* Fixed Divider - stays in place */}
+          <div 
+            className="w-full mx-auto"
+            style={{
+              maxWidth: "1360px",
+              borderBottom: "1px solid #DFDFDF",
+            }}
+          />
+        </div>
+
+        {/* Expandable Filter Panel */}
+        <div 
+          className="w-full overflow-hidden transition-all duration-300 ease-in-out"
+          style={{
+            maxHeight: isFilterPanelOpen ? "1000px" : "0px",
+            paddingTop: isFilterPanelOpen ? "24px" : "0px",
+            paddingBottom: isFilterPanelOpen ? "24px" : "0px",
+            opacity: isFilterPanelOpen ? 1 : 0,
+          }}
+        >
+          {isFilterPanelOpen && (
+            <div className="w-full mx-auto" style={{ maxWidth: "1360px", paddingLeft: "12px", paddingRight: "12px" }}>
+              <div 
+                className="flex flex-col gap-6 rounded-lg"
+                style={{
+                  backgroundColor: "#F8F8F8",
+                  padding: "24px",
+                  border: "none",
+                }}
+              >
+                {/* Provider Filter */}
+                <div className="flex flex-col gap-3">
+                  <label
                     style={{
                       fontFamily: "Poppins, sans-serif",
                       fontSize: "14px",
+                      fontWeight: 500,
                       color: "#344054",
-                      background: "transparent",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: 0,
-                      textDecoration: "underline",
-                      whiteSpace: "nowrap",
-                      flexShrink: 0,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.opacity = "0.7";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.opacity = "1";
                     }}
                   >
-                    Clear All
-                  </button>
-                );
-              })()}
+                    Provider
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setProviderFilter("All")}
+                      style={{
+                        fontFamily: "Poppins, sans-serif",
+                        fontSize: "14px",
+                        padding: "6px 12px",
+                        borderRadius: "16px",
+                        border: "1px solid #E5E7EB",
+                        backgroundColor: providerFilter === "All" ? "#000" : "#FFFFFF",
+                        color: providerFilter === "All" ? "#FFFFFF" : "#344054",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (providerFilter !== "All") {
+                          e.currentTarget.style.backgroundColor = "#F9FAFB";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (providerFilter !== "All") {
+                          e.currentTarget.style.backgroundColor = "#FFFFFF";
+                        }
+                      }}
+                    >
+                      All
+                    </button>
+                    {filteredProviders.map(provider => (
+                      <button
+                        key={provider}
+                        onClick={() => setProviderFilter(provider)}
+                        style={{
+                          fontFamily: "Poppins, sans-serif",
+                          fontSize: "14px",
+                          padding: "6px 12px",
+                          borderRadius: "16px",
+                          border: "1px solid #E5E7EB",
+                          backgroundColor: providerFilter === provider ? "#000" : "#FFFFFF",
+                          color: providerFilter === provider ? "#FFFFFF" : "#344054",
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (providerFilter !== provider) {
+                            e.currentTarget.style.backgroundColor = "#F9FAFB";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (providerFilter !== provider) {
+                            e.currentTarget.style.backgroundColor = "#FFFFFF";
+                          }
+                        }}
+                      >
+                        {provider}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Capability Filter */}
+                <div className="flex flex-col gap-3">
+                  <label
+                    style={{
+                      fontFamily: "Poppins, sans-serif",
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      color: "#344054",
+                    }}
+                  >
+                    Capability
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setCapabilityFilter("All")}
+                      style={{
+                        fontFamily: "Poppins, sans-serif",
+                        fontSize: "14px",
+                        padding: "6px 12px",
+                        borderRadius: "16px",
+                        border: "1px solid #E5E7EB",
+                        backgroundColor: capabilityFilter === "All" ? "#000" : "#FFFFFF",
+                        color: capabilityFilter === "All" ? "#FFFFFF" : "#344054",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (capabilityFilter !== "All") {
+                          e.currentTarget.style.backgroundColor = "#F9FAFB";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (capabilityFilter !== "All") {
+                          e.currentTarget.style.backgroundColor = "#FFFFFF";
+                        }
+                      }}
+                    >
+                      All
+                    </button>
+                    {filteredCapabilities.map(capability => (
+                      <button
+                        key={capability}
+                        onClick={() => setCapabilityFilter(capability)}
+                        style={{
+                          fontFamily: "Poppins, sans-serif",
+                          fontSize: "14px",
+                          padding: "6px 12px",
+                          borderRadius: "16px",
+                          border: "1px solid #E5E7EB",
+                          backgroundColor: capabilityFilter === capability ? "#000" : "#FFFFFF",
+                          color: capabilityFilter === capability ? "#FFFFFF" : "#344054",
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (capabilityFilter !== capability) {
+                            e.currentTarget.style.backgroundColor = "#F9FAFB";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (capabilityFilter !== capability) {
+                            e.currentTarget.style.backgroundColor = "#FFFFFF";
+                          }
+                        }}
+                      >
+                        {capability}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Persona Filter */}
+                <div className="flex flex-col gap-3">
+                  <label
+                    style={{
+                      fontFamily: "Poppins, sans-serif",
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      color: "#344054",
+                    }}
+                  >
+                    Persona
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setPersonaFilter("All")}
+                      style={{
+                        fontFamily: "Poppins, sans-serif",
+                        fontSize: "14px",
+                        padding: "6px 12px",
+                        borderRadius: "16px",
+                        border: "1px solid #E5E7EB",
+                        backgroundColor: personaFilter === "All" ? "#000" : "#FFFFFF",
+                        color: personaFilter === "All" ? "#FFFFFF" : "#344054",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (personaFilter !== "All") {
+                          e.currentTarget.style.backgroundColor = "#F9FAFB";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (personaFilter !== "All") {
+                          e.currentTarget.style.backgroundColor = "#FFFFFF";
+                        }
+                      }}
+                    >
+                      All
+                    </button>
+                    {filteredPersonas.map(persona => (
+                      <button
+                        key={persona}
+                        onClick={() => setPersonaFilter(persona)}
+                        style={{
+                          fontFamily: "Poppins, sans-serif",
+                          fontSize: "14px",
+                          padding: "6px 12px",
+                          borderRadius: "16px",
+                          border: "1px solid #E5E7EB",
+                          backgroundColor: personaFilter === persona ? "#000" : "#FFFFFF",
+                          color: personaFilter === persona ? "#FFFFFF" : "#344054",
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (personaFilter !== persona) {
+                            e.currentTarget.style.backgroundColor = "#F9FAFB";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (personaFilter !== persona) {
+                            e.currentTarget.style.backgroundColor = "#FFFFFF";
+                          }
+                        }}
+                      >
+                        {persona}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Clear All Filters Button */}
+                {(() => {
+                  const hasActiveFilters = 
+                    providerFilter !== "All" ||
+                    capabilityFilter !== "All" ||
+                    personaFilter !== "All" ||
+                    search !== "";
+                  
+                  if (!hasActiveFilters) return null;
+                  
+                  return (
+                    <button
+                      onClick={() => {
+                        setProviderFilter("All");
+                        setCapabilityFilter("All");
+                        setDeploymentFilter("Agent");
+                        setSelectedDeploymentType("Agent");
+                        setPersonaFilter("All");
+                        setSearch("");
+                      }}
+                      style={{
+                        fontFamily: "Poppins, sans-serif",
+                        fontSize: "14px",
+                        color: "#344054",
+                        background: "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: 0,
+                        textDecoration: "underline",
+                        whiteSpace: "nowrap",
+                        flexShrink: 0,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.opacity = "0.7";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.opacity = "1";
+                      }}
+                    >
+                      Clear All
+                    </button>
+                  );
+                })()}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Agent Grid */}
-        <div className="w-full mx-auto" style={{ maxWidth: "1360px", paddingLeft: "12px", paddingRight: "12px", marginTop: "28px" }}>
+        <div className="w-full mx-auto" style={{ maxWidth: "1360px", paddingLeft: "12px", paddingRight: "12px" }}>
           {loading && (
             <div 
               className="grid gap-4 md:gap-6 lg:gap-10"
@@ -1343,51 +1428,6 @@ export default function AgentLibraryPage() {
             </>
           ) : !loading && !error && (
             <>
-              {/* AI Search Results Section */}
-              {aiSearchedAgentIds && aiSearchedAgentIds.length > 0 && (
-                <div className="mb-12">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">AI Search Results</h2>
-                      <p className="text-sm text-muted-foreground">
-                        Showing {aiSearchedAgents.length} of {aiSearchedAgentIds.length} AI-recommended agents
-                      </p>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        // Clear the chat to remove AI search results
-                        const { clearChat } = useChatStore.getState();
-                        clearChat();
-                      }}
-                      className="text-xs px-3 py-2"
-                    >
-                      Clear AI Search
-                    </Button>
-                  </div>
-                  
-                <div 
-                  className="grid gap-4 md:gap-6 lg:gap-10"
-                  style={{
-                    gridTemplateColumns: "repeat(3, 1fr)",
-                  }}
-                >
-                  {paginatedAiAgents.map((agent) => (
-                    <AgentCard key={agent.id} {...agent} assetType={agent.assetType} demoPreview={agent.demoPreview} />
-                  ))}
-                </div>
-
-                  {aiSearchedAgents.length === 0 && (
-                    <div className="text-center py-12">
-                      <div className="text-muted-foreground">No AI-recommended agents match your current filters.</div>
-                    </div>
-                  )}
-
-                  {aiTotalPages > 1 && renderPaginationControls(aiCurrentPage, aiTotalPages, setAiCurrentPage)}
-                </div>
-              )}
-
               {/* All Agents Section */}
               <div className={aiSearchedAgentIds && aiSearchedAgentIds.length > 0 ? "border-t pt-12" : ""}>
                 <div 
@@ -1649,13 +1689,8 @@ export default function AgentLibraryPage() {
           </div>
         </div>
       </section>
-
-      {/* Create Agent Chat Dialog */}
-      <ChatDialog 
-        open={createChatOpen} 
-        onOpenChange={setCreateChatOpen} 
-        initialMode="create"
-      />
+        </>
+      )}
     </div>
   );
 }

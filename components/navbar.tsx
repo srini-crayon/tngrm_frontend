@@ -37,6 +37,8 @@ export function Navbar() {
   const [isLoadingEnquiries, setIsLoadingEnquiries] = useState(false)
   const [isNavbarVisible, setIsNavbarVisible] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
+  const alertBarRef = useRef<HTMLDivElement>(null)
+  const [alertBarHeight, setAlertBarHeight] = useState(0)
 
   const hasUnread = notifications.some((n) => !n.read)
 
@@ -110,17 +112,32 @@ export function Navbar() {
 
   // Handle scroll for sticky navbar
   useEffect(() => {
+    // Always show navbar on agents/chat page (constant sticky)
+    if (pathname === '/agents/chat') {
+      setIsNavbarVisible(true)
+      return
+    }
+
     const handleScroll = () => {
       const currentScrollY = window.scrollY
+      const documentHeight = document.documentElement.scrollHeight - window.innerHeight
+      const scrollPercentage = documentHeight > 0 ? (currentScrollY / documentHeight) * 100 : 0
 
-      // Show navbar when at top or scrolling up
+      // Always show navbar when at top (within 20px)
       if (currentScrollY < 20) {
         setIsNavbarVisible(true)
-      } else if (currentScrollY < lastScrollY) {
-        // Scrolling up
-        setIsNavbarVisible(true)
-      } else if (currentScrollY > lastScrollY) {
-        // Scrolling down
+        setLastScrollY(currentScrollY)
+        return
+      }
+
+      // Show navbar when scrolling up and past 20% of page
+      if (currentScrollY < lastScrollY - 5) {
+        // Scrolling up - show navbar if past 20% threshold
+        if (scrollPercentage >= 20) {
+          setIsNavbarVisible(true)
+        }
+      } else if (currentScrollY > lastScrollY + 5) {
+        // Scrolling down - hide navbar
         setIsNavbarVisible(false)
       }
 
@@ -129,8 +146,23 @@ export function Navbar() {
 
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [lastScrollY])
+  }, [lastScrollY, pathname])
 
+  // Measure alert bar height
+  useEffect(() => {
+    const measureAlertBar = () => {
+      if (alertBarRef.current) {
+        setAlertBarHeight(alertBarRef.current.offsetHeight)
+      } else {
+        setAlertBarHeight(0)
+      }
+    }
+    
+    measureAlertBar()
+    // Re-measure periodically to handle alert bar dismissal
+    const interval = setInterval(measureAlertBar, 100)
+    return () => clearInterval(interval)
+  }, [pathname])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -219,7 +251,11 @@ export function Navbar() {
 
   return (
     <>
-      <NotificationAlertBar />
+      {pathname !== '/agents/chat' && (
+        <div ref={alertBarRef}>
+          <NotificationAlertBar />
+        </div>
+      )}
       <nav 
         className={`bg-white border-b border-gray-200 sticky top-0 z-50 transition-transform duration-300 ${
           isNavbarVisible ? 'translate-y-0' : '-translate-y-full'
@@ -238,7 +274,14 @@ export function Navbar() {
             {/* Desktop Navigation */}
             <div className="hidden items-center gap-[24px] md:flex whitespace-nowrap flex-shrink-0">
               <Link 
-                href="/agents" 
+                href="/agents"
+                onClick={(e) => {
+                  // Always navigate to /agents without query params to clear chat mode
+                  if (pathname === '/agents') {
+                    e.preventDefault()
+                    router.push('/agents')
+                  }
+                }}
                 className={`text-[14px] whitespace-nowrap transition-all px-1 py-2 ${
                   pathname === '/agents' 
                     ? 'font-medium text-[#091917]' 
@@ -632,9 +675,15 @@ export function Navbar() {
         >
           <div className="px-6 py-4 space-y-3">
             <Link 
-              href="/agents" 
+              href="/agents"
+              onClick={() => {
+                setIsMobileMenuOpen(false)
+                // Navigate to agents page, clearing any chat mode
+                if (pathname === '/agents') {
+                  router.push('/agents')
+                }
+              }}
               className="block text-sm font-medium text-gray-700 hover:text-primary transition-colors py-2"
-              onClick={() => setIsMobileMenuOpen(false)}
             >
               Agent Store
             </Link>
