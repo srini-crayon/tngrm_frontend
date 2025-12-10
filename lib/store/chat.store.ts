@@ -47,6 +47,13 @@ export type ChatMessage = {
     asset_type?: string
     by_persona?: string
   }[]
+  mega_trends?: string
+  suggested_agents?: {
+    solution_name: string
+    segment: string
+    description: string
+    trend_reference: string
+  }[]
 }
 
 type ChatState = {
