@@ -46,6 +46,66 @@ function ChatAgentCard({ agent }: { agent: NonNullable<ChatMessage['filteredAgen
   )
 }
 
+// Suggested Agent Card Component for Explore Mode
+function SuggestedAgentCard({ agent }: { agent: NonNullable<ChatMessage['suggested_agents']>[0] }) {
+  return (
+    <Card className="mt-2 shadow-sm border border-gray-200 hover:border-gray-300 transition-colors">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <h4 className="font-semibold text-gray-900">{agent.solution_name}</h4>
+              <Badge variant="outline" className="text-xs">
+                {agent.segment}
+              </Badge>
+            </div>
+            <p className="text-sm text-gray-600 mb-2">{agent.description}</p>
+            {agent.trend_reference && (
+              <p className="text-xs text-gray-500 italic">
+                Related to: {agent.trend_reference}
+              </p>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Mega Trends Component for Explore Mode
+function MegaTrendsSection({ megaTrends }: { megaTrends: string }) {
+  return (
+    <div className="mt-4 pt-4 border-t border-gray-200">
+      <div className="mb-3">
+        <h3 className="text-base font-semibold text-gray-900 mb-2 flex items-center gap-2">
+          <Zap className="h-4 w-4 text-purple-600" />
+          Mega Trends & Opportunities
+        </h3>
+      </div>
+      <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg p-4 border border-purple-100">
+        <div className="text-sm leading-relaxed prose prose-sm max-w-none">
+          <ReactMarkdown
+            components={{
+              h1: ({ children }: MarkdownComponentProps) => <h1 className="text-lg font-bold mb-2 mt-3 first:mt-0">{children}</h1>,
+              h2: ({ children }: MarkdownComponentProps) => <h2 className="text-base font-semibold mb-2 mt-3 first:mt-0">{children}</h2>,
+              h3: ({ children }: MarkdownComponentProps) => <h3 className="text-sm font-semibold mb-1 mt-2 first:mt-0">{children}</h3>,
+              h4: ({ children }: MarkdownComponentProps) => <h4 className="text-sm font-semibold mb-1 mt-2">{children}</h4>,
+              p: ({ children }: MarkdownComponentProps) => <p className="mb-2 text-gray-700">{children}</p>,
+              ul: ({ children }: MarkdownComponentProps) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+              ol: ({ children }: MarkdownComponentProps) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+              li: ({ children }: MarkdownComponentProps) => <li className="text-sm text-gray-700">{children}</li>,
+              strong: ({ children }: MarkdownComponentProps) => <strong className="font-semibold text-gray-900">{children}</strong>,
+              em: ({ children }: MarkdownComponentProps) => <em className="italic">{children}</em>,
+            }}
+          >
+            {formatChatText(megaTrends)}
+          </ReactMarkdown>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Typing Effect Component
 function TypingEffect({ text }: { text: string }) {
   const [displayedText, setDisplayedText] = useState("")
@@ -571,6 +631,12 @@ export default function ChatDialog({ open, onOpenChange, initialMode = "explore"
       const brdDownloadUrl = json?.data?.brd_download_url || null
       const brdStatus = json?.data?.brd_status || null
       
+      // Extract mega_trends and suggested_agents for explore mode
+      const megaTrends = json?.data?.mega_trends || null
+      const suggestedAgents = json?.data?.suggested_agents && Array.isArray(json.data.suggested_agents) 
+        ? json.data.suggested_agents 
+        : null
+      
       const replyTs = json?.data?.timestamp
         ? new Date(json.data.timestamp).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
         : new Date().toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
@@ -584,7 +650,9 @@ export default function ChatDialog({ open, onOpenChange, initialMode = "explore"
         letsBuildTimestamp: letsBuild ? Date.now() : undefined,
         gatheredInfo,
         brdDownloadUrl,
-        brdStatus
+        brdStatus,
+        mega_trends: megaTrends,
+        suggested_agents: suggestedAgents
       })
       
       // If we have agent IDs, fetch their details
@@ -764,7 +832,26 @@ export default function ChatDialog({ open, onOpenChange, initialMode = "explore"
                           {formatChatText(m.text)}
                         </ReactMarkdown>
                         
+                        {/* Show Mega Trends and Suggested Agents in Explore Mode */}
+                        {mode === "explore" && m.mega_trends && (
+                          <MegaTrendsSection megaTrends={m.mega_trends} />
+                        )}
                         
+                        {mode === "explore" && m.suggested_agents && m.suggested_agents.length > 0 && (
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <div className="mb-3">
+                              <h3 className="text-base font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                <Sparkles className="h-4 w-4 text-purple-600" />
+                                Suggested Agents
+                              </h3>
+                            </div>
+                            <div className="space-y-2">
+                              {m.suggested_agents.map((agent, index) => (
+                                <SuggestedAgentCard key={`suggested-${index}`} agent={agent} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Show Let's Build buttons if lets_build flag is true */}
                         {m.letsBuild === true && (
