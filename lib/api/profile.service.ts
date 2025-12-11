@@ -7,17 +7,46 @@ import {
   ResellerProfileUpdate,
   ProfileApiResponse 
 } from '../types/profile.types'
+import { getAuthHeaders } from './config'
+import { useAuthStore } from '../store/auth.store'
 
 const API_BASE_URL = 'https://agents-store.onrender.com'
 
 export class ProfileService {
+  private static getToken(): string | null {
+    // Get token from auth store
+    if (typeof window !== 'undefined') {
+      const state = useAuthStore.getState()
+      const token = state.token
+      
+      // Validate token if present
+      if (token) {
+        try {
+          const { isTokenExpired } = require('../utils/token')
+          if (isTokenExpired(token)) {
+            console.warn('Token expired, clearing auth state')
+            state.logout()
+            return null
+          }
+        } catch (error) {
+          console.warn('Error validating token:', error)
+        }
+      }
+      
+      return token
+    }
+    return null
+  }
   // Client Profile Methods
   static async fetchClientProfile(clientId: string): Promise<ClientProfile> {
+    const token = this.getToken()
+    const headers = getAuthHeaders(token, {
+      'Content-Type': 'application/json',
+    })
+    
     const response = await fetch(`${API_BASE_URL}/api/client/profile/${clientId}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     })
 
     if (!response.ok) {
@@ -44,11 +73,14 @@ export class ProfileService {
   }
 
   static async updateClientProfile(clientId: string, updateData: ClientProfileUpdate): Promise<ClientProfile> {
+    const token = this.getToken()
+    const headers = getAuthHeaders(token, {
+      'Content-Type': 'application/json',
+    })
+    
     const response = await fetch(`${API_BASE_URL}/api/client/profile/${clientId}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(updateData),
     })
 
@@ -62,11 +94,14 @@ export class ProfileService {
 
   // ISV Profile Methods
   static async fetchISVProfile(isvId: string): Promise<ISVProfile> {
+    const token = this.getToken()
+    const headers = getAuthHeaders(token, {
+      'Content-Type': 'application/json',
+    })
+    
     const response = await fetch(`${API_BASE_URL}/api/isv/profile/${isvId}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     })
 
     if (!response.ok) {
@@ -97,11 +132,14 @@ export class ProfileService {
   }
 
   static async updateISVProfile(isvId: string, updateData: ISVProfileUpdate): Promise<ISVProfile> {
+    const token = this.getToken()
+    const headers = getAuthHeaders(token, {
+      'Content-Type': 'application/json',
+    })
+    
     const response = await fetch(`${API_BASE_URL}/api/isv/profile/${isvId}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(updateData),
     })
 
@@ -115,11 +153,14 @@ export class ProfileService {
 
   // Reseller Profile Methods
   static async fetchResellerProfile(resellerId: string): Promise<ResellerProfile> {
+    const token = this.getToken()
+    const headers = getAuthHeaders(token, {
+      'Content-Type': 'application/json',
+    })
+    
     const response = await fetch(`${API_BASE_URL}/api/reseller/profile/${resellerId}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     })
 
     if (!response.ok) {
@@ -149,11 +190,14 @@ export class ProfileService {
   }
 
   static async updateResellerProfile(resellerId: string, updateData: ResellerProfileUpdate): Promise<ResellerProfile> {
+    const token = this.getToken()
+    const headers = getAuthHeaders(token, {
+      'Content-Type': 'application/json',
+    })
+    
     const response = await fetch(`${API_BASE_URL}/api/reseller/profile/${resellerId}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(updateData),
     })
 
@@ -167,13 +211,19 @@ export class ProfileService {
 
   // File Upload Methods (for ISV and Reseller)
   static async uploadFile(file: File, type: 'mou' | 'logo', userId: string): Promise<string> {
+    const token = this.getToken()
     const formData = new FormData()
     formData.append('file', file)
     formData.append('type', type)
     formData.append('user_id', userId)
 
+    const headers = getAuthHeaders(token, {
+      // Don't set Content-Type - let browser set it with boundary for multipart
+    })
+
     const response = await fetch(`${API_BASE_URL}/api/upload`, {
       method: 'POST',
+      headers,
       body: formData,
     })
 

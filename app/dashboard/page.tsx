@@ -11,6 +11,7 @@ import ChatDialog from "../../components/chat-dialog"
 import { AgentPreviewModal } from "../../components/agent-preview-modal"
 import { EditAgentModal } from "../../components/edit-agent-modal"
 import { Search, MoreVertical } from "lucide-react"
+import { getAuthHeaders } from "../../lib/api/config"
 
 type Agent = {
   agent_id: string
@@ -117,7 +118,17 @@ export default function DashboardPage() {
       try {
         setLoading(true)
         setError(null)
-        const res = await fetch(`https://agents-store.onrender.com/api/isv/profile/${isvId}`, { cache: "no-store" })
+        
+        // Get token from auth store
+        const token = useAuthStore.getState().token
+        const headers = getAuthHeaders(token, {
+          'Content-Type': 'application/json',
+        })
+        
+        const res = await fetch(`https://agents-store.onrender.com/api/isv/profile/${isvId}`, {
+          cache: "no-store",
+          headers,
+        })
         if (!res.ok) throw new Error(`Failed to load ISV profile: ${res.status}`)
         const json: ApiResponse = await res.json()
         if (!abort) setData(json)
@@ -513,7 +524,15 @@ export default function DashboardPage() {
           onSave={() => {
             // Refresh agent list after successful save
             if (isvId) {
-              fetch(`https://agents-store.onrender.com/api/isv/profile/${isvId}`, { cache: "no-store" })
+              const token = useAuthStore.getState().token
+              const headers = getAuthHeaders(token, {
+                'Content-Type': 'application/json',
+              })
+              
+              fetch(`https://agents-store.onrender.com/api/isv/profile/${isvId}`, {
+                cache: "no-store",
+                headers,
+              })
                 .then(res => res.json())
                 .then(json => setData(json))
                 .catch(e => setError(e?.message || "Failed to refresh"))

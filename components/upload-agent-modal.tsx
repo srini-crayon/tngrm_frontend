@@ -8,6 +8,8 @@ import { ArrowLeft, ArrowRight, RotateCw, X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { UploadSuccessModal } from "./upload-success-modal"
+import { useAuthStore } from "../lib/store/auth.store"
+import { getAuthHeaders, createApiUrl, endpoints } from "../lib/api/config"
 
 type UploadState = "idle" | "uploading" | "success" | "error" | "validation-error"
 
@@ -118,12 +120,41 @@ export function UploadAgentModal({ isOpen, onClose }: UploadAgentModalProps) {
       formData.append('file', file)
       formData.append('dry_run', 'false')
 
+      // Get token from auth store and validate
+      const authState = useAuthStore.getState()
+      let token = authState.token
+      
+      // Validate token if present
+      if (token) {
+        try {
+          const { isTokenExpired } = await import('../lib/utils/token')
+          if (isTokenExpired(token)) {
+            console.warn('Token expired, user needs to re-login')
+            authState.logout()
+            setUploadedFile({
+              name: file.name,
+              size: file.size,
+              state: "error",
+              errorMessage: "Your session has expired. Please log in again.",
+            })
+            return
+          }
+        } catch (error) {
+          console.warn('Error validating token:', error)
+        }
+      }
+      
+      // Get auth headers with token
+      const authHeaders = getAuthHeaders(token, {
+        'accept': 'application/json',
+        // Don't set Content-Type - let browser set it with boundary for multipart
+      })
+
       // Make API call to bulk upload endpoint
-      const response = await fetch('https://agents-store.onrender.com/api/admin/bulk-upload', {
+      const bulkUploadUrl = createApiUrl(endpoints.admin.bulkUpload)
+      const response = await fetch(bulkUploadUrl, {
         method: 'POST',
-        headers: {
-          'accept': 'application/json',
-        },
+        headers: authHeaders,
         body: formData,
       })
 

@@ -1,7 +1,33 @@
-import { createApiUrl } from './config'
+import { createApiUrl, getAuthHeaders } from './config'
 import type { AgentOnboardRequest, AgentOnboardResponse, ApiError } from '../types/agent.types'
+import { useAuthStore } from '../store/auth.store'
 
 class AgentService {
+  private getToken(): string | null {
+    // Get token from auth store
+    if (typeof window !== 'undefined') {
+      const state = useAuthStore.getState()
+      const token = state.token
+      
+      // Validate token if present
+      if (token) {
+        try {
+          const { isTokenExpired } = require('../utils/token')
+          if (isTokenExpired(token)) {
+            console.warn('Token expired, clearing auth state')
+            state.logout()
+            return null
+          }
+        } catch (error) {
+          console.warn('Error validating token:', error)
+        }
+      }
+      
+      return token
+    }
+    return null
+  }
+
   private async makeRequest<T>(
     endpoint: string,
     data: AgentOnboardRequest,
@@ -10,6 +36,7 @@ class AgentService {
     try {
       const url = createApiUrl(endpoint)
       const formData = new FormData()
+      const token = this.getToken()
 
       // Add all text fields to FormData
       Object.entries(data).forEach(([key, value]) => {
@@ -40,12 +67,15 @@ class AgentService {
         console.log('Request data keys: [unable to log in Safari]')
       }
 
+      // Get auth headers with token
+      const authHeaders = getAuthHeaders(token, {
+        'Accept': 'application/json',
+        // Don't set Content-Type - let browser set it with boundary for multipart
+      })
+
       const response = await fetch(url, {
         method,
-        headers: {
-          'Accept': 'application/json',
-          // Don't set Content-Type - let browser set it with boundary for multipart
-        },
+        headers: authHeaders,
         body: formData,
         credentials: 'include',
         mode: 'cors',
@@ -118,15 +148,19 @@ class AgentService {
   async updateAgent(agentId: string, formData: FormData): Promise<any> {
     try {
       const url = createApiUrl(`/api/agents/${agentId}`)
+      const token = this.getToken()
       
       console.log(`Agent API PUT request to:`, url)
 
+      // Get auth headers with token
+      const authHeaders = getAuthHeaders(token, {
+        'Accept': 'application/json',
+        // Don't set Content-Type - let browser set it with boundary for multipart
+      })
+
       const response = await fetch(url, {
         method: 'PUT',
-        headers: {
-          'Accept': 'application/json',
-          // Don't set Content-Type - let browser set it with boundary for multipart
-        },
+        headers: authHeaders,
         body: formData,
         credentials: 'include',
         mode: 'cors',

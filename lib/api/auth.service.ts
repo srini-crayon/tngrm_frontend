@@ -24,6 +24,58 @@ class AuthService {
 
       const result = await response.json()
 
+      // Extract token from multiple sources for login requests
+      if (endpoint === '/api/auth/login' && response.ok) {
+        // Try to extract token from response body
+        let token = result.token || result.access_token || result.jwt_token
+        
+        // Try to extract token from response headers
+        if (!token) {
+          const authHeader = response.headers.get('Authorization')
+          if (authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.substring(7)
+          }
+        }
+        
+        // Try to extract token from other header formats
+        if (!token) {
+          token = response.headers.get('X-Auth-Token') || 
+                  response.headers.get('X-Access-Token') ||
+                  response.headers.get('Token')
+        }
+        
+        // If token found, add it to result
+        if (token) {
+          result.token = token
+          console.log('JWT Token extracted from login response')
+        } else {
+          console.log('No JWT token found in login response (using session-based auth)')
+        }
+        
+        // Print API response for login requests (browser console)
+        console.log('Login API Response:', JSON.stringify(result, null, 2))
+        
+        // Also log to terminal via server-side endpoint
+        try {
+          await fetch('/api/log', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              type: 'login',
+              endpoint: endpoint,
+              response: result,
+              timestamp: new Date().toISOString(),
+            }),
+          }).catch(() => {
+            // Silently fail if logging endpoint is unavailable
+          })
+        } catch (error) {
+          // Silently fail if logging fails
+        }
+      }
+
       if (!response.ok) {
         // Try to get more detailed error information
         let errorMessage = result.message || `HTTP ${response.status}: ${response.statusText}`
