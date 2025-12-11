@@ -1,4 +1,4 @@
-import { createApiUrl, createFormData, endpoints } from './config'
+import { createApiUrl, createFormData, endpoints, getAuthHeaders } from './config'
 import type {
   AgentAPIResponse,
   ISVAPIResponse,
@@ -8,8 +8,34 @@ import type {
   UpdateResellerRequest,
   ApiError,
 } from '../types/admin.types'
+import { useAuthStore } from '../store/auth.store'
 
 class AdminService {
+  private getToken(): string | null {
+    // Get token from auth store
+    if (typeof window !== 'undefined') {
+      const state = useAuthStore.getState()
+      const token = state.token
+      
+      // Validate token if present
+      if (token) {
+        try {
+          const { isTokenExpired } = require('../utils/token')
+          if (isTokenExpired(token)) {
+            console.warn('Token expired, clearing auth state')
+            state.logout()
+            return null
+          }
+        } catch (error) {
+          console.warn('Error validating token:', error)
+        }
+      }
+      
+      return token
+    }
+    return null
+  }
+
   private async makeRequest<T>(
     endpoint: string,
     method: 'GET' | 'PUT' = 'GET',
@@ -17,13 +43,17 @@ class AdminService {
   ): Promise<T> {
     try {
       const url = createApiUrl(endpoint)
+      const token = this.getToken()
+      
+      // Get auth headers with token
+      const authHeaders = getAuthHeaders(token, {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+      })
       
       const options: RequestInit = {
         method,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json',
-        },
+        headers: authHeaders,
         credentials: 'include', // Include cookies for session management
         mode: 'cors',
       }

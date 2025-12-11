@@ -44,6 +44,9 @@ export interface SignupRequest {
 export interface LoginResponse {
   success: boolean
   message?: string
+  token?: string
+  token_type?: string
+  expires_in?: number
   user?: User
   redirect?: string
 }
@@ -96,6 +99,7 @@ export interface ISVSignupForm {
 // Auth Store State
 export interface AuthState {
   user: User | null
+  token: string | null
   isAuthenticated: boolean
   isLoading: boolean
   error: string | null

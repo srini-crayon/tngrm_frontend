@@ -26,6 +26,7 @@ export const endpoints = {
     updateIsv: (isvId: string) => `/api/admin/isvs/${isvId}`,
     resellers: '/api/admin/resellers',
     updateReseller: (resellerId: string) => `/api/admin/resellers/${resellerId}`,
+    bulkUpload: '/api/admin/bulk-upload',
   },
 } as const
 
@@ -44,4 +45,27 @@ export const createFormData = (data: Record<string, any>) => {
     }
   })
   return formData
+}
+
+// Helper function to get auth headers with JWT token
+export const getAuthHeaders = (token: string | null, additionalHeaders: Record<string, string> = {}) => {
+  const headers: Record<string, string> = {
+    ...additionalHeaders,
+  }
+  
+  if (token) {
+    // Validate token before using it
+    try {
+      // Basic JWT format validation (should have 3 parts separated by dots)
+      if (token.split('.').length === 3) {
+        headers['Authorization'] = `Bearer ${token}`
+      } else {
+        console.warn('Invalid token format, skipping Authorization header')
+      }
+    } catch (error) {
+      console.warn('Error validating token:', error)
+    }
+  }
+  
+  return headers
 }

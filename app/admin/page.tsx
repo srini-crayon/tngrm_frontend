@@ -652,11 +652,23 @@ export default function AdminPage() {
     >
       <div className="w-full">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">Admin Dashboard</h1>
-          <p className="text-base text-gray-600">
-            Manage agents, ISVs, and resellers
-          </p>
+        <div className="flex items-start justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">Admin Dashboard</h1>
+            <p className="text-base text-gray-600">
+              Manage agents, ISVs, and resellers
+            </p>
+          </div>
+          <div>
+            <Button 
+              className="bg-black text-white hover:bg-black/90"
+              onClick={() => {
+                router.push('/onboard')
+              }}
+            >
+              ONBOARD AGENT
+            </Button>
+          </div>
         </div>
 
         {/* Tabs */}

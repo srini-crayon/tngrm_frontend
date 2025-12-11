@@ -13,6 +13,7 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { useToast } from "../hooks/use-toast"
 import { Badge } from "./ui/badge"
 import { NotificationAlertBar } from "./notification-alert-bar"
+import { getAuthHeaders } from "../lib/api/config"
 
 export function Navbar() {
   const router = useRouter()
@@ -66,11 +67,15 @@ export function Navbar() {
     
     setIsLoadingEnquiries(true)
     try {
+      // Get token from auth store
+      const token = useAuthStore.getState().token
+      const headers = getAuthHeaders(token, {
+        'accept': 'application/json',
+      })
+      
       const response = await fetch('https://agents-store.onrender.com/api/enquiries', {
         method: 'GET',
-        headers: {
-          'accept': 'application/json',
-        },
+        headers,
       })
       
       if (response.ok) {

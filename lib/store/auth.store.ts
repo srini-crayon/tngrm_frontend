@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { authService } from '../api/auth.service'
 import type { AuthState, AuthActions, SignupRequest } from '../types/auth.types'
+import { isTokenExpired, getTokenPayload } from '../utils/token'
 
 // Safari-safe localStorage wrapper
 const safeLocalStorage = {
@@ -39,6 +40,7 @@ export const useAuthStore = create<AuthStore>()(
     (set, get) => ({
       // State
       user: null,
+      token: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
@@ -51,7 +53,51 @@ export const useAuthStore = create<AuthStore>()(
         try {
           const response = await authService.login(email, password)
           
+          // Print the login API response (browser console)
+          console.log('Login Response:', JSON.stringify(response, null, 2))
+          
+          // Also log to terminal via server-side endpoint
+          try {
+            await fetch('/api/log', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                type: 'login-store',
+                response: response,
+                timestamp: new Date().toISOString(),
+              }),
+            }).catch(() => {
+              // Silently fail if logging endpoint is unavailable
+            })
+          } catch (error) {
+            // Silently fail if logging fails
+          }
+          
           if (response.success && response.user) {
+            // Extract and validate token
+            let token = response.token || null
+            
+            // Validate token if present
+            if (token) {
+              // Check if token is expired
+              if (isTokenExpired(token)) {
+                console.warn('Received expired token, clearing it')
+                token = null
+              } else {
+                // Extract token payload to verify it contains user info
+                const payload = getTokenPayload(token)
+                if (payload) {
+                  console.log('Token payload:', payload)
+                  // Optionally verify token user matches response user
+                  if (payload.user_id && payload.user_id !== response.user.user_id) {
+                    console.warn('Token user_id mismatch, using response user')
+                  }
+                }
+              }
+            }
+            
             // Determine redirect URL based on user role
             let redirectUrl = null
             
@@ -75,11 +121,20 @@ export const useAuthStore = create<AuthStore>()(
             
             set({
               user: response.user,
+              token: token,
               isAuthenticated: true,
               isLoading: false,
               error: null,
               redirectUrl: redirectUrl,
             })
+            
+            console.log('Login successful:', {
+              user: response.user.email,
+              role: response.user.role,
+              hasToken: !!token,
+              tokenType: token ? 'JWT' : 'Session-based'
+            })
+            
             return { success: true, redirect: redirectUrl }
           } else {
             set({
@@ -150,6 +205,7 @@ export const useAuthStore = create<AuthStore>()(
       logout: () => {
         set({
           user: null,
+          token: null,
           isAuthenticated: false,
           isLoading: false,
           error: null,
@@ -170,6 +226,7 @@ export const useAuthStore = create<AuthStore>()(
       storage: createJSONStorage(() => safeLocalStorage),
       partialize: (state) => ({
         user: state.user,
+        token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
     }
