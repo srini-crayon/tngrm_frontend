@@ -696,3 +696,66 @@ section:has([data-slot="tabs-list"]) [data-slot="tabs-list"]::after {
   }
 }
 
+/* Animated Gradient Background */
+@keyframes gradientAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-gradient-bg {
+  background: #ffffff;
+  animation: gradientAnimation 18s ease infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.animated-gradient-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.06) 0%,
+    rgba(147, 51, 234, 0.06) 25%,
+    rgba(236, 72, 153, 0.06) 50%,
+    rgba(251, 146, 60, 0.06) 75%,
+    rgba(59, 130, 246, 0.06) 100%
+  );
+  background-size: 400% 400%;
+  animation: gradientAnimation 20s ease infinite reverse;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(50px);
+  opacity: 0.8;
+}
+
+.animated-gradient-bg::after {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.12), transparent 35%),
+              radial-gradient(circle at 80% 30%, rgba(236, 72, 153, 0.12), transparent 30%),
+              radial-gradient(circle at 40% 70%, rgba(16, 185, 129, 0.12), transparent 30%),
+              radial-gradient(circle at 75% 75%, rgba(251, 146, 60, 0.12), transparent 32%);
+  filter: blur(80px);
+  animation: gradientAnimation 25s ease infinite;
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.animated-gradient-bg > * {
+  position: relative;
+  z-index: 1;
+}
+
