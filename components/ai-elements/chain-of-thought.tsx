@@ -80,18 +80,40 @@ export function ChainOfThoughtStep({
   const StepIcon = Icon || Search;
   
   return (
-    <div className="flex items-start gap-3 py-1">
+    <div 
+      className={`flex items-start gap-3 py-1.5 transition-opacity duration-300 ${
+        status === "active" ? "opacity-100" : status === "complete" ? "opacity-60" : "opacity-40"
+      }`}
+    >
       <div className="flex-shrink-0 mt-0.5">
-        <StepIcon className="w-4 h-4 text-gray-600" />
+        <StepIcon 
+          className={`w-4 h-4 transition-colors duration-200 ${
+            status === "active" 
+              ? "text-blue-600" 
+              : status === "complete" 
+              ? "text-gray-500" 
+              : "text-gray-400"
+          }`}
+        />
       </div>
       <div className="flex-1 min-w-0">
         <p 
-          className="text-sm text-gray-700 leading-relaxed"
+          className={`text-sm leading-relaxed transition-colors duration-200 ${
+            status === "active" 
+              ? "text-gray-900" 
+              : status === "complete" 
+              ? "text-gray-600" 
+              : "text-gray-500"
+          }`}
           style={{ fontFamily: "Poppins, sans-serif" }}
         >
           {label}
         </p>
-        {children && <div className="mt-2">{children}</div>}
+        {children && (
+          <div className="mt-2">
+            {children}
+          </div>
+        )}
       </div>
     </div>
   );

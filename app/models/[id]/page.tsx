@@ -51,8 +51,8 @@ type ModelDetailApiResponse = {
 
 export default function ModelDetailPage() {
   const { openModal } = useModal();
-  const params = useParams();
-  const modelId = params?.id as string;
+  // Extract id directly to avoid params enumeration issues with React DevTools
+  const modelId = useParams()?.id as string | undefined;
   const [modelData, setModelData] = useState<ModelDetailApiResponse["data"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -759,3 +759,9 @@ section:has([data-slot="tabs-list"]) [data-slot="tabs-list"]::after {
   z-index: 1;
 }
 
+/* Remove positioning from nextjs-portal elements */
+nextjs-portal {
+  left: unset !important;
+  top: unset !important;
+}
+
