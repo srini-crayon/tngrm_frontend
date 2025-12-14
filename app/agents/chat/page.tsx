@@ -824,13 +824,13 @@ function MegaTrendCard({ markdown, agents }: { markdown: string; agents: Agent[]
                 
                 return (
                   <h4 
-                    className="font-semibold mb-2 mt-2 first:mt-0"
+                    className="font-semibold mb-1 mt-5 first:mt-0"
                     style={{
                       fontFamily: "Poppins, sans-serif",
                       fontWeight: 600,
                       fontSize: "16px",
-                      lineHeight: "1.4",
-                      color: "#374151",
+                      lineHeight: "1.6",
+                      color: "#111827",
                     }}
                   >
                     {children}
@@ -1150,7 +1150,7 @@ function SuggestedAgents({ suggested_agents }: { suggested_agents?: Array<{ solu
               >
                 {agent.trend_reference && (
                   <span 
-                    className="text-xs font-medium inline-flex items-center"
+                    className="px-2.5 py-1 rounded-full text-xs font-medium"
                     style={{
                       backgroundColor: "#ffffff",
                       fontFamily: "Poppins, sans-serif",
@@ -1163,19 +1163,6 @@ function SuggestedAgents({ suggested_agents }: { suggested_agents?: Array<{ solu
                       textTransform: "uppercase",
                       color: "#65717C",
                       border: "1px solid rgb(145, 157, 168)",
-                      borderWidth: "1px",
-                      borderRadius: "16324px",
-                      paddingTop: "2.04px",
-                      paddingRight: "8.71px",
-                      paddingBottom: "2.04px",
-                      paddingLeft: "8.71px",
-                      opacity: 1,
-                      transform: "rotate(0deg)",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      whiteSpace: "nowrap",
-                      height: "22.085079193115234px",
                     }}
                   >
                     {agent.trend_reference}
@@ -1183,7 +1170,7 @@ function SuggestedAgents({ suggested_agents }: { suggested_agents?: Array<{ solu
                 )}
                 {agent.segment && (
                   <span 
-                    className="text-xs font-medium inline-flex items-center"
+                    className="px-2.5 py-1 rounded-full text-xs font-medium"
                     style={{
                       backgroundColor: "#ffffff",
                       fontFamily: "Poppins, sans-serif",
@@ -1196,19 +1183,6 @@ function SuggestedAgents({ suggested_agents }: { suggested_agents?: Array<{ solu
                       textTransform: "uppercase",
                       color: "#65717C",
                       border: "1px solid rgb(151, 165, 179)",
-                      borderWidth: "1px",
-                      borderRadius: "16324px",
-                      paddingTop: "2.04px",
-                      paddingRight: "8.71px",
-                      paddingBottom: "2.04px",
-                      paddingLeft: "8.71px",
-                      opacity: 1,
-                      transform: "rotate(0deg)",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      whiteSpace: "nowrap",
-                      height: "22.085079193115234px",
                     }}
                   >
                     Segment: {agent.segment}
