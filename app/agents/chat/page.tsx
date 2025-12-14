@@ -404,10 +404,11 @@ function IntroText({ text, agents }: { text: string; agents: Agent[] }) {
 }
 
 // Agent Info Card Component - Main Agent Card
-function AgentInfoCard({ markdown, agents, onAgentCardRender }: { 
+function AgentInfoCard({ markdown, agents, onAgentCardRender, filteredAgentIds }: { 
   markdown: string; 
   agents: Agent[];
   onAgentCardRender?: (agentCards: React.ReactElement[]) => void;
+  filteredAgentIds?: string[];
 }) {
   const processTextWithAgents = (text: string): string => {
     if (!agents.length) return text;
@@ -485,19 +486,46 @@ function AgentInfoCard({ markdown, agents, onAgentCardRender }: {
       const text = typeof children === 'string' ? children : 
         (Array.isArray(children) ? children.join('') : String(children));
       
+      // Check if we have filtered agent IDs to show a tag/button
+      const hasFilteredAgents = filteredAgentIds && Array.isArray(filteredAgentIds) && filteredAgentIds.length > 0;
+      const firstAgentId = hasFilteredAgents ? filteredAgentIds[0] : null;
+      
       return (
-        <h3 
-          className="font-semibold mb-2 mt-3 first:mt-0"
-          style={{
-            fontFamily: "Poppins, sans-serif",
-            fontWeight: 600,
-            fontSize: "21px",
-            lineHeight: "1.2",
-            color: "#111827",
-          }}
-        >
-          {children}
-        </h3>
+        <div className="flex items-center justify-between gap-3 mb-2 mt-3 first:mt-0 flex-wrap">
+          <h3 
+            className="font-semibold"
+            style={{
+              fontFamily: "Poppins, sans-serif",
+              fontWeight: 600,
+              fontStyle: "normal",
+              fontSize: "21px",
+              lineHeight: "120%",
+              letterSpacing: "0%",
+              color: "#111827",
+              margin: 0,
+            }}
+          >
+            {children}
+          </h3>
+          {firstAgentId && (
+            <Link 
+              href={`/agents/${firstAgentId}`}
+              className="inline-flex items-center gap-1 hover:opacity-80 transition-opacity flex-shrink-0"
+              style={{
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 400,
+                fontStyle: "normal",
+                fontSize: "14px",
+                lineHeight: "21px",
+                letterSpacing: "0%",
+                color: "#2563EB",
+                textDecoration: "none",
+              }}
+            >
+              View Agent <span style={{ marginLeft: "4px" }}>›</span>
+            </Link>
+          )}
+        </div>
       );
     },
     h4: ({ children }: any) => {
@@ -733,20 +761,38 @@ function MegaTrendCard({ markdown, agents }: { markdown: string; agents: Agent[]
         className="w-full flex items-center justify-between gap-2 cursor-pointer hover:opacity-80 transition-opacity mb-3"
         style={{
           fontFamily: "Poppins, sans-serif",
-          paddingLeft: "20px",
-          paddingRight: "20px",
+          paddingLeft: "0px",
+          paddingRight: "0px",
+          marginTop:"45px"
         }}
       >
         <h2 
           className="font-semibold flex items-center gap-2"
         style={{
           fontFamily: "Poppins, sans-serif",
-          fontWeight: 600,
-            fontSize: "16px",
-          color: "#2563EB",
+          fontWeight: 500,
+          fontStyle: "normal",
+          fontSize: "21px",
+          lineHeight: "120%",
+          letterSpacing: "0%",
+          color: "#3B60AF",
         }}
       >
-          <span>➜</span> Mega Trends
+          <img 
+            src="/up-stream.png" 
+            alt="Up Stream" 
+            style={{ 
+              width: "21.000417709350586px", 
+              height: "13.500417709350586px", 
+              marginLeft: "1.5px",
+              marginTop: "4.5px",
+              display: "inline-block",
+              verticalAlign: "top",
+              opacity: 1,
+              transform: "rotate(0deg)"
+            }} 
+          />
+          Mega Trends
       </h2>
         {isExpanded ? (
           <ChevronUp className="w-5 h-5 text-gray-400" />
@@ -755,8 +801,19 @@ function MegaTrendCard({ markdown, agents }: { markdown: string; agents: Agent[]
         )}
       </button>
       
+      {/* Divider line after Mega Trends title */}
+      <div 
+        style={{ 
+          height: "1px", 
+          backgroundColor: "#D1D5DB",
+          marginLeft: "0px",
+          marginRight: "0px",
+          marginBottom: "15px"
+        }} 
+      />
+      
       {isExpanded && (
-        <div className="prose prose-gray max-w-none px-5 pb-0" style={{ fontSize: "14px", lineHeight: "21px", fontFamily: "Poppins, sans-serif", fontWeight: 400, letterSpacing: "0%" }}>
+        <div className="prose prose-gray max-w-none px-0 pb-0" style={{ fontSize: "14px", lineHeight: "21px", fontFamily: "Poppins, sans-serif", fontWeight: 400, letterSpacing: "0%" }}>
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
@@ -783,6 +840,28 @@ function MegaTrendCard({ markdown, agents }: { markdown: string; agents: Agent[]
               h3: ({ children }) => {
                 const text = typeof children === 'string' ? children : 
                   (Array.isArray(children) ? children.join('') : String(children));
+                
+                // Check if this is the combined title/subtitle heading (contains pipe separator)
+                const isCombinedTitleSubtitle = typeof text === 'string' && text.includes('|');
+                
+                if (isCombinedTitleSubtitle) {
+                  return (
+                    <h3 
+                      className="mb-2 mt-3 first:mt-0"
+                      style={{
+                        fontFamily: "Poppins, sans-serif",
+                        fontWeight: 400,
+                        fontStyle: "normal",
+                        fontSize: "14px",
+                        lineHeight: "21px",
+                        letterSpacing: "0%",
+                        color: "#091917",
+                      }}
+                    >
+                      {children}
+                    </h3>
+                  );
+                }
                 
                 if (typeof text === 'string' && (text.includes('Description:') || text.includes('Key Features:'))) {
                   return (
@@ -902,7 +981,22 @@ function MegaTrendCard({ markdown, agents }: { markdown: string; agents: Agent[]
                 return <p className="mb-3 last:mb-0" style={{ color: "#374151", fontSize: "14px", lineHeight: "21px", marginTop: "0px", marginBottom: "8px", fontFamily: "Poppins, sans-serif", fontWeight: 400, letterSpacing: "0%" }}>{children}</p>;
               },
               ul: ({ children }) => {
-                return <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>;
+                return (
+                  <ul 
+                    className="list-disc list-inside mb-2 space-y-1"
+                    style={{
+                      fontFamily: "Poppins, sans-serif",
+                      fontWeight: 600,
+                      fontStyle: "normal",
+                      fontSize: "21px",
+                      lineHeight: "120%",
+                      letterSpacing: "0%",
+                      color: "#111827",
+                    }}
+                  >
+                    {children}
+                  </ul>
+                );
               },
               ol: ({ children }) => {
                 return <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>;
@@ -986,18 +1080,34 @@ function SuggestedAgents({ suggested_agents }: { suggested_agents?: Array<{ solu
   return (
     <div>
       <h2 
-        className="font-semibold flex items-center gap-2 mb-4"
+        className="font-medium flex items-center gap-2 mb-4"
         style={{
           fontFamily: "Poppins, sans-serif",
-          fontWeight: 600,
-          fontSize: "16px",
-          color: "#2563EB",
+          fontWeight: 500,
+          fontStyle: "normal",
+          fontSize: "21px",
+          lineHeight: "120%",
+          letterSpacing: "0%",
+          color: "#1C4A46",
           marginBottom: "16px",
+          marginTop:"40px"
         }}
       >
-        <Sparkles className="w-4 h-4" style={{ color: "#2563EB" }} />
+        <Sparkles className="w-4 h-4" style={{ color: "#1C4A46" }} />
         Suggested Agents
       </h2>
+      
+      {/* Divider line after Suggested Agents title */}
+      <div 
+        style={{ 
+          height: "1px", 
+          backgroundColor: "#D1D5DB",
+          marginLeft: "0px",
+          marginRight: "0px",
+          marginBottom: "15px"
+        }} 
+      />
+      
       <div className="space-y-3">
       {suggested_agents.map((agent, index) => (
           <SectionCard key={index} className="mb-3">
@@ -1009,6 +1119,8 @@ function SuggestedAgents({ suggested_agents }: { suggested_agents?: Array<{ solu
                 fontSize: "16px",
               color: "#111827",
                 marginBottom: agent.description ? "8px" : "0",
+                
+
             }}
           >
             {agent.solution_name}
@@ -1038,18 +1150,32 @@ function SuggestedAgents({ suggested_agents }: { suggested_agents?: Array<{ solu
               >
                 {agent.trend_reference && (
                   <span 
-                    className="px-2.5 py-1 rounded-full text-xs font-medium"
+                    className="text-xs font-medium inline-flex items-center"
                     style={{
-                      backgroundColor: "#F3F4F6",
+                      backgroundColor: "#ffffff",
                       fontFamily: "Poppins, sans-serif",
-                      fontWeight: 600,
+                      fontWeight: 500,
                       fontStyle: "normal",
-                      fontSize: "14px",
+                      fontSize: "12.3px",
                       lineHeight: "21px",
-                      letterSpacing: "0%",
+                      letterSpacing: "-0.33",
                       verticalAlign: "middle",
                       textTransform: "uppercase",
-                      color: "#111827",
+                      color: "#65717C",
+                      border: "1px solid rgb(145, 157, 168)",
+                      borderWidth: "1px",
+                      borderRadius: "16324px",
+                      paddingTop: "2.04px",
+                      paddingRight: "8.71px",
+                      paddingBottom: "2.04px",
+                      paddingLeft: "8.71px",
+                      opacity: 1,
+                      transform: "rotate(0deg)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      whiteSpace: "nowrap",
+                      height: "22.085079193115234px",
                     }}
                   >
                     {agent.trend_reference}
@@ -1057,18 +1183,32 @@ function SuggestedAgents({ suggested_agents }: { suggested_agents?: Array<{ solu
                 )}
                 {agent.segment && (
                   <span 
-                    className="px-2.5 py-1 rounded-full text-xs font-medium"
+                    className="text-xs font-medium inline-flex items-center"
                     style={{
-                      backgroundColor: "#F3F4F6",
+                      backgroundColor: "#ffffff",
                       fontFamily: "Poppins, sans-serif",
-                      fontWeight: 600,
+                      fontWeight: 500,
                       fontStyle: "normal",
-                      fontSize: "14px",
+                      fontSize: "12.3px",
                       lineHeight: "21px",
-                      letterSpacing: "0%",
+                      letterSpacing: "-0.33",
                       verticalAlign: "middle",
                       textTransform: "uppercase",
-                      color: "#111827",
+                      color: "#65717C",
+                      border: "1px solid rgb(151, 165, 179)",
+                      borderWidth: "1px",
+                      borderRadius: "16324px",
+                      paddingTop: "2.04px",
+                      paddingRight: "8.71px",
+                      paddingBottom: "2.04px",
+                      paddingLeft: "8.71px",
+                      opacity: 1,
+                      transform: "rotate(0deg)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      whiteSpace: "nowrap",
+                      height: "22.085079193115234px",
                     }}
                   >
                     Segment: {agent.segment}
@@ -1825,7 +1965,11 @@ export default function AgentsChatPage() {
                           )}
                           {agentMarkdown && (
                             <div className="mb-4">
-                              <AgentInfoCard markdown={agentMarkdown} agents={agents} />
+                              <AgentInfoCard 
+                                markdown={agentMarkdown} 
+                                agents={agents} 
+                                filteredAgentIds={message.filteredAgentIds}
+                              />
                             </div>
                           )}
                         </>
