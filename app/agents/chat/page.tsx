@@ -1110,7 +1110,14 @@ function SuggestedAgents({ suggested_agents }: { suggested_agents?: Array<{ solu
       
       <div className="space-y-3">
       {suggested_agents.map((agent, index) => (
-          <SectionCard key={index} className="mb-3">
+          <div
+            key={index}
+            className="mb-3 agent-card-hover card-stagger"
+            style={{
+              animationDelay: `${index * 100}ms`
+            }}
+          >
+            <SectionCard className="mb-0">
           <div 
               className="font-semibold mb-2"
             style={{
@@ -1190,7 +1197,8 @@ function SuggestedAgents({ suggested_agents }: { suggested_agents?: Array<{ solu
                 )}
           </div>
             )}
-        </SectionCard>
+            </SectionCard>
+          </div>
       ))}
       </div>
     </div>
@@ -1198,7 +1206,7 @@ function SuggestedAgents({ suggested_agents }: { suggested_agents?: Array<{ solu
 }
 
 // Agent Card Component matching Figma design
-function AgentResponseCard({ agent }: { agent: Agent }) {
+function AgentResponseCard({ agent, index }: { agent: Agent; index?: number }) {
   const [agentDetails, setAgentDetails] = useState<{
     features?: string;
     roi?: string;
@@ -1251,8 +1259,9 @@ function AgentResponseCard({ agent }: { agent: Agent }) {
     : features;
 
   return (
-    <SectionCard>
-      {/* Header: Agent Name and View Link */}
+    <div className="agent-card-hover card-stagger" style={{ animationDelay: index !== undefined ? `${index * 100}ms` : '0ms' }}>
+      <SectionCard>
+        {/* Header: Agent Name and View Link */}
       <div className="flex items-start justify-between mb-3">
         <h3 
           className="font-bold"
@@ -1268,7 +1277,7 @@ function AgentResponseCard({ agent }: { agent: Agent }) {
         </h3>
         <Link 
           href={`/agents/${agent.agent_id}`}
-          className="hover:opacity-80 font-semibold text-xs flex items-center gap-1 transition-opacity"
+          className="hover:opacity-80 font-semibold text-xs flex items-center gap-1 transition-all duration-200 hover:scale-105"
           style={{
             fontFamily: "Poppins, sans-serif",
             fontWeight: 600,
@@ -1372,7 +1381,8 @@ function AgentResponseCard({ agent }: { agent: Agent }) {
           </p>
         </div>
       )}
-    </SectionCard>
+      </SectionCard>
+    </div>
   );
 }
 
@@ -1395,14 +1405,16 @@ function AgentCarousel({ agents }: { agents: Agent[] }) {
 
   return (
     <div className="relative my-4">
-      <AgentResponseCard agent={agents[currentIndex]} />
+      <div className="card-stagger" style={{ animationDelay: '0ms' }}>
+        <AgentResponseCard agent={agents[currentIndex]} />
+      </div>
       
       {/* Navigation Controls - Only Next button */}
       <div className="flex items-center justify-end mt-4 px-2">
         {currentIndex < agents.length - 1 && (
           <button
             onClick={nextAgent}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-all duration-200 button-shine active:scale-95 shadow-sm"
             style={{
               fontFamily: "Poppins, sans-serif",
               fontWeight: 600,
@@ -1476,6 +1488,8 @@ function InlineAgentCard({ agent }: { agent: Agent }) {
 export default function AgentsChatPage() {
   const router = useRouter();
   const [chatInput, setChatInput] = useState("");
+  const [charCount, setCharCount] = useState(0);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -1703,6 +1717,9 @@ export default function AgentsChatPage() {
   const handleSendChatMessage = async (messageText: string) => {
     const timeString = formatTime();
     const userText = messageText;
+    setCharCount(0);
+    setFeedback({ type: 'success', message: 'Message sent!' });
+    setTimeout(() => setFeedback(null), 2000);
     addMessage({ id: crypto.randomUUID(), role: "user", text: userText, time: timeString });
     setChatInput("");
     setIsSending(true);
@@ -1779,6 +1796,8 @@ export default function AgentsChatPage() {
         text: "I'm currently experiencing technical difficulties. Please try again.",
         time: errTs
       });
+      setFeedback({ type: 'error', message: 'Failed to send message' });
+      setTimeout(() => setFeedback(null), 2000);
     } finally {
       setIsSending(false);
     }
@@ -1817,7 +1836,7 @@ export default function AgentsChatPage() {
     el.style.maxHeight = '200px';
   }, [chatInput]);
 
-  // Simple Thinking Component
+  // Enhanced Thinking Component with wave dots
   const SimpleThinking = () => {
     const [dots, setDots] = useState('');
     
@@ -1835,21 +1854,34 @@ export default function AgentsChatPage() {
     }, []);
     
     return (
-      <div className="w-full py-2 px-2">
-        <p 
-          className="text-sm animate-pulse"
-          style={{ 
-            fontFamily: "Poppins, sans-serif",
-            fontSize: "14px",
-            lineHeight: "21px",
-            fontWeight: 400,
-            letterSpacing: "0%",
-            transition: "opacity 0.3s ease-in-out",
-            color: "#374151",
-          }}
-        >
-          Thinking{dots}
-        </p>
+      <div className="w-full py-2 px-2 relative overflow-hidden rounded-lg">
+        <div className="absolute inset-0 shimmer-bg" />
+        <div className="relative flex items-center gap-2">
+          <p 
+            className="text-sm"
+            style={{ 
+              fontFamily: "Poppins, sans-serif",
+              fontSize: "14px",
+              lineHeight: "21px",
+              fontWeight: 400,
+              letterSpacing: "0%",
+              color: "#374151",
+            }}
+          >
+            Thinking{dots}
+          </p>
+          <div className="flex gap-1">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="w-1.5 h-1.5 bg-gray-500 rounded-full wave-dot"
+                style={{
+                  animationDelay: `${i * 0.2}s`
+                }}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     );
   };
@@ -1866,7 +1898,7 @@ export default function AgentsChatPage() {
     >
       {/* Messages Area - Scrollable content only - Centered 50% width container */}
       <div 
-        className="flex-1 overflow-y-auto" 
+        className="flex-1 overflow-y-auto smooth-scroll" 
         style={{ 
           backgroundColor: "#f8fafc",
           minHeight: 0,
@@ -1894,7 +1926,7 @@ export default function AgentsChatPage() {
               }}
             >
               <div
-                className={`${message.role === "user" ? "rounded-2xl px-4 py-3" : ""}`}
+                className={`message-bubble ${message.role === "user" ? "rounded-2xl px-4 py-3 user-message-enter" : ""}`}
                 style={{
                   fontFamily: "Poppins, sans-serif",
                   fontSize: "14px",
@@ -1905,6 +1937,7 @@ export default function AgentsChatPage() {
                   color: message.role === "user" ? "#FFFFFF" : "#374151",
                   width: message.role === "user" ? "fit-content" : "100%",
                   maxWidth: message.role === "user" ? "85%" : "100%",
+                  animationDelay: message.role === "user" ? `${index * 50}ms` : undefined,
                 }}
               >
                 {message.role === "assistant" && message.text === "AI thinking..." ? (
@@ -2210,6 +2243,20 @@ export default function AgentsChatPage() {
         </div>
       </div>
 
+      {/* Feedback Toast */}
+      {feedback && (
+        <div 
+          className={`fixed bottom-24 right-4 z-50 px-4 py-2 rounded-lg shadow-lg ${
+            feedback.type === 'success' 
+              ? 'bg-green-500 text-white' 
+              : 'bg-red-500 text-white'
+          } toast-enter`}
+          style={{ fontFamily: 'Poppins, sans-serif' }}
+        >
+          {feedback.message}
+        </div>
+      )}
+
       {/* Chat Input - Fixed at bottom - Centered 50% width container */}
       <div 
         className="fixed bottom-0 left-0 right-0 z-50" 
@@ -2238,38 +2285,48 @@ export default function AgentsChatPage() {
             }}
           >
             {/* Upper section: Input */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex-1 flex items-start gap-2">
-                <textarea
-                  ref={chatInputRef}
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      if (chatInput.trim() && !isSending) {
-                        handleSendChatMessage(chatInput.trim());
+            <div className="flex flex-col gap-2 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 flex items-start gap-2">
+                  <textarea
+                    ref={chatInputRef}
+                    value={chatInput}
+                    onChange={(e) => {
+                      setChatInput(e.target.value);
+                      setCharCount(e.target.value.length);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        if (chatInput.trim() && !isSending) {
+                          handleSendChatMessage(chatInput.trim());
+                        }
                       }
-                    }
-                  }}
-                  placeholder="I want an agent to review NDAs"
-                  className="w-full text-lg py-2 flex-1 resize-none border-none focus:outline-none focus:bg-transparent focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
-                  style={{ 
-                    outline: 'none', 
-                    boxShadow: 'none', 
-                    border: 'none', 
-                    borderWidth: '0',
-                    WebkitAppearance: 'none',
-                    MozAppearance: 'none',
-                    overflowY: 'auto',
-                    minHeight: '40px',
-                    maxHeight: '200px',
-                    backgroundColor: 'transparent',
-                    fontFamily: 'Poppins, sans-serif',
-                  }}
-                  rows={1}
-                />
+                    }}
+                    placeholder="I want an agent to review NDAs"
+                    className="w-full text-lg py-2 flex-1 resize-none border-none input-focus-ring focus:outline-none focus:bg-transparent focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
+                    style={{ 
+                      outline: 'none', 
+                      boxShadow: 'none', 
+                      border: 'none', 
+                      borderWidth: '0',
+                      WebkitAppearance: 'none',
+                      MozAppearance: 'none',
+                      overflowY: 'auto',
+                      minHeight: '40px',
+                      maxHeight: '200px',
+                      backgroundColor: 'transparent',
+                      fontFamily: 'Poppins, sans-serif',
+                    }}
+                    rows={1}
+                  />
+                </div>
               </div>
+              {charCount > 0 && (
+                <div className="text-xs text-gray-500 counter-enter px-1" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                  {charCount} {charCount === 1 ? 'character' : 'characters'}
+                </div>
+              )}
             </div>
 
             {/* Lower section: Buttons and controls */}
@@ -2340,10 +2397,20 @@ export default function AgentsChatPage() {
                     }
                   }}
                   disabled={!chatInput.trim() || isSending}
-                  className="h-10 w-10 rounded-full bg-gray-800 hover:bg-gray-900 text-white flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-10 w-10 rounded-full bg-gray-800 hover:bg-gray-900 text-white flex items-center justify-center transition-all duration-200 button-shine active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Submit message"
+                  onMouseDown={(e) => {
+                    if (!isSending && chatInput.trim()) {
+                      e.currentTarget.classList.add('button-press');
+                      setTimeout(() => e.currentTarget.classList.remove('button-press'), 200);
+                    }
+                  }}
                 >
-                  <ArrowUp className="h-5 w-5" />
+                  {isSending ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full send-spinner" />
+                  ) : (
+                    <ArrowUp className="h-5 w-5" />
+                  )}
                 </button>
               </div>
             </div>
