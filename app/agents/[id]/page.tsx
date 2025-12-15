@@ -15,7 +15,6 @@ import { DocumentationSection } from "../../../components/documentation-section"
 import { DemoAccessLink } from "../../../components/demo-access-link"
 import { AgentIcon } from "../../../components/agent-icon"
 import { ISVPartnerButton } from "../../../components/isv-partner-button"
-import { slugifyAgentName } from "../../../lib/utils"
 
 type AgentDetailApiResponse = {
   agent?: {
@@ -76,54 +75,79 @@ type AgentDetailApiResponse = {
   }
 }
 
+type BundledAgentsResponse = {
+  success: boolean
+  data?: {
+    agent_id: string
+    agent_name: string
+    created_at: string
+    bundled_agent_ids: string[]
+    bundled_agent_names: string[]
+  }
+}
+
 async function fetchAgentDetail(agentId: string) {
   try {
     const res = await fetch(`https://agents-store.onrender.com/api/agents/${agentId}`, { cache: "no-store" })
-    if (!res.ok) {
-      // eslint-disable-next-line no-console
-      console.error(`Failed to fetch agent ${agentId}: ${res.status}`)
-      return null
-    }
+    if (!res.ok) throw new Error(`Failed to fetch agent ${agentId}: ${res.status}`)
     const data: AgentDetailApiResponse = await res.json()
-    
-    // Check if agent exists in response
-    if (!data?.agent) {
-      return null
-    }
-    
-    // Try to check approval status from main agents list first
-    try {
+    // Check if agent is approved before returning
+    if (data?.agent) {
+      // Fetch agent list to check approval status
       const agentsRes = await fetch("https://agents-store.onrender.com/api/agents", { cache: "no-store" })
       if (agentsRes.ok) {
         const agentsData = await agentsRes.json()
-        const normalizedAgentId = String(agentId).trim()
-        const agentInList = agentsData?.agents?.find((a: any) => String(a.agent_id).trim() === normalizedAgentId)
-        
-        // If found in list and approved, return data
+        const agentInList = agentsData?.agents?.find((a: any) => a.agent_id === agentId)
+        // Only return data if agent is approved
         if (agentInList?.admin_approved === "yes") {
           return data
         }
-        // If found but not approved, return null (don't show unapproved agents)
-        if (agentInList && agentInList.admin_approved !== "yes") {
-          return null
-        }
       }
-    } catch (listErr) {
-      // eslint-disable-next-line no-console
-      console.error('Error checking agent list:', listErr)
     }
-    
-    // If agent not found in main list but detail API returned data,
-    // it might be a bundled/similar agent that's not yet in the main list
-    // Since we only show approved agents in links, we'll trust the detail API response
-    // and show the agent if the detail API successfully returned data
-    // This handles edge cases where agents are in bundled/similar but not main list
-    return data
+    // Return null if not approved or not found
+    return null
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error(`Error fetching agent detail for ${agentId}:`, err)
+    console.error(err)
     return null
   }
+}
+
+async function fetchBundledAgents(agentId: string) {
+  try {
+    // Try to fetch bundled agents from the API
+    const res = await fetch(`https://agents-store.onrender.com/api/agents/${agentId}/bundled`, { cache: "no-store" })
+    if (res.ok) {
+      const data: BundledAgentsResponse = await res.json()
+      // eslint-disable-next-line no-console
+      console.log('Bundled Agents API Response:', JSON.stringify(data, null, 2))
+      if (data?.success && data?.data?.bundled_agent_ids && data?.data?.bundled_agent_names) {
+        // Fetch full agent details for each bundled agent
+        const agentsRes = await fetch("https://agents-store.onrender.com/api/agents", { cache: "no-store" })
+        if (agentsRes.ok) {
+          const agentsData = await agentsRes.json()
+          const bundledAgents = data.data.bundled_agent_ids
+            .map((id, idx) => {
+              const agentDetail = (agentsData?.agents || []).find((a: any) => a?.agent_id === id)
+              return {
+                agent_id: id,
+                agent_name: data.data?.bundled_agent_names[idx] || 'Agent',
+                description: agentDetail?.description || 'Agent description',
+                demo_preview: agentDetail?.demo_preview,
+              }
+            })
+            .slice(0, 3) // Limit to 3 agents for display
+          return bundledAgents
+        }
+      }
+    }
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('Bundled agents API not available, using fallback')
+  }
+  
+  // Fallback: return null to trigger use of related agents from main agents list
+  return null
 }
 
 function readReadmeFile(): string {
@@ -199,14 +223,11 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
   let nextAgentName: string | null = null
   let prevAgentName: string | null = null
   let relatedAgents: any[] = []
-  let approvedAgents: any[] = []
-  
   try {
-    // Fetch agents list for next/prev navigation and fallback related agents
     const agentsRes = await fetch("https://agents-store.onrender.com/api/agents", { cache: "no-store" })
     if (agentsRes.ok) {
       const agentsJson = await agentsRes.json()
-      approvedAgents = (agentsJson?.agents || [])
+      const approvedAgents = (agentsJson?.agents || [])
         .filter((a: any) => a?.admin_approved === "yes")
         .filter((a: any) => a?.agent_id)
       
@@ -222,99 +243,21 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
         prevAgentId = prevAgent?.agent_id || null
         nextAgentName = nextAgent?.agent_name || null
         prevAgentName = prevAgent?.agent_name || null
-      }
-    }
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error('Error fetching agents for navigation:', err)
-  }
-
-  // Fetch bundled agents for related agents section
-  let bundledAgentsFound = false
-  try {
-    const bundledRes = await fetch(`https://agents-store.onrender.com/api/agents/${id}/bundled`, { cache: "no-store" })
-    
-    if (bundledRes.ok) {
-      const bundledData = await bundledRes.json()
-      
-      if (bundledData?.success && bundledData?.data) {
-        const bundledIds = bundledData.data.bundled_agent_ids || []
-        const bundledNames = bundledData.data.bundled_agent_names || []
         
-        if (bundledIds.length > 0 && bundledNames.length > 0) {
-          // Create a map of approved agent IDs for quick lookup
-          const approvedAgentIds = new Set(approvedAgents.map((a: any) => String(a.agent_id).trim()))
-          
-          // Create a map of agent ID to name from the original arrays
-          const idToNameMap = new Map<string, string>()
-          bundledIds.forEach((agentId: string, index: number) => {
-            const trimmedId = String(agentId).trim()
-            if (trimmedId && bundledNames[index]) {
-              idToNameMap.set(trimmedId, bundledNames[index])
-            }
-          })
-          
-          // Map bundled agent IDs to names (keep description empty as requested)
-          // Filter to only show approved agents, limit to first 10 agents for display
-          relatedAgents = bundledIds
-            .map((agentId: string) => String(agentId).trim())
-            .filter((agentId: string) => agentId && approvedAgentIds.has(agentId))
-            .slice(0, 10)
-            .map((agentId: string) => ({
-              agent_id: agentId,
-              agent_name: idToNameMap.get(agentId) || 'Agent',
-              description: '', // Keep empty as requested
-              demo_preview: null,
-            }))
-          
-          if (relatedAgents.length > 0) {
-            bundledAgentsFound = true
-          }
+        // Try to fetch bundled agents first, then fallback to related agents
+        const bundledAgents = await fetchBundledAgents(id)
+        if (bundledAgents && bundledAgents.length > 0) {
+          relatedAgents = bundledAgents
+        } else {
+          // Fallback: Get related agents (exclude current agent, take first 3)
+          relatedAgents = approvedAgents
+            .filter((a: any) => a?.agent_id !== id)
+            .slice(0, 3)
         }
       }
     }
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error('Error fetching bundled agents for agent', id, ':', err)
-  }
-  
-  // Fallback: If no bundled agents found, use similar agents API
-  if (!bundledAgentsFound) {
-    try {
-      const similarRes = await fetch(`https://agents-store.onrender.com/api/agents/${id}/similar?limit=4`, { cache: "no-store" })
-      
-      if (similarRes.ok) {
-        const similarData = await similarRes.json()
-        
-        if (similarData?.similar_agents && Array.isArray(similarData.similar_agents)) {
-          // Map similar agents with full details (name and description)
-          relatedAgents = similarData.similar_agents
-            .filter((a: any) => a?.admin_approved === "yes" && a?.agent_id) // Only approved agents with valid ID
-            .map((a: any) => ({
-              agent_id: String(a.agent_id).trim(),
-              agent_name: a.agent_name || 'Agent',
-              description: a.description || '',
-              demo_preview: a.demo_preview || null,
-            }))
-        }
-      }
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('Error fetching similar agents for agent', id, ':', err)
-      
-      // Final fallback: If similar agents API also fails, use general agents list
-      if (approvedAgents.length > 0) {
-        relatedAgents = approvedAgents
-          .filter((a: any) => a?.agent_id && a?.agent_id !== id)
-          .slice(0, 3)
-          .map((a: any) => ({
-            agent_id: String(a.agent_id).trim(),
-            agent_name: a.agent_name || 'Agent',
-            description: a.description || '',
-            demo_preview: a.demo_preview || null,
-          }))
-      }
-    }
+  } catch {
+    // ignore - keep nextAgentId null
   }
   return (
     <>
@@ -601,46 +544,42 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
                   >
                     ROI
                   </TabsTrigger>
-                  {data?.deployments && data.deployments.length > 0 && (
-                    <TabsTrigger 
-                      value="deployment"
-                      className="relative pb-2 bg-transparent border-0 rounded-none data-[state=active]:bg-transparent data-[state=inactive]:bg-transparent h-auto shadow-none data-[state=active]:shadow-none text-left"
-                      style={{
-                        fontFamily: "Poppins, sans-serif",
-                        fontSize: "14px",
-                        fontWeight: 500,
-                        color: "#344054",
-                        padding: "8px",
-                        whiteSpace: "nowrap",
-                        cursor: "pointer",
-                        transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-weight 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                        boxShadow: "none",
-                        textAlign: "left",
-                      }}
-                    >
-                      Deployment
-                    </TabsTrigger>
-                  )}
-                  {data?.documentation && data.documentation.length > 0 && (
-                    <TabsTrigger 
-                      value="docs"
-                      className="relative pb-2 bg-transparent border-0 rounded-none data-[state=active]:bg-transparent data-[state=inactive]:bg-transparent h-auto shadow-none data-[state=active]:shadow-none text-left"
-                      style={{
-                        fontFamily: "Poppins, sans-serif",
-                        fontSize: "14px",
-                        fontWeight: 500,
-                        color: "#344054",
-                        padding: "8px",
-                        whiteSpace: "nowrap",
-                        cursor: "pointer",
-                        transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-weight 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                        boxShadow: "none",
-                        textAlign: "left",
-                      }}
-                    >
-                      Docs
-                    </TabsTrigger>
-                  )}
+                  <TabsTrigger 
+                    value="deployment"
+                    className="relative pb-2 bg-transparent border-0 rounded-none data-[state=active]:bg-transparent data-[state=inactive]:bg-transparent h-auto shadow-none data-[state=active]:shadow-none text-left"
+                    style={{
+                      fontFamily: "Poppins, sans-serif",
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      color: "#344054",
+                      padding: "8px",
+                      whiteSpace: "nowrap",
+                      cursor: "pointer",
+                      transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-weight 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      boxShadow: "none",
+                      textAlign: "left",
+                    }}
+                  >
+                    Deployment
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="docs"
+                    className="relative pb-2 bg-transparent border-0 rounded-none data-[state=active]:bg-transparent data-[state=inactive]:bg-transparent h-auto shadow-none data-[state=active]:shadow-none text-left"
+                    style={{
+                      fontFamily: "Poppins, sans-serif",
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      color: "#344054",
+                      padding: "8px",
+                      whiteSpace: "nowrap",
+                      cursor: "pointer",
+                      transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-weight 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      boxShadow: "none",
+                      textAlign: "left",
+                    }}
+                  >
+                    Docs
+                  </TabsTrigger>
                 </TabsList>
                 <TabsContent value="features" style={{ marginTop: "8px" }}>
                   {agent?.features && agent.features !== "na" ? (
@@ -781,23 +720,12 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
                               >
                                 {agent?.agent_name || 'Agent'} powered by Agents
                               </h4>
-                              <div 
-                                className="space-y-3"
-                                style={{
-                                  maxHeight: relatedAgents.length > 3 ? '280px' : 'auto',
-                                  overflowY: relatedAgents.length > 3 ? 'auto' : 'visible',
-                                  paddingRight: relatedAgents.length > 3 ? '8px' : '0',
-                                  scrollbarWidth: relatedAgents.length > 3 ? 'thin' : 'auto',
-                                  scrollbarColor: relatedAgents.length > 3 ? '#D1D5DB #F9FAFB' : 'auto',
-                                }}
-                              >
-                                {relatedAgents
-                                  .filter((ra: any) => ra?.agent_id) // Only show agents with valid agent_id
-                                  .map((relatedAgent: any, idx: number) => (
+                              <div className="space-y-3">
+                                {relatedAgents.map((relatedAgent: any, idx: number) => (
                                   <Link
                                     key={relatedAgent.agent_id || idx}
-                                    href={`/agents/${String(relatedAgent.agent_id)}`}
-                                    className="block bg-white rounded-2xl p-2 border border-gray-100 hover:shadow-md transition-shadow"
+                                    href={`/agents/${relatedAgent.agent_id}`}
+                                    className="block bg-white rounded-2xl p-2 border border-gray-100"
                                   >
                                     <div className="flex gap-2 items-center">
                                       <div 
@@ -834,23 +762,21 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
                                         >
                                           {relatedAgent.agent_name || 'Agent Name'}
                                         </h5>
-                                        {relatedAgent.description ? (
-                                          <p 
-                                            style={{
-                                              fontFamily: 'Poppins, sans-serif',
-                                              fontSize: '12px',
-                                              fontWeight: 400,
-                                              color: '#344054',
-                                              lineHeight: '1.5',
-                                              display: '-webkit-box',
-                                              WebkitLineClamp: 2,
-                                              WebkitBoxOrient: 'vertical',
-                                              overflow: 'hidden',
-                                            }}
-                                          >
-                                            {relatedAgent.description}
-                                          </p>
-                                        ) : null}
+                                        <p 
+                                          style={{
+                                            fontFamily: 'Poppins, sans-serif',
+                                            fontSize: '12px',
+                                            fontWeight: 400,
+                                            color: '#344054',
+                                            lineHeight: '1.5',
+                                            display: '-webkit-box',
+                                            WebkitLineClamp: 2,
+                                            WebkitBoxOrient: 'vertical',
+                                            overflow: 'hidden',
+                                          }}
+                                        >
+                                          {relatedAgent.description || 'Agent description'}
+                                        </p>
                                       </div>
                                     </div>
                                   </Link>
@@ -935,23 +861,12 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
                         >
                           {agent?.agent_name || 'Agent'} powered by Agents
                         </h4>
-                        <div 
-                          className="space-y-3"
-                          style={{
-                            maxHeight: relatedAgents.length > 3 ? '280px' : 'auto',
-                            overflowY: relatedAgents.length > 3 ? 'auto' : 'visible',
-                            paddingRight: relatedAgents.length > 3 ? '8px' : '0',
-                            scrollbarWidth: relatedAgents.length > 3 ? 'thin' : 'auto',
-                            scrollbarColor: relatedAgents.length > 3 ? '#D1D5DB #F9FAFB' : 'auto',
-                          }}
-                        >
-                          {relatedAgents
-                            .filter((ra: any) => ra?.agent_id) // Only show agents with valid agent_id
-                            .map((relatedAgent: any, idx: number) => (
+                        <div className="space-y-3">
+                          {relatedAgents.map((relatedAgent: any, idx: number) => (
                             <Link
                               key={relatedAgent.agent_id || idx}
-                              href={`/agents/${String(relatedAgent.agent_id)}`}
-                              className="block bg-white rounded-2xl p-2 border border-gray-100 hover:shadow-md transition-shadow"
+                              href={`/agents/${relatedAgent.agent_id}`}
+                              className="block bg-white rounded-2xl p-2 border border-gray-100"
                             >
                               <div className="flex gap-2 items-center">
                                 <div 
@@ -1012,8 +927,7 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
                     )}
                   </div>
                 </TabsContent>
-                {data?.deployments && data.deployments.length > 0 && (
-                  <TabsContent value="deployment" className="mt-6">
+                <TabsContent value="deployment" className="mt-6">
                   <div className="flex gap-8">
                     <div className="flex-1" style={{ maxWidth: '740px' }}>
                   {(!data?.deployments || data.deployments.length === 0) ? (
@@ -1086,23 +1000,12 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
                         >
                           {agent?.agent_name || 'Agent'} powered by Agents
                         </h4>
-                        <div 
-                          className="space-y-3"
-                          style={{
-                            maxHeight: relatedAgents.length > 3 ? '280px' : 'auto',
-                            overflowY: relatedAgents.length > 3 ? 'auto' : 'visible',
-                            paddingRight: relatedAgents.length > 3 ? '8px' : '0',
-                            scrollbarWidth: relatedAgents.length > 3 ? 'thin' : 'auto',
-                            scrollbarColor: relatedAgents.length > 3 ? '#D1D5DB #F9FAFB' : 'auto',
-                          }}
-                        >
-                          {relatedAgents
-                            .filter((ra: any) => ra?.agent_id) // Only show agents with valid agent_id
-                            .map((relatedAgent: any, idx: number) => (
+                        <div className="space-y-3">
+                          {relatedAgents.map((relatedAgent: any, idx: number) => (
                             <Link
                               key={relatedAgent.agent_id || idx}
-                              href={`/agents/${String(relatedAgent.agent_id)}`}
-                              className="block bg-white rounded-2xl p-2 border border-gray-100 hover:shadow-md transition-shadow"
+                              href={`/agents/${relatedAgent.agent_id}`}
+                              className="block bg-white rounded-2xl p-2 border border-gray-100"
                             >
                               <div className="flex gap-2 items-center">
                                 <div 
@@ -1163,9 +1066,7 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
                   )}
                   </div>
                 </TabsContent>
-                )}
-                {data?.documentation && data.documentation.length > 0 && (
-                  <TabsContent value="docs" className="mt-6">
+                <TabsContent value="docs" className="mt-6">
                   <div className="flex gap-8">
                     <div className="flex-1" style={{ maxWidth: '740px' }}>
                   {data?.documentation && data.documentation.length > 0 && data.documentation[0] ? (
@@ -1201,23 +1102,12 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
                         >
                           {agent?.agent_name || 'Agent'} powered by Agents
                         </h4>
-                        <div 
-                          className="space-y-3"
-                          style={{
-                            maxHeight: relatedAgents.length > 3 ? '280px' : 'auto',
-                            overflowY: relatedAgents.length > 3 ? 'auto' : 'visible',
-                            paddingRight: relatedAgents.length > 3 ? '8px' : '0',
-                            scrollbarWidth: relatedAgents.length > 3 ? 'thin' : 'auto',
-                            scrollbarColor: relatedAgents.length > 3 ? '#D1D5DB #F9FAFB' : 'auto',
-                          }}
-                        >
-                          {relatedAgents
-                            .filter((ra: any) => ra?.agent_id) // Only show agents with valid agent_id
-                            .map((relatedAgent: any, idx: number) => (
+                        <div className="space-y-3">
+                          {relatedAgents.map((relatedAgent: any, idx: number) => (
                             <Link
                               key={relatedAgent.agent_id || idx}
-                              href={`/agents/${String(relatedAgent.agent_id)}`}
-                              className="block bg-white rounded-2xl p-2 border border-gray-100 hover:shadow-md transition-shadow"
+                              href={`/agents/${relatedAgent.agent_id}`}
+                              className="block bg-white rounded-2xl p-2 border border-gray-100"
                             >
                               <div className="flex gap-2 items-center">
                                 <div 
@@ -1278,7 +1168,6 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
                     )}
                   </div>
                 </TabsContent>
-                )}
               </Tabs>
 
           <div className="mt-10 flex items-center justify-between w-full">

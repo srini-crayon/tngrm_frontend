@@ -24,10 +24,16 @@ type ChatDialogProps = {
   initialMessage?: string
 }
 
-// Agent Card Component for Chat
-function ChatAgentCard({ agent }: { agent: NonNullable<ChatMessage['filteredAgents']>[0] }) {
+// Agent Card Component for Chat with hover animations
+function ChatAgentCard({ agent, index }: { agent: NonNullable<ChatMessage['filteredAgents']>[0]; index?: number }) {
   return (
-    <Card className="mt-3 shadow-none border-0 !py-0 !gap-0" style={{ backgroundColor: "#E8E8E8" }}>
+    <Card 
+      className="mt-3 shadow-none border-0 !py-0 !gap-0 agent-card-hover" 
+      style={{ 
+        backgroundColor: "#E8E8E8",
+        animationDelay: index !== undefined ? `${index * 100}ms` : undefined
+      }}
+    >
       <CardContent className="p-4 !px-4 !py-4">
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -35,7 +41,7 @@ function ChatAgentCard({ agent }: { agent: NonNullable<ChatMessage['filteredAgen
             <p className="text-sm text-gray-600 line-clamp-2">{agent.description}</p>
           </div>
           <Link href={`/agents/${agent.agent_id}`}>
-            <Button size="sm" variant="outline" className="ml-2 flex-shrink-0 shadow-none">
+            <Button size="sm" variant="outline" className="ml-2 flex-shrink-0 shadow-none transition-all duration-200 hover:scale-105">
               <ExternalLink className="h-3 w-3 mr-1" />
               View
             </Button>
@@ -46,16 +52,21 @@ function ChatAgentCard({ agent }: { agent: NonNullable<ChatMessage['filteredAgen
   )
 }
 
-// Suggested Agent Card Component for Explore Mode
-function SuggestedAgentCard({ agent }: { agent: NonNullable<ChatMessage['suggested_agents']>[0] }) {
+// Suggested Agent Card Component for Explore Mode with animations
+function SuggestedAgentCard({ agent, index }: { agent: NonNullable<ChatMessage['suggested_agents']>[0]; index?: number }) {
   return (
-    <Card className="mt-2 shadow-sm border border-gray-200 hover:border-gray-300 transition-colors">
+    <Card 
+      className="mt-2 shadow-sm border border-gray-200 agent-card-hover card-stagger" 
+      style={{
+        animationDelay: index !== undefined ? `${index * 100}ms` : undefined
+      }}
+    >
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <h4 className="font-semibold text-gray-900">{agent.solution_name}</h4>
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs transition-all duration-200 hover:scale-105">
                 {agent.segment}
               </Badge>
             </div>
@@ -130,7 +141,24 @@ function TypingEffect({ text }: { text: string }) {
   )
 }
 
-// Enhanced Thinking Component
+// Wave Dots Component for typing indicator
+function WaveDots() {
+  return (
+    <div className="flex items-center gap-1 px-2">
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="w-2 h-2 bg-gray-400 rounded-full wave-dot"
+          style={{
+            animationDelay: `${i * 0.2}s`
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// Enhanced Thinking Component with shimmer
 function ThinkingIndicator() {
   const [thinkingStage, setThinkingStage] = useState(0)
   
@@ -150,25 +178,24 @@ function ThinkingIndicator() {
   }, [])
   
   return (
-    <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-      <div className="relative">
-        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-          <Brain className="h-4 w-4 text-white animate-pulse" />
-        </div>
-        <div className="absolute -top-1 -right-1">
-          <Sparkles className="h-3 w-3 text-yellow-500 animate-bounce" />
-        </div>
-      </div>
-      <div className="flex-1">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-medium text-gray-700">AI Assistant</span>
-          <div className="flex gap-1">
-            <div className="w-1 h-1 bg-blue-500 rounded-full animate-pulse"></div>
-            <div className="w-1 h-1 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-            <div className="w-1 h-1 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+    <div className="relative overflow-hidden rounded-lg">
+      <div className="absolute inset-0 shimmer-bg" />
+      <div className="relative flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+        <div className="relative">
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+            <Brain className="h-4 w-4 text-white animate-pulse" />
+          </div>
+          <div className="absolute -top-1 -right-1">
+            <Sparkles className="h-3 w-3 text-yellow-500 animate-bounce" />
           </div>
         </div>
-        <p className="text-sm text-gray-600">{thinkingMessages[thinkingStage]}</p>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-sm font-medium text-gray-700">AI Assistant</span>
+            <WaveDots />
+          </div>
+          <p className="text-sm text-gray-600">{thinkingMessages[thinkingStage]}</p>
+        </div>
       </div>
     </div>
   )
@@ -240,6 +267,9 @@ export default function ChatDialog({ open, onOpenChange, initialMode = "explore"
   const [input, setInput] = useState("")
   const [isSending, setIsSending] = useState(false)
   const [isThinking, setIsThinking] = useState(false)
+  const [charCount, setCharCount] = useState(0)
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [ripple, setRipple] = useState<{ x: number; y: number; id: string } | null>(null)
   const dialogContentRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollableContentRef = useRef<HTMLDivElement>(null)
@@ -533,7 +563,7 @@ export default function ChatDialog({ open, onOpenChange, initialMode = "explore"
     }
   }, [sessionId, setSessionId])
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change with smooth momentum
   useEffect(() => {
     // Scroll to bottom when messages change or when thinking/sending state changes
     const scrollToBottom = () => {
@@ -545,14 +575,17 @@ export default function ChatDialog({ open, onOpenChange, initialMode = "explore"
           inline: 'nearest'
         })
       } else if (scrollableContentRef.current) {
-        // Fallback: scroll to bottom of scrollable container
-        scrollableContentRef.current.scrollTop = scrollableContentRef.current.scrollHeight
+        // Fallback: scroll to bottom of scrollable container with smooth behavior
+        scrollableContentRef.current.scrollTo({
+          top: scrollableContentRef.current.scrollHeight,
+          behavior: 'smooth'
+        })
       }
     }
     
     // Use requestAnimationFrame to ensure DOM has updated
     requestAnimationFrame(() => {
-      setTimeout(scrollToBottom, 0)
+      setTimeout(scrollToBottom, 100)
     })
   }, [messages, isThinking, isSending])
 
@@ -600,8 +633,13 @@ export default function ChatDialog({ open, onOpenChange, initialMode = "explore"
     const userText = messageText
     addMessage({ id: crypto.randomUUID(), role: "user", text: userText, time: timeString })
     setInput("")
+    setCharCount(0)
     setIsSending(true)
     setIsThinking(true)
+    
+    // Show feedback
+    setFeedback({ type: 'success', message: 'Message sent!' })
+    setTimeout(() => setFeedback(null), 2000)
     
     // Add thinking message immediately
     const thinkingMessageId = crypto.randomUUID()
@@ -676,6 +714,9 @@ export default function ChatDialog({ open, onOpenChange, initialMode = "explore"
           text: "I'm currently experiencing technical difficulties. Please try again.",
         time: errTs
       })
+      // Show error feedback
+      setFeedback({ type: 'error', message: 'Failed to send message' })
+      setTimeout(() => setFeedback(null), 2000)
     } finally {
       setIsSending(false)
       setIsThinking(false)
@@ -687,6 +728,15 @@ export default function ChatDialog({ open, onOpenChange, initialMode = "explore"
     await handleSendMessage(input)
   }
 
+  // Handle message bubble click for ripple effect
+  const handleMessageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    setRipple({ x, y, id: Date.now().toString() })
+    setTimeout(() => setRipple(null), 600)
+  }
+
   function handleClearChat() {
     clearChat()
     setInput("")
@@ -696,7 +746,7 @@ export default function ChatDialog({ open, onOpenChange, initialMode = "explore"
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent 
-          className={`p-0 rounded-2xl border shadow-2xl transition-all duration-300 ease-out ${
+          className={`p-0 rounded-2xl border shadow-2xl transition-all duration-300 ease-out dialog-enhanced-enter ${
             isExpanded 
               ? "sm:max-w-[900px] md:max-w-[960px] animate-in slide-in-from-bottom-4" 
               : "sm:max-w-[600px] md:max-w-[600px] animate-in slide-in-from-bottom-4 chat-dialog-bottom-right"
@@ -786,7 +836,7 @@ export default function ChatDialog({ open, onOpenChange, initialMode = "explore"
           </div>
             <div 
               ref={scrollableContentRef}
-              className="space-y-4 overflow-y-auto overflow-x-hidden px-4 py-4" 
+              className="space-y-4 overflow-y-auto overflow-x-hidden px-4 py-4 smooth-scroll" 
               style={{ 
                 minHeight: 0, 
                 maxHeight: '100%',
@@ -796,21 +846,40 @@ export default function ChatDialog({ open, onOpenChange, initialMode = "explore"
                 scrollBehavior: 'smooth'
               }}
             >
-            {messages.map((m) => (
-              <div key={m.id} className={m.role === "user" ? "flex flex-col items-end" : "flex flex-col items-start"}>
+            {messages.map((m, index) => (
+              <div 
+                key={m.id} 
+                className={`${m.role === "user" ? "flex flex-col items-end" : "flex flex-col items-start"} ${
+                  m.role === "user" ? "user-message-enter" : "message-enter"
+                }`}
+                style={{
+                  animationDelay: `${index * 50}ms`
+                }}
+              >
                 <div className="flex max-w-[80%] items-end gap-2">
                   {m.role === "assistant" && (
                     <div className="relative mt-1 h-5 w-5 shrink-0">
                       <Image src="/chat_icon.png" alt="bot" fill className="object-contain" />
                     </div>
                   )}
-                  <div className={
-                    m.role === "user"
-                      ? "rounded-xl px-4 py-2 text-white"
-                      : "rounded-xl bg-gray-100 px-4 py-2 text-gray-900"
-                  }
-                  style={m.role === "user" ? { backgroundColor: "#6853D5" } : undefined}
+                  <div 
+                    className={`message-bubble ${
+                      m.role === "user"
+                        ? "rounded-xl px-4 py-2 text-white"
+                        : "rounded-xl bg-gray-100 px-4 py-2 text-gray-900"
+                    }`}
+                    style={m.role === "user" ? { backgroundColor: "#6853D5" } : undefined}
+                    onClick={handleMessageClick}
                   >
+                    {ripple && (
+                      <span
+                        className="ripple-effect"
+                        style={{
+                          left: ripple.x,
+                          top: ripple.y,
+                        }}
+                      />
+                    )}
                     {m.role === "assistant" ? (
                       <div className="text-sm leading-relaxed prose prose-sm max-w-none">
                         <ReactMarkdown
@@ -847,7 +916,11 @@ export default function ChatDialog({ open, onOpenChange, initialMode = "explore"
                             </div>
                             <div className="space-y-2">
                               {m.suggested_agents.map((agent, index) => (
-                                <SuggestedAgentCard key={`suggested-${index}`} agent={agent} />
+                                <SuggestedAgentCard 
+                                  key={`suggested-${index}`} 
+                                  agent={agent} 
+                                  index={index}
+                                />
                               ))}
                             </div>
                           </div>
@@ -910,7 +983,11 @@ export default function ChatDialog({ open, onOpenChange, initialMode = "explore"
                         {m.filteredAgents && m.filteredAgents.length > 0 && (
                           <div className="mt-3 space-y-2">
                             {m.filteredAgents.map((agent, index) => (
-                              <ChatAgentCard key={`${agent.agent_id}-${index}`} agent={agent} />
+                              <ChatAgentCard 
+                                key={`${agent.agent_id}-${index}`} 
+                                agent={agent} 
+                                index={index}
+                              />
                             ))}
                           </div>
                         )}
@@ -933,20 +1010,58 @@ export default function ChatDialog({ open, onOpenChange, initialMode = "explore"
             <div ref={messagesEndRef} style={{ height: '1px', width: '100%' }} />
           </div>
             <div className="border-t px-3 py-3">
-            <div className="flex items-center gap-2">
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && !isSending) handleSend() }}
-                placeholder="Type your message..."
-                className="flex-1"
-                disabled={isSending}
-              />
-              <Button onClick={handleSend} className="bg-black text-white hover:bg-black/90" disabled={isSending}>
-                Send
-              </Button>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Input
+                  value={input}
+                  onChange={(e) => {
+                    setInput(e.target.value)
+                    setCharCount(e.target.value.length)
+                  }}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !isSending) handleSend() }}
+                  placeholder="Type your message..."
+                  className="flex-1 input-focus-ring"
+                  disabled={isSending}
+                />
+                <Button 
+                  onClick={handleSend} 
+                  className="bg-black text-white hover:bg-black/90 button-shine transition-all duration-200 active:scale-95" 
+                  disabled={isSending}
+                  onMouseDown={(e) => {
+                    e.currentTarget.classList.add('button-press')
+                    setTimeout(() => e.currentTarget.classList.remove('button-press'), 200)
+                  }}
+                >
+                  {isSending ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full send-spinner" />
+                      <span>Sending...</span>
+                    </div>
+                  ) : (
+                    <span>Send</span>
+                  )}
+                </Button>
+              </div>
+              {charCount > 0 && (
+                <div className="text-xs text-gray-500 counter-enter px-1">
+                  {charCount} {charCount === 1 ? 'character' : 'characters'}
+                </div>
+              )}
             </div>
           </div>
+          
+          {/* Feedback Toast */}
+          {feedback && (
+            <div 
+              className={`fixed bottom-20 right-4 z-50 px-4 py-2 rounded-lg shadow-lg ${
+                feedback.type === 'success' 
+                  ? 'bg-green-500 text-white' 
+                  : 'bg-red-500 text-white'
+              } toast-enter`}
+            >
+              {feedback.message}
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
