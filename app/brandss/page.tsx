@@ -2101,11 +2101,28 @@ function AgenticOpportunities({ initialFilter = "CONSUMER EXPERIENCE" }: { initi
     <section
       className="w-full py-16 px-8 md:px-20 lg:px-20 relative"
       style={{
+        
         backgroundImage: "url('/Agentic_card_backdrop.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "1200 center ",
+        backgroundSize: "contain",
+        backgroundPosition: "0% 0% 0% 0% ",
         backgroundRepeat: "no-repeat",
-        opacity: 0.9,
+        opacity: 1,
+      //   background: `
+      //   radial-gradient(1200px 800px at 85% 35%, 
+      //     #ff6fae 0%, 
+      //     #d9468f 25%, 
+      //     #c7b8ff 45%, 
+      //     #ffffff 70%
+      //   ),
+      //   radial-gradient(900px 700px at 90% 15%, 
+      //     #ffe8a3 0%, 
+      //     #ffb38a 35%, 
+      //     rgba(255,255,255,0) 65%
+      //   ),
+      //   #ffffff
+      // `,
+      
+  
       }}
       aria-labelledby="agentic-opportunities-heading"
     >
