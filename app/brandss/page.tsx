@@ -779,6 +779,7 @@ function AgentsSpotlight() {
   const [agents, setAgents] = useState<SpotlightAgent[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
     const fetchAgents = async () => {
@@ -848,24 +849,32 @@ function AgentsSpotlight() {
   }, []);
 
   const handlePrevious = () => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
     setCurrentIndex((prev) => {
       if (prev === 0) {
         // Wrap to the end
         const maxIndex = Math.max(0, agents.length - 2);
+        setTimeout(() => setIsTransitioning(false), 600);
         return maxIndex;
       }
-      return Math.max(0, prev - 2);
+      setTimeout(() => setIsTransitioning(false), 600);
+      return Math.max(0, prev - 1);
     });
   };
 
   const handleNext = () => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
     setCurrentIndex((prev) => {
       const maxIndex = Math.max(0, agents.length - 2);
       if (prev >= maxIndex) {
         // Wrap to the beginning
+        setTimeout(() => setIsTransitioning(false), 600);
         return 0;
       }
-      return Math.min(maxIndex, prev + 2);
+      setTimeout(() => setIsTransitioning(false), 600);
+      return Math.min(maxIndex, prev + 1);
     });
   };
 
@@ -1000,16 +1009,27 @@ function AgentsSpotlight() {
 
         {/* Agent Cards Grid */}
         {hasAgents ? (
-          <div className="flex flex-col md:flex-row gap-8 mb-12">
-            {/* Agent Card 1 - Large Card */}
-            {currentAgents[0] && (
+          <div className="relative overflow-hidden mb-12">
+            <div 
+              className="flex flex-col md:flex-row gap-8"
+              style={{
+                transition: "transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+                transform: `translateX(0)`,
+                willChange: "transform",
+              }}
+            >
+              {/* Agent Card 1 - Large Card */}
+              {currentAgents[0] && (
               <div 
+                key={`card-1-${currentIndex}`}
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 w-full md:w-[70%] card-hover" 
                 style={{ 
                   paddingTop: "25px",
                   paddingLeft:"10px",
-                  transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+                  transition: "all 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s ease-in-out, transform 0.6s ease-in-out",
                   cursor: "pointer",
+                  opacity: isTransitioning ? 0.7 : 1,
+                  transform: isTransitioning ? "translateX(10px)" : "translateX(0)",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = "translateY(-8px) scale(1.01)"
@@ -1258,10 +1278,14 @@ function AgentsSpotlight() {
             {/* Agent Card 2 - Small Card */}
             {currentAgents[1] && (
               <div 
+                key={`card-2-${currentIndex}`}
                 className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 w-full md:w-[40%] card-hover"
                 style={{
-                  transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+                  transition: "all 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s ease-in-out, transform 0.6s ease-in-out",
                   cursor: "pointer",
+                  opacity: isTransitioning ? 0.7 : 1,
+                  transform: isTransitioning ? "translateX(10px)" : "translateX(0)",
+                  transitionDelay: "0.1s",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = "translateY(-8px) scale(1.01)"
@@ -1419,6 +1443,7 @@ function AgentsSpotlight() {
                 </div>
               </div>
             )}
+            </div>
           </div>
         ) : (
           <div className="flex items-center justify-center h-64">
@@ -1516,6 +1541,440 @@ const ALL_PILLS = [
   "IoT-Enabled Smart Tap + Experience Agent",
   "Heineken Digital Universe App (D2C)",
 ]
+
+// StackedAgentCards Component - Reusable scroll-based stacked card UI
+function StackedAgentCards({ cards }: { cards: AgentContent[] }) {
+  const [activeCardIndex, setActiveCardIndex] = useState(0)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([])
+  const scrollDistance = 500 // Fixed scroll distance per card - reduced for smoother progression
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!containerRef.current) return
+
+      const container = containerRef.current
+      const containerTop = container.getBoundingClientRect().top
+      const viewportHeight = window.innerHeight
+      
+      // Calculate scroll progress within the container
+      // Start when container enters viewport
+      const scrollStart = viewportHeight
+      const scrollProgress = Math.max(0, scrollStart - containerTop)
+      
+      // Determine active card based on scroll distance with smoother transitions
+      // Each card becomes active after scrolling a fixed distance
+      // Use more granular calculation for smoother progression
+      const rawIndex = scrollProgress / scrollDistance
+      const newActiveIndex = Math.min(
+        cards.length - 1,
+        Math.max(0, Math.floor(rawIndex))
+      )
+      
+      // Update active index for smoother transitions
+      if (newActiveIndex !== activeCardIndex) {
+        setActiveCardIndex(newActiveIndex)
+      }
+    }
+
+    let ticking = false
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          handleScroll()
+          ticking = false
+        })
+        ticking = true
+      }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll, { passive: true })
+    handleScroll()
+    
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [activeCardIndex, cards.length, scrollDistance])
+
+  const renderCard = (content: AgentContent, index: number) => {
+    const isActive = index === activeCardIndex
+    const isVisible = index <= activeCardIndex
+    const stackPosition = activeCardIndex - index // 0 = active, 1 = first behind, 2 = second behind, etc.
+    
+    // Progressive transforms for stacked cards - more visible and smoother
+    const getCardStyles = () => {
+      if (!isVisible) {
+        return {
+          opacity: 0,
+          transform: 'scale(0.92) translateY(60px)',
+          zIndex: 1,
+        }
+      }
+
+      if (isActive) {
+        // Active card: full size, full opacity, highest z-index
+        return {
+          opacity: 1,
+          transform: 'scale(1) translateY(0)',
+          zIndex: 100 + cards.length,
+        }
+      }
+
+      // Stacked cards behind active card - more visible with better progression
+      // Extended arrays to handle all 7 cards smoothly
+      const scaleValues = [0.96, 0.92, 0.88, 0.84, 0.80, 0.76, 0.72]
+      const opacityValues = [0.85, 0.70, 0.55, 0.40, 0.30, 0.20, 0.15]
+      const translateYValues = [-15, -30, -45, -60, -75, -90, -105]
+      
+      // Calculate index for arrays (stackPosition - 1 because stackPosition 0 is active)
+      const arrayIndex = stackPosition - 1
+      
+      // Use the value from array if available, otherwise calculate progressively
+      const scale = arrayIndex < scaleValues.length 
+        ? scaleValues[arrayIndex] 
+        : Math.max(0.70, 0.96 - (arrayIndex * 0.04))
+      const opacity = arrayIndex < opacityValues.length 
+        ? opacityValues[arrayIndex] 
+        : Math.max(0.10, 0.85 - (arrayIndex * 0.10))
+      const translateY = arrayIndex < translateYValues.length 
+        ? translateYValues[arrayIndex] 
+        : -15 - (arrayIndex * 15)
+      const zIndex = 100 + cards.length - stackPosition
+
+      return {
+        opacity,
+        transform: `scale(${scale}) translateY(${translateY}px)`,
+        zIndex,
+      }
+    }
+
+    const styles = getCardStyles()
+    const shadowIntensity = isActive ? 0.2 : Math.max(0.08, 0.2 - stackPosition * 0.025)
+
+    return (
+      <div
+        key={index}
+        ref={(el) => {
+          cardRefs.current[index] = el
+        }}
+        className="rounded-2xl border border-[#e6e6ea] p-7 md:p-9 relative overflow-hidden"
+        style={{
+          fontFamily: "Poppins, sans-serif",
+          backgroundColor: "#FFFFFF",
+          position: "sticky",
+          top: "100px",
+          width: "100%",
+          minHeight: "600px",
+          marginBottom: index < cards.length - 1 ? `-${scrollDistance - 120}px` : "100px",
+          marginTop: index === 0 ? "0" : "0",
+          transition: "opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.8s ease-out",
+          willChange: "transform, opacity",
+          pointerEvents: isActive ? "auto" : "none",
+          ...styles,
+          boxShadow: isVisible
+            ? `0 ${8 + stackPosition * 4}px ${25 + stackPosition * 8}px rgba(0, 0, 0, ${shadowIntensity}), 0 0 0 1px rgba(0, 0, 0, 0.05)`
+            : "none",
+        }}
+      >
+        <div className="relative z-10" style={{ maxWidth: "calc(100% - 320px)", paddingRight: "20px" }}>
+          {/* Agent Label */}
+          <span
+            className="inline-block mb-4"
+            style={{
+              fontFamily: "Poppins, sans-serif",
+              fontWeight: 500,
+              fontStyle: "normal",
+              fontSize: "12px",
+              lineHeight: "140%",
+              letterSpacing: "0%",
+              textAlign: "center",
+              color: "#F05283",
+              width: "78.99999959707212px",
+              height: "31.999999836788707px",
+              transform: "rotate(-0.28deg)",
+              opacity: 1,
+              borderRadius: "4px",
+              paddingTop: "4px",
+              paddingRight: "16px",
+              paddingBottom: "4px",
+              paddingLeft: "16px",
+              gap: "8px",
+              background: "#FFEBF1",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {content.label}
+          </span>
+
+          {/* Card Title */}
+          <h3
+            className="mb-6"
+            style={{
+              fontFamily: "Poppins, sans-serif",
+              fontWeight: 500,
+              fontStyle: "normal",
+              fontSize: "24px",
+              lineHeight: "31.86px",
+              letterSpacing: "-0.49px",
+              verticalAlign: "middle",
+              color: "#181818",
+              width: "511px",
+              height: "32px",
+              maxWidth: "100%",
+            }}
+          >
+            {content.title}
+          </h3>
+
+          {/* OPPORTUNITY, SOLUTION, and BUSINESS IMPACT Sections - Two Column Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 pb-6 border-b border-[#e6e6ea]">
+            {/* Left Column: OPPORTUNITY and BUSINESS IMPACT */}
+            <div className="flex flex-col gap-6">
+              {/* OPPORTUNITY Section */}
+              <div>
+                <div className="flex items-center gap-0 mb-2">
+                  <div
+                    className="flex items-center justify-center rounded"
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <circle cx="7" cy="7" r="6" stroke="#F05283" strokeWidth="1.5" fill="none"/>
+                      <circle cx="7" cy="7" r="3" fill="#F05283"/>
+                    </svg>
+                  </div>
+                  <p
+                    style={{
+                      fontFamily: "Poppins, sans-serif",
+                      fontWeight: 600,
+                      fontStyle: "normal",
+                      fontSize: "14px",
+                      lineHeight: "21px",
+                      letterSpacing: "0%",
+                      verticalAlign: "middle",
+                      color: "#111827",
+                      textTransform: "uppercase",
+                      margin: 0,
+                    }}
+                  >
+                    OPPORTUNITY
+                  </p>
+                </div>
+                <p
+                  style={{
+                    fontFamily: "Poppins, sans-serif",
+                    fontWeight: 400,
+                    fontStyle: "normal",
+                    fontSize: "14px",
+                    lineHeight: "21.45px",
+                    letterSpacing: "-0.33px",
+                    verticalAlign: "middle",
+                    color: "#65717C",
+                    marginLeft: "8px",
+                  }}
+                >
+                  {content.opportunity}
+                </p>
+              </div>
+
+              {/* BUSINESS IMPACT Section */}
+              <div>
+                <div className="flex items-center gap-0 mb-2">
+                  <div
+                    className="flex items-center justify-center rounded"
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M2 10 L4 6 L7 8 L10 4 L12 6" stroke="#10B981" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M10 4 L12 4 L12 6" stroke="#10B981" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  <p
+                    style={{
+                      fontFamily: "Poppins, sans-serif",
+                      fontWeight: 600,
+                      fontStyle: "normal",
+                      fontSize: "14px",
+                      lineHeight: "21px",
+                      letterSpacing: "0%",
+                      verticalAlign: "middle",
+                      color: "#111827",
+                      textTransform: "uppercase",
+                      margin: 0,
+                    }}
+                  >
+                    BUSINESS IMPACT
+                  </p>
+                </div>
+                <p
+                  style={{
+                    fontFamily: "Poppins, sans-serif",
+                    fontWeight: 400,
+                    fontStyle: "normal",
+                    fontSize: "14px",
+                    lineHeight: "21.45px",
+                    letterSpacing: "-0.33px",
+                    verticalAlign: "middle",
+                    color: "#65717C",
+                    marginLeft: "8px",
+                  }}
+                >
+                  {content.businessImpact}
+                </p>
+              </div>
+            </div>
+
+            {/* Right Column: SOLUTION Section */}
+            <div>
+              <div className="flex items-center gap-0 mb-3">
+                <div
+                  className="flex items-center justify-center rounded"
+                  style={{
+                    width: "24px",
+                    height: "24px",
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M7 2 L9 6 L13 7 L9 8 L7 12 L5 8 L1 7 L5 6 Z" fill="#3B82F6"/>
+                  </svg>
+                </div>
+                <p
+                  style={{
+                    fontFamily: "Poppins, sans-serif",
+                    fontWeight: 600,
+                    fontStyle: "normal",
+                    fontSize: "14px",
+                    lineHeight: "21px",
+                    letterSpacing: "0%",
+                    verticalAlign: "middle",
+                    color: "#111827",
+                    textTransform: "uppercase",
+                    margin: 0,
+                  }}
+                >
+                  SOLUTION
+                </p>
+              </div>
+              <ul className="space-y-2">
+                {content.solution.map((item, idx) => (
+                  <li
+                    key={idx}
+                    className="flex items-start"
+                    style={{
+                      fontFamily: "Poppins, sans-serif",
+                      fontWeight: 400,
+                      fontStyle: "normal",
+                      fontSize: "14px",
+                      lineHeight: "21.45px",
+                      letterSpacing: "-0.33px",
+                      verticalAlign: "middle",
+                      color: "#65717C",
+                      marginLeft: "8px",
+                    }}
+                  >
+                    <span className="mr-2 text-[#6b2bb2]">•</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* MARKET VALIDATION Section */}
+          <div>
+            <div className="flex items-center gap-0 mb-2">
+              <div
+                className="flex items-center justify-center rounded"
+                style={{
+                  width: "24px",
+                  height: "24px",
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M7 2 L8 5 L11 6 L8 7 L7 10 L6 7 L3 6 L6 5 Z" fill="#F59E0B"/>
+                  <circle cx="7" cy="7" r="1.5" fill="#F59E0B"/>
+                </svg>
+              </div>
+              <p
+                style={{
+                  fontFamily: "Poppins, sans-serif",
+                  fontWeight: 600,
+                  fontStyle: "normal",
+                  fontSize: "14px",
+                  lineHeight: "21px",
+                  letterSpacing: "0%",
+                  verticalAlign: "middle",
+                  color: "#111827",
+                  textTransform: "uppercase",
+                  margin: 0,
+                }}
+              >
+                MARKET VALIDATION
+              </p>
+            </div>
+            <p
+              style={{
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 400,
+                fontStyle: "normal",
+                fontSize: "14px",
+                lineHeight: "21.45px",
+                letterSpacing: "-0.33px",
+                verticalAlign: "middle",
+                color: "#65717C",
+                marginLeft: "8px",
+              }}
+            >
+              {content.marketValidation}
+            </p>
+          </div>
+        </div>
+        
+        {/* Right Side Image */}
+        <img
+          src="/Agentic_usecase_right.png"
+          alt="Agentic Usecase"
+          style={{
+            position: "absolute",
+            width: "280px",
+            height: "434px",
+            top: "42.41px",
+            right: "20px",
+            opacity: 1,
+            borderRadius: "24px",
+            zIndex: 5,
+          }}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative"
+      style={{
+        minHeight: `${scrollDistance * cards.length}px`,
+        paddingTop: "100px",
+        paddingBottom: "200px",
+      }}
+    >
+      {cards.map((card, index) => renderCard(card, index))}
+    </div>
+  )
+}
 
 function AgenticOpportunities({ initialFilter = "CONSUMER EXPERIENCE" }: { initialFilter?: string }) {
   const [activeFilter, setActiveFilter] = useState(initialFilter)
@@ -1623,13 +2082,11 @@ function AgenticOpportunities({ initialFilter = "CONSUMER EXPERIENCE" }: { initi
 
   const filters = ["CONSUMER EXPERIENCE", "ENTERPRISE PRODUCTIVITY", "DATA ACCELERATOR"]
   
-  // Get unselected pills
-  const unselectedPills = useMemo(() => {
-    return ALL_PILLS.filter(pill => !selectedPills.includes(pill))
-  }, [selectedPills])
-  
-  // Use pill data if a pill is selected, otherwise use filter data
-  const currentContent = pillData[activePill] || agentData[activeFilter] || agentData["CONSUMER EXPERIENCE"]
+  // Create array of 3 card contents (only filters)
+  const allCardContents = useMemo(() => {
+    const filterCards = filters.map(filter => agentData[filter])
+    return filterCards // Only use the 3 filter cards
+  }, [])
 
   const handlePillClick = (pill: string) => {
     // If pill is not already selected, add it to selected pills
@@ -1642,13 +2099,13 @@ function AgenticOpportunities({ initialFilter = "CONSUMER EXPERIENCE" }: { initi
 
   return (
     <section
-      className="w-full py-16 px-8 md:px-20 lg:px-20"
+      className="w-full py-16 px-8 md:px-20 lg:px-20 relative"
       style={{
         backgroundImage: "url('/Agentic_card_backdrop.png')",
         backgroundSize: "cover",
         backgroundPosition: "1200 center ",
         backgroundRepeat: "no-repeat",
-        opacity:0.9
+        opacity: 0.9,
       }}
       aria-labelledby="agentic-opportunities-heading"
     >
@@ -1729,346 +2186,8 @@ function AgenticOpportunities({ initialFilter = "CONSUMER EXPERIENCE" }: { initi
           </div>
         </div>
 
-        {/* Main Content Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] gap-8 lg:gap-6">
-          {/* Left: Selected Pills (all selected pills in horizontal row) */}
-          {selectedPills.length > 0 && (
-            <div className="hidden lg:flex flex-row items-center justify-center gap-3 lg:gap-4">
-              {selectedPills.map((pill) => (
-                <div
-                  key={pill}
-                  onClick={() => handlePillClick(pill)}
-                  className="border border-[#e6e6ea] p-0 transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer flex items-center justify-center"
-                  style={{
-                    width: "60px",
-                    height: "505px",
-                    borderRadius: "16px",
-                    opacity: 1,
-                    background: activePill === pill 
-                      ? "linear-gradient(213.47deg, #FFBAFD 31.16%, #FFFFFF 79.17%)"
-                      : "linear-gradient(213.47deg, #FFAD87 31.16%, #FFFFFF 79.17%)",
-                    fontFamily: "Poppins, sans-serif",
-                  }}
-                  aria-label={pill}
-                >
-                  <span
-                    style={{
-                      fontFamily: "Poppins, sans-serif",
-                      fontWeight: 500,
-                      fontStyle: "normal",
-                      fontSize: "24px",
-                      lineHeight: "120%",
-                      letterSpacing: "-0.49px",
-                      verticalAlign: "middle",
-                      color: "#181818",
-                      writingMode: "vertical-rl",
-                      textOrientation: "mixed",
-                      transform: "rotate(180deg)",
-                      display: "inline-block",
-                      height: "481px",
-                    }}
-                  >
-                    {pill}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Center: Main Content Card */}
-          <div
-            id={`agent-content-${activeFilter.toLowerCase().replace(/\s+/g, "-")}`}
-            role="tabpanel"
-            className="rounded-2xl border border-[#e6e6ea] p-7 md:p-9 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg relative overflow-hidden"
-            style={{
-              fontFamily: "Poppins, sans-serif",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundRepeat: "no-repeat",
-              backgroundColor:"#FFFFFF"
-            }}
-          >
-            <div className="relative z-10" style={{ maxWidth: "calc(100% - 320px)", paddingRight: "20px" }}>
-              {/* Agent Label */}
-              <span
-                className="inline-block mb-4"
-                style={{
-                  fontFamily: "Poppins, sans-serif",
-                  fontWeight: 500,
-                  fontStyle: "normal",
-                  fontSize: "12px",
-                  lineHeight: "140%",
-                  letterSpacing: "0%",
-                  textAlign: "center",
-                  color: "#F05283",
-                  width: "78.99999959707212px",
-                  height: "31.999999836788707px",
-                  transform: "rotate(-0.28deg)",
-                  opacity: 1,
-                  borderRadius: "4px",
-                  paddingTop: "4px",
-                  paddingRight: "16px",
-                  paddingBottom: "4px",
-                  paddingLeft: "16px",
-                  gap: "8px",
-                  background: "#FFEBF1",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {currentContent.label}
-              </span>
-
-              {/* Card Title */}
-              <h3
-                className="mb-6"
-                style={{
-                  fontFamily: "Poppins, sans-serif",
-                  fontWeight: 500,
-                  fontStyle: "normal",
-                  fontSize: "24px",
-                  lineHeight: "31.86px",
-                  letterSpacing: "-0.49px",
-                  verticalAlign: "middle",
-                  color: "#181818",
-                  width: "511px",
-                  height: "32px",
-                  maxWidth: "100%",
-                }}
-              >
-                {currentContent.title}
-              </h3>
-
-              {/* OPPORTUNITY, SOLUTION, and BUSINESS IMPACT Sections - Two Column Layout */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 pb-6 border-b border-[#e6e6ea]">
-                {/* Left Column: OPPORTUNITY and BUSINESS IMPACT */}
-                <div className="flex flex-col gap-6">
-                  {/* OPPORTUNITY Section */}
-                  <div>
-                    <div className="flex items-center gap-0 mb-2">
-                      <div
-                        className="flex items-center justify-center rounded"
-                        style={{
-                          width: "24px",
-                          height: "24px",
-                        }}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <circle cx="7" cy="7" r="6" stroke="#F05283" strokeWidth="1.5" fill="none"/>
-                          <circle cx="7" cy="7" r="3" fill="#F05283"/>
-                        </svg>
-                      </div>
-                      <p
-                        style={{
-                          fontFamily: "Poppins, sans-serif",
-                          fontWeight: 600,
-                          fontStyle: "normal",
-                          fontSize: "14px",
-                          lineHeight: "21px",
-                          letterSpacing: "0%",
-                          verticalAlign: "middle",
-                          color: "#111827",
-                          textTransform: "uppercase",
-                          margin: 0,
-                        }}
-                      >
-                        OPPORTUNITY
-                      </p>
-                    </div>
-                    <p
-                      style={{
-                        fontFamily: "Poppins, sans-serif",
-                        fontWeight: 400,
-                        fontStyle: "normal",
-                        fontSize: "14px",
-                        lineHeight: "21.45px",
-                        letterSpacing: "-0.33px",
-                        verticalAlign: "middle",
-                        color: "#65717C",
-                        marginLeft: "8px",
-                      }}
-                    >
-                      {currentContent.opportunity}
-                    </p>
-                  </div>
-
-                  {/* BUSINESS IMPACT Section */}
-                  <div>
-                    <div className="flex items-center gap-0 mb-2">
-                      <div
-                        className="flex items-center justify-center rounded"
-                        style={{
-                          width: "24px",
-                          height: "24px",
-                        }}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <path d="M2 10 L4 6 L7 8 L10 4 L12 6" stroke="#10B981" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M10 4 L12 4 L12 6" stroke="#10B981" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-                        </svg>
-                      </div>
-                      <p
-                        style={{
-                          fontFamily: "Poppins, sans-serif",
-                          fontWeight: 600,
-                          fontStyle: "normal",
-                          fontSize: "14px",
-                          lineHeight: "21px",
-                          letterSpacing: "0%",
-                          verticalAlign: "middle",
-                          color: "#111827",
-                          textTransform: "uppercase",
-                          margin: 0,
-                        }}
-                      >
-                        BUSINESS IMPACT
-                      </p>
-                    </div>
-                    <p
-                      style={{
-                        fontFamily: "Poppins, sans-serif",
-                        fontWeight: 400,
-                        fontStyle: "normal",
-                        fontSize: "14px",
-                        lineHeight: "21.45px",
-                        letterSpacing: "-0.33px",
-                        verticalAlign: "middle",
-                        color: "#65717C",
-                        marginLeft: "8px",
-                      }}
-                    >
-                      {currentContent.businessImpact}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Right Column: SOLUTION Section */}
-                <div>
-                  <div className="flex items-center gap-0 mb-3">
-                    <div
-                      className="flex items-center justify-center rounded"
-                      style={{
-                        width: "24px",
-                        height: "24px",
-                      }}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path d="M7 2 L9 6 L13 7 L9 8 L7 12 L5 8 L1 7 L5 6 Z" fill="#3B82F6"/>
-                      </svg>
-                    </div>
-                    <p
-                      style={{
-                        fontFamily: "Poppins, sans-serif",
-                        fontWeight: 600,
-                        fontStyle: "normal",
-                        fontSize: "14px",
-                        lineHeight: "21px",
-                        letterSpacing: "0%",
-                        verticalAlign: "middle",
-                        color: "#111827",
-                        textTransform: "uppercase",
-                        margin: 0,
-                      }}
-                    >
-                      SOLUTION
-                    </p>
-                  </div>
-                  <ul className="space-y-2">
-                    {currentContent.solution.map((item, idx) => (
-                      <li
-                        key={idx}
-                        className="flex items-start"
-                        style={{
-                          fontFamily: "Poppins, sans-serif",
-                          fontWeight: 400,
-                          fontStyle: "normal",
-                          fontSize: "14px",
-                          lineHeight: "21.45px",
-                          letterSpacing: "-0.33px",
-                          verticalAlign: "middle",
-                          color: "#65717C",
-                          marginLeft: "8px",
-                        }}
-                      >
-                        <span className="mr-2 text-[#6b2bb2]">•</span>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              {/* MARKET VALIDATION Section */}
-              <div>
-                <div className="flex items-center gap-0 mb-2">
-                  <div
-                    className="flex items-center justify-center rounded"
-                    style={{
-                      width: "24px",
-                      height: "24px",
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <path d="M7 2 L8 5 L11 6 L8 7 L7 10 L6 7 L3 6 L6 5 Z" fill="#F59E0B"/>
-                      <circle cx="7" cy="7" r="1.5" fill="#F59E0B"/>
-                    </svg>
-                  </div>
-                  <p
-                    style={{
-                      fontFamily: "Poppins, sans-serif",
-                      fontWeight: 600,
-                      fontStyle: "normal",
-                      fontSize: "14px",
-                      lineHeight: "21px",
-                      letterSpacing: "0%",
-                      verticalAlign: "middle",
-                      color: "#111827",
-                      textTransform: "uppercase",
-                      margin: 0,
-                    }}
-                  >
-                    MARKET VALIDATION
-                  </p>
-                </div>
-                <p
-                  style={{
-                    fontFamily: "Poppins, sans-serif",
-                    fontWeight: 400,
-                    fontStyle: "normal",
-                    fontSize: "14px",
-                    lineHeight: "21.45px",
-                    letterSpacing: "-0.33px",
-                    verticalAlign: "middle",
-                    color: "#65717C",
-                    marginLeft: "8px",
-                  }}
-                >
-                  {currentContent.marketValidation}
-                </p>
-              </div>
-            </div>
-            
-            {/* Right Side Image */}
-            <img
-              src="/Agentic_usecase_right.png"
-              alt="Agentic Usecase"
-              style={{
-                position: "absolute",
-                width: "280px",
-                height: "434px",
-                top: "42.41px",
-                right: "20px",
-                opacity: 1,
-                borderRadius: "24px",
-                zIndex: 5,
-              }}
-            />
-          </div>
-        </div>
+        {/* Stacked Cards Component */}
+        <StackedAgentCards cards={allCardContents} />
       </div>
     </section>
   )
