@@ -92,13 +92,13 @@ function MegaTrends({ trends = defaultTrends }: { trends?: Trend[] }) {
 
   return (
     <section
-      className="w-full py-16 px-8 md:px-20 lg:px-20 bg-white"
+      className="w-full py-16 px-8 md:px-20 lg:px-20 bg-white relative overflow-hidden"
       style={{
         minHeight: "650px",
       }}
       aria-label="Mega Trends section"
     >
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto relative" style={{ zIndex: 1 }}>
         {/* Section Header */}
         <div className="text-center mb-12">
           <h2
@@ -172,25 +172,19 @@ function MegaTrends({ trends = defaultTrends }: { trends?: Trend[] }) {
                 }}
               >
                 {/* Card Header - Number and Tag */}
-                <div className="flex justify-between items-start mb-4">
-                  {/* Large Index Number */}
-                  <span
+                <div className="flex justify-between items-start mb-6">
+                  {/* Large Index Number - Logo Image */}
+                  <Image
+                    src={`/Mega_trend_${trend.index}.png`}
+                    alt={`Mega Trend ${trend.index}`}
+                    width={57}
+                    height={64}
                     style={{
-                      fontFamily: "Poppins, sans-serif",
-                      fontWeight: 600,
-                      fontStyle: "normal",
-                      fontSize: "64px",
-                      lineHeight: "64px",
-                      letterSpacing: "-4px",
-                      verticalAlign: "middle",
-                      background: colors.numberGradient,
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      backgroundClip: "text",
+                      width: "57px",
+                      height: "64px",
+                      objectFit: "contain",
                     }}
-                  >
-                    {trend.index}
-                  </span>
+                  />
                   {/* Pill Tag */}
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-medium ${colors.tag} transition-colors`}
@@ -295,6 +289,36 @@ function MegaTrends({ trends = defaultTrends }: { trends?: Trend[] }) {
               </div>
             )
           })}
+        </div>
+      </div>
+
+      {/* Bottom Right Image - Positioned at extreme right bottom corner */}
+      <div className="hidden lg:block absolute right-0 bottom-0" style={{ zIndex: -1 }}>
+        <div className="relative h-auto">
+          <Image
+            src="/Mega_trend_outer.png"
+            alt="Mega Trends Illustration"
+            width={600}
+            height={342}
+            className="object-contain h-auto max-h-[343px] md:max-h-[343px]"
+            style={{ width: "auto", height: "auto", display: "block"}}
+            priority
+          />
+        </div>
+      </div>
+
+      {/* Bottom Right Image - Mobile/Tablet view */}
+      <div className="lg:hidden w-full flex items-center justify-center mt-8">
+        <div className="relative h-auto">
+          <Image
+            src="/Mega_trend_outer.png"
+            alt="Mega Trends Illustration"
+            width={600}
+            height={342}
+            className="object-contain h-auto max-h-[480px] md:max-h-[520px]"
+            style={{ width: "auto", height: "auto", display: "block" }}
+            priority
+          />
         </div>
       </div>
     </section>
@@ -515,17 +539,17 @@ export default function BrandssPage() {
                 className="relative"
                 style={{
                   width: "378px",
-                  height: "469px",
+                  height: "550px",
                   mixBlendMode: "darken",
-                  marginTop: "clamp(60px, 10vw, 120px)",
+                  marginTop: "clamp(10px, 2.5vw, 30px)",
                   opacity: 1,
                 }}
               >
                 <Image
-                  src="/img/henkin_logo.png"
+                  src="/Henkin_bottle.png"
                   alt="Heineken Bottle"
                   width={378}
-                  height={469}
+                  height={550}
                   className="w-full h-full object-contain image-hover fade-in"
                   style={{
                     opacity: 1,
@@ -556,242 +580,185 @@ export default function BrandssPage() {
 
       {/* Want to deploy Tangram section */}
       <AnimatedSection delay={0.4}>
-      <section className="w-full py-20 px-8 md:px-16 lg:px-20" style={{ 
-        marginTop:"40px",
-        marginBottom:"40px",
-        width: "100%",
-        height: "548px",
-        opacity: 1,
-        position: "relative",
-        background: "#FFFFFF",
-        // margin: "0 auto",
-        textRendering: "optimizeLegibility",
-        WebkitFontSmoothing: "antialiased",
-        boxSizing: "border-box",
-        overflow: "hidden",
-        zIndex: 1,
-        maxWidth: "100%",
-      }}>
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          top: 0,
-          left: "50%",
-          transform: "translateX(-50%)",
-          backgroundImage: "url('/img/bgpattern.svg')",
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "center center",
-          backgroundSize: "contain",
-          opacity: 1,
-          zIndex: 0,
-          pointerEvents: "none",
-          width: "100%",
-          maxWidth: "1356px",
-          height: "100%",
-        }} />
-        <div className="max-w-7xl mx-auto" style={{
-          position: "relative",
-          border: "none",
-          borderRadius: 0,
-          background: "transparent",
-          padding: "70px clamp(24px, 4vw, 48px)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 0,
-          boxSizing: "border-box",
-          zIndex: 2,
-          minHeight: "200px",
-        }}>
-          {/* Header Section */}
-          <div style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "12px",
-            width: "100%",
-            marginBottom: "32px",
-            boxSizing: "border-box",
-          }}>
-            {/* Main Heading */}
-            <h1 style={{
-              fontFamily: "Poppins, sans-serif",
-              fontWeight: 600,
-              fontStyle: "normal",
-              fontSize: "32px",
-              lineHeight: "44.8px",
-              letterSpacing: "-0.64px",
-              textAlign: "center",
-              verticalAlign: "middle",
-              background: "linear-gradient(to left, #0082c0 0%, #3b60af 100%)",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              color: "transparent",
-              margin: 0,
-              width: "100%",
-              maxWidth: "100%",
-              padding: "0 16px",
-              boxSizing: "border-box",
-            }}>
-              Want to deploy Tangram at your enterprise?
-            </h1>
+        <section className="w-full py-10 px-0 md:px-0 lg:px-20 mt-0 lg:mt-8 relative overflow-hidden">
+          <div className="max-w-7xl mx-auto relative">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:gap-12">
+              {/* Left Content */}
+              <div className="w-full lg:w-1/2 flex flex-col gap-6 lg:gap-8 relative z-10 lg:pr-0">
+                {/* Tagline */}
+                {/* Main Heading - Can overlap image */}
+                <h1 
+                  className="lg:-mr-32 lg:pr-0 lg:w-[1200px]"
+                  style={{
+                    fontFamily: "Poppins, sans-serif",
+                    fontWeight: 400,
+                    fontStyle: "normal",
+                    fontSize: "62px",
+                    lineHeight: "120%",
+                    letterSpacing: "0px",
+                    verticalAlign: "middle",
+                    background: "linear-gradient(90deg, #2F0368 0%, #5E04D2 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                    color: "transparent",
+                    maxWidth: "1200px",
+                    minHeight: "148px",
+                    opacity: 1,
+                    transform: "rotate(0deg)",
+                    wordWrap: "break-word",
+                    overflowWrap: "break-word",
+                    position: "relative",
+                    overflow: "visible",
+                    top: "55px",
+                    marginBottom: "32px"
+                  }}
+                >
+                  Crayon Data Challenge: 
+                  3 days to <br /> build a working Prototype.
+                </h1>
 
-            {/* Subtitle */}
-            <p style={{
-              fontFamily: "Poppins, sans-serif",
-              fontWeight: 400,
-              fontStyle: "normal",
-              fontSize: "16px",
-              lineHeight: "24px",
-              letterSpacing: "0%",
-              textAlign: "center",
-              verticalAlign: "middle",
-              color: "#6b7280",
-              margin: 0,
-              width: "100%",
-              maxWidth: "548px",
-              position: "relative",
-            }}>
-              Get in touch and learn how tangram.ai can  help you <br/>unlock the full potential of Gen AI for your business.
-            </p>
-          </div>
+                {/* Subtext */}
+                <p 
+                  style={{ 
+                    fontFamily: "Poppins, sans-serif", 
+                    color: "#181818", 
+                    fontSize: "24px", 
+                    lineHeight: "160%", 
+                    letterSpacing: "0%",
+                    width: "700px",
+                    height: "114px",
+                    opacity: 1,
+                    transform: "rotate(0deg)",
+                    position: "relative",
+                    marginTop:"10px"
+                  }}
+                >
+                  <span style={{ fontWeight: 600, fontStyle: "normal" }}>We challenge your team.<span style={{ fontWeight: 400, fontStyle: "normal" }} >Take your best AI and Agentic</span></span>
+                  <span style={{ fontWeight: 400, fontStyle: "normal" }}>Workflow idea, and we deliver a validated, built, and shipped pilot in just 3 weeks.</span>
+                </p>
 
-          {/* Button Group */}
-          <div style={{
-            display: "flex",
-            flexDirection: "row",
-            gap: "24px",
-            alignItems: "center",
-            justifyContent: "center",
-            paddingTop: 0,
-            width: "100%",
-            boxSizing: "border-box",
-          }}>
-            <div style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-start",
-              justifyContent: "center",
-              height: "48px",
-              position: "relative",
-              background: "rgba(121, 133, 171, 0.05)",
-              borderRadius: "4px",
-              padding: "20px 28px",
-              boxSizing: "border-box",
-              flexShrink: 0,
-              minWidth: "135px",
-            }}>
-              {/* Shadow element */}
-              <div style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                width: "139px",
-                height: "48px",
-                opacity: 1,
-                paddingTop: "20px",
-                paddingRight: "28px",
-                paddingBottom: "20px",
-                paddingLeft: "28px",
-                background: "#0081C500",
-                zIndex: 0,
-                boxSizing: "border-box",
-              }} />
-              <a
-                href="/agents"
-                style={{
-                  position: "absolute",
-                  left: "2px",
-                  top: "2px",
-                  width: "135px",
-                  height: "44px",
-                  opacity: 1,
-                  borderRadius: "12px",
-                  zIndex: 1,
-                  fontFamily: "Poppins, sans-serif",
-                  fontWeight: 500,
-                  fontStyle: "normal",
-                  fontSize: "14px",
-                  lineHeight: "21px",
-                  letterSpacing: "0%",
-                  color: "#FFFFFF",
-                  background: "black",
-                  border: "none",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  whiteSpace: "nowrap",
-                  boxSizing: "border-box",
-                  textDecoration: "none",
-                  cursor: "pointer",
-                  pointerEvents: "auto",
-                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.opacity = "0.9"
-                  e.currentTarget.style.transform = "translateY(-2px)"
-                  e.currentTarget.style.boxShadow = "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)"
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.opacity = "1"
-                  e.currentTarget.style.transform = "translateY(0)"
-                  e.currentTarget.style.boxShadow = "none"
-                }}
-              >
-                Agent Store 
-              </a>
+                {/* Tagline */}
+                <p 
+                  className="max-w-lg flex items-center gap-2 mt-4"
+                  style={{
+                    fontFamily: "Poppins, sans-serif",
+                    fontWeight: 600,
+                    fontStyle: "normal",
+                    fontSize: "18px",
+                    lineHeight: "100%",
+                    letterSpacing: "8%",
+                    textTransform: "uppercase",
+                    color: "#181818"
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 1L10 6L2 11V1Z" fill="#00AE8D"/>
+                  </svg>
+                  Prove your speed. Ship your future.
+                </p>
+
+                {/* CTA Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 mt-4 mb-5">
+                  <a
+                    href="#"
+                    className="text-white text-center transition-all duration-200 hover:opacity-90"
+                    style={{
+                      fontFamily: "Poppins, sans-serif",
+                      fontWeight: 500,
+                      fontStyle: "normal",
+                      fontSize: "14px",
+                      lineHeight: "21px",
+                      letterSpacing: "0%",
+                      verticalAlign: "middle",
+                      textTransform: "uppercase",
+                      maxWidth: "1053.95px",
+                      borderRadius: "4.09px",
+                      opacity: 1,
+                      borderWidth: "1px",
+                      paddingTop: "12.26px",
+                      paddingRight: "16.34px",
+                      paddingBottom: "12.26px",
+                      paddingLeft: "16.34px",
+                      gap: "4.08px",
+                      background: "#181818",
+                      border: "1px solid #181818",
+                      transform: "rotate(0deg)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    ACCEPT THE 3-WEEK CHALLENGE
+                  </a>
+                  <a
+                    href="#"
+                    className="text-black text-center transition-all duration-200 hover:bg-gray-50"
+                    style={{
+                      fontFamily: "Poppins, sans-serif",
+                      fontWeight: 500,
+                      fontStyle: "normal",
+                      fontSize: "14px",
+                      lineHeight: "21px",
+                      letterSpacing: "0%",
+                      verticalAlign: "middle",
+                      textTransform: "uppercase",
+                      maxWidth: "1053.95px",
+                      borderRadius: "4.09px",
+                      opacity: 1,
+                      borderWidth: "1px",
+                      paddingTop: "12.26px",
+                      paddingRight: "16.34px",
+                      paddingBottom: "12.26px",
+                      paddingLeft: "16.34px",
+                      gap: "4.08px",
+                      background: "#FFFFFF",
+                      border: "1px solid #181818",
+                      transform: "rotate(0deg)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    SEE HOW WE DO IT
+                  </a>
+                </div>
+              </div>
             </div>
-            <a
-              href="/ai-catalyst"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                width: "135px",
-                height: "44px",
-                opacity: 1,
-                borderRadius: "12px",
-                padding: "16px",
-                fontFamily: "Poppins, sans-serif",
-                fontWeight: 500,
-                fontStyle: "normal",
-                fontSize: "14px",
-                lineHeight: "21px",
-                letterSpacing: "0%",
-                color: "#111827",
-                background: "transparent",
-                border: "1px solid #222222",
-                cursor: "pointer",
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                outline: "none",
-                textDecoration: "none",
-                whiteSpace: "nowrap",
-                boxSizing: "border-box",
-                position: "relative",
-                flexShrink: 0,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(0, 0, 0, 0.04)"
-                e.currentTarget.style.transform = "translateY(-2px)"
-                e.currentTarget.style.boxShadow = "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)"
-                e.currentTarget.style.borderColor = "#000000"
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent"
-                e.currentTarget.style.transform = "translateY(0)"
-                e.currentTarget.style.boxShadow = "none"
-                e.currentTarget.style.borderColor = "#222222"
-              }}
-            >
-              AI Catalyst
-            </a>
           </div>
-        </div>
-      </section>
+
+          {/* Right Image - Positioned at extreme right bottom corner */}
+          <div className="hidden lg:block absolute right-0 bottom-0 z-0">
+            <div className="relative h-auto">
+              <Image
+                src="/Want_to_deploy_right1.png"
+                alt="AI and Agentic Workflow Illustration"
+                width={600}
+                height={520}
+                className="object-contain h-auto max-h-[480px] md:max-h-[520px]"
+                style={{ width: "auto", height: "auto", display: "block " }}
+                priority
+              />
+            </div>
+          </div>
+
+          {/* Right Image - Mobile/Tablet view */}
+          <div className="lg:hidden w-full flex items-center justify-center mt-8">
+            <div className="relative h-auto">
+              <Image
+                src="/Want_to_deploy_right1.png"
+                alt="AI and Agentic Workflow Illustration"
+                width={600}
+                height={520}
+                className="object-contain h-auto max-h-[480px] md:max-h-[520px]"
+                style={{ width: "auto", height: "auto", display: "block" }}
+                priority
+              />
+            </div>
+          </div>
+        </section>
       </AnimatedSection>
     </div>
   )
@@ -1675,7 +1642,14 @@ function AgenticOpportunities({ initialFilter = "CONSUMER EXPERIENCE" }: { initi
 
   return (
     <section
-      className="w-full py-16 px-8 md:px-20 lg:px-20 bg-[#fbfbfc]"
+      className="w-full py-16 px-8 md:px-20 lg:px-20"
+      style={{
+        backgroundImage: "url('/Agentic_card_backdrop.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "1200 center ",
+        backgroundRepeat: "no-repeat",
+        opacity:0.9
+      }}
       aria-labelledby="agentic-opportunities-heading"
     >
       <div className="max-w-7xl mx-auto">
@@ -1693,7 +1667,7 @@ function AgenticOpportunities({ initialFilter = "CONSUMER EXPERIENCE" }: { initi
               letterSpacing: "0px",
               textAlign: "center",
               verticalAlign: "middle",
-              background: "linear-gradient(90deg, #2F0368 0%, #5E04D2 100%)",
+              background: "linear-gradient(90deg, #EE4C75 0%, #F07558 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -1808,10 +1782,13 @@ function AgenticOpportunities({ initialFilter = "CONSUMER EXPERIENCE" }: { initi
             className="rounded-2xl border border-[#e6e6ea] p-7 md:p-9 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg relative overflow-hidden"
             style={{
               fontFamily: "Poppins, sans-serif",
-              background: "linear-gradient(239.28deg, #FED1E6 2.61%, #FFFFFF 47.78%)",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              backgroundColor:"#FFFFFF"
             }}
           >
-            <div className="relative z-10">
+            <div className="relative z-10" style={{ maxWidth: "calc(100% - 320px)", paddingRight: "20px" }}>
               {/* Agent Label */}
               <span
                 className="inline-block mb-4"
@@ -2074,48 +2051,22 @@ function AgenticOpportunities({ initialFilter = "CONSUMER EXPERIENCE" }: { initi
                 </p>
               </div>
             </div>
-          </div>
-
-          {/* Right: Unselected Pills */}
-          <div className="flex flex-row items-center justify-end gap-3 lg:gap-4 lg:ml-auto">
-            {unselectedPills.map((pill, idx) => {
-              return (
-                <div
-                  key={pill}
-                  onClick={() => handlePillClick(pill)}
-                  className="border border-[#e6e6ea] p-0 transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer flex items-center justify-center"
-                  style={{
-                    width: "60px",
-                    height: "505px",
-                    borderRadius: "16px",
-                    opacity: 1,
-                    background: "linear-gradient(213.47deg, #FFAD87 31.16%, #FFFFFF 79.17%)",
-                    fontFamily: "Poppins, sans-serif",
-                  }}
-                  aria-label={pill}
-                >
-                  <span
-                    style={{
-                      fontFamily: "Poppins, sans-serif",
-                      fontWeight: 500,
-                      fontStyle: "normal",
-                      fontSize: "24px",
-                      lineHeight: "120%",
-                      letterSpacing: "-0.49px",
-                      verticalAlign: "middle",
-                      color: "#181818",
-                      writingMode: "vertical-rl",
-                      textOrientation: "mixed",
-                      transform: "rotate(180deg)",
-                      display: "inline-block",
-                      height: "481px",
-                    }}
-                  >
-                    {pill}
-                  </span>
-                </div>
-              )
-            })}
+            
+            {/* Right Side Image */}
+            <img
+              src="/Agentic_usecase_right.png"
+              alt="Agentic Usecase"
+              style={{
+                position: "absolute",
+                width: "280px",
+                height: "434px",
+                top: "42.41px",
+                right: "20px",
+                opacity: 1,
+                borderRadius: "24px",
+                zIndex: 5,
+              }}
+            />
           </div>
         </div>
       </div>
