@@ -874,21 +874,19 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
               </Tabs>
             </div>
 
-            {/* Sidebar - Independent of tabs, always visible */}
-            {/* <div className="flex justify-center items-start">
-              <RelatedAgentsSidebar 
-                relatedAgents={relatedAgents}
-                agentName={agent?.agent_name}
-              />
-            </div> */}
-            <div className="flex justify-center items-start  mt-8">
-              <div className="w-full max-w-sm bg-white rounded-xl shadow-md border border-gray-200 ">
-                <RelatedAgentsSidebar
-                  relatedAgents={relatedAgents}
-                  agentName={agent?.agent_name}
-                  agentsSource={agentsSource}
-                />
-              </div>
+            {/* Sidebar - Independent of tabs, always visible to maintain layout */}
+            <div className="flex-shrink-0" style={{ minWidth: '490px', width: 'fit-content', maxWidth: '490px', marginTop: '30px', marginRight: '100px' }}>
+              {relatedAgents.length > 0 ? (
+                <div className="w-full bg-white rounded-xl shadow-md border border-gray-200">
+                  <RelatedAgentsSidebar
+                    relatedAgents={relatedAgents}
+                    agentName={agent?.agent_name}
+                    agentsSource={agentsSource}
+                  />
+                </div>
+              ) : (
+                <div style={{ minWidth: '490px', width: 'fit-content', maxWidth: '600px', height: '1px' }} aria-hidden="true" />
+              )}
             </div>
 
           </div>
