@@ -16,6 +16,7 @@ interface FormData {
   agentDescription: string
   agentType: string
   tags: string[]
+  bundledAgents?: string[]
   targetPersonas: string[]
   keyFeatures: string
   valueProposition: string
@@ -24,6 +25,7 @@ interface FormData {
   
   // Tab 2: Capabilities
   coreCapabilities: string[]
+  coreCapabilityMap?: Record<string, string>
   
   // Tab 3: Demo Assets
   demoLinks: string[]
@@ -36,7 +38,7 @@ interface FormData {
   sampleOutput: string
   securityDetails: string
   readmeFile: File | null
-  additionalRelatedFiles: string
+  additionalRelatedFiles: string | string[]
   deploymentOptions: DeploymentOption[]
 }
 
@@ -261,12 +263,25 @@ export function OnboardAgentPreview({ formData }: OnboardAgentPreviewProps) {
                       {formData.additionalRelatedFiles && (
                         <div>
                           <h5 className="text-sm font-medium text-gray-700 mb-2">Additional Related Files</h5>
-                          <ReadMore text={formData.additionalRelatedFiles} className="text-gray-600" />
+                          {Array.isArray(formData.additionalRelatedFiles) ? (
+                            <ul className="list-disc list-inside space-y-1">
+                              {formData.additionalRelatedFiles.map((link, idx) => (
+                                <li key={idx} className="text-gray-600">
+                                  <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                    {link}
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <ReadMore text={formData.additionalRelatedFiles} className="text-gray-600" />
+                          )}
                         </div>
                       )}
                       {!formData.sdkDetails && !formData.apiDocumentation && 
                        !formData.sampleInput && !formData.sampleOutput && 
-                       !formData.securityDetails && !formData.additionalRelatedFiles && (
+                       !formData.securityDetails && (!formData.additionalRelatedFiles || 
+                       (Array.isArray(formData.additionalRelatedFiles) && formData.additionalRelatedFiles.length === 0)) && (
                         <p className="text-gray-500 italic">No documentation available</p>
                       )}
                     </div>

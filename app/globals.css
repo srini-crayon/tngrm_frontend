@@ -1126,3 +1126,63 @@ nextjs-portal {
   left: 100%;
 }
 
+/* Hide scrollbar for onboarding modal */
+.scrollbar-hide {
+  -webkit-overflow-scrolling: touch;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Onboarding Modal Animations */
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes progressBar {
+  from {
+    width: 0%;
+  }
+  to {
+    width: var(--progress-width);
+  }
+}
+
+/* Smooth step transitions */
+.onboarding-step-enter {
+  animation: fadeInSlide 0.3s ease-out;
+}
+
+.onboarding-step-exit {
+  animation: fadeOut 0.2s ease-in;
+}
+
+/* Enhanced input focus states */
+.onboarding-input:focus {
+  border-color: #004BEC;
+  box-shadow: 0 0 0 3px rgba(0, 75, 236, 0.1);
+  outline: none;
+}
+
+/* Interactive button hover effects */
+.onboarding-button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.onboarding-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.onboarding-button:active {
+  transform: translateY(0);
+}
+
