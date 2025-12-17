@@ -614,42 +614,52 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
                   >
                     ROI
                   </TabsTrigger>
-                  <TabsTrigger
-                    value="deployment"
-                    className="relative pb-2 bg-transparent border-0 rounded-none data-[state=active]:bg-transparent data-[state=inactive]:bg-transparent h-auto shadow-none data-[state=active]:shadow-none text-left"
-                    style={{
-                      fontFamily: "Poppins, sans-serif",
-                      fontSize: "14px",
-                      fontWeight: 500,
-                      color: "#344054",
-                      padding: "8px",
-                      whiteSpace: "nowrap",
-                      cursor: "pointer",
-                      transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-weight 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                      boxShadow: "none",
-                      textAlign: "left",
-                    }}
-                  >
-                    Deployment
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="docs"
-                    className="relative pb-2 bg-transparent border-0 rounded-none data-[state=active]:bg-transparent data-[state=inactive]:bg-transparent h-auto shadow-none data-[state=active]:shadow-none text-left"
-                    style={{
-                      fontFamily: "Poppins, sans-serif",
-                      fontSize: "14px",
-                      fontWeight: 500,
-                      color: "#344054",
-                      padding: "8px",
-                      whiteSpace: "nowrap",
-                      cursor: "pointer",
-                      transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-weight 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                      boxShadow: "none",
-                      textAlign: "left",
-                    }}
-                  >
-                    Docs
-                  </TabsTrigger>
+                  {data?.deployments && data.deployments.length > 0 && (
+                    <TabsTrigger
+                      value="deployment"
+                      className="relative pb-2 bg-transparent border-0 rounded-none data-[state=active]:bg-transparent data-[state=inactive]:bg-transparent h-auto shadow-none data-[state=active]:shadow-none text-left"
+                      style={{
+                        fontFamily: "Poppins, sans-serif",
+                        fontSize: "14px",
+                        fontWeight: 500,
+                        color: "#344054",
+                        padding: "8px",
+                        whiteSpace: "nowrap",
+                        cursor: "pointer",
+                        transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-weight 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                        boxShadow: "none",
+                        textAlign: "left",
+                      }}
+                    >
+                      Deployment
+                    </TabsTrigger>
+                  )}
+                  {data?.documentation && data.documentation.length > 0 && data.documentation[0] && (
+                    (() => {
+                      const doc = data.documentation[0]
+                      const hasContent = doc.sdk_details || doc.swagger_details || doc.sample_input || doc.sample_output || doc.security_details || doc.related_files
+                      return hasContent ? (
+                        <TabsTrigger
+                          value="docs"
+                          className="relative pb-2 bg-transparent border-0 rounded-none data-[state=active]:bg-transparent data-[state=inactive]:bg-transparent h-auto shadow-none data-[state=active]:shadow-none text-left"
+                          style={{
+                            fontFamily: "Poppins, sans-serif",
+                            fontSize: "14px",
+                            fontWeight: 500,
+                            color: "#344054",
+                            padding: "8px",
+                            whiteSpace: "nowrap",
+                            cursor: "pointer",
+                            transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-weight 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                            boxShadow: "none",
+                            textAlign: "left",
+                          }}
+                        >
+                          Docs
+                        </TabsTrigger>
+                      ) : null
+                    })()
+                  )}
                 </TabsList>
                 <TabsContent value="features" style={{ marginTop: "8px" }}>
                   {agent?.features && agent.features !== "na" ? (
@@ -808,11 +818,9 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
                     </p>
                   )}
                 </TabsContent>
-                <TabsContent value="deployment" className="mt-6">
-                  {(!data?.deployments || data.deployments.length === 0) ? (
-                    <p className="text-muted-foreground">No deployment information available.</p>
-                  ) : (
-                    (() => {
+                {data?.deployments && data.deployments.length > 0 && (
+                  <TabsContent value="deployment" className="mt-6">
+                    {(() => {
                       const groups: Record<string, typeof data.deployments> = {}
                       for (const d of (data?.deployments || [])) {
                         const key = d?.service_provider || 'Other'
@@ -849,16 +857,20 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
                           ))}
                         </Accordion>
                       )
-                    })()
-                  )}
-                </TabsContent>
-                <TabsContent value="docs" className="mt-6">
-                  {data?.documentation && data.documentation.length > 0 && data.documentation[0] ? (
-                    <DocumentationSection documentation={data.documentation[0]} />
-                  ) : (
-                    <p className="text-muted-foreground">Documentation is not available for this agent.</p>
-                  )}
-                </TabsContent>
+                    })()}
+                  </TabsContent>
+                )}
+                {data?.documentation && data.documentation.length > 0 && data.documentation[0] && (
+                  (() => {
+                    const doc = data.documentation[0]
+                    const hasContent = doc.sdk_details || doc.swagger_details || doc.sample_input || doc.sample_output || doc.security_details || doc.related_files
+                    return hasContent ? (
+                      <TabsContent value="docs" className="mt-6">
+                        <DocumentationSection documentation={doc} />
+                      </TabsContent>
+                    ) : null
+                  })()
+                )}
               </Tabs>
             </div>
 
