@@ -250,7 +250,7 @@ export default function AICatalystPage() {
                     >
                       <div className="relative w-[286px] h-[291px]">
                         <Image
-                          src="https://www.figma.com/api/mcp/asset/ae9a57a8-0413-4cf5-9a75-bf5bef926ef0"
+                          src="Labs.png"
                           alt="Labs"
                           fill
                           className="object-contain rounded-tl-[16px] rounded-tr-[16px]"
@@ -412,7 +412,7 @@ export default function AICatalystPage() {
                     >
                       <div className="relative w-[286px] h-[291px]">
                         <Image
-                          src="https://www.figma.com/api/mcp/asset/5daf3d3f-be18-4775-8ebe-1d388a5942bf"
+                          src="Foundary.png"
                           alt="Foundry"
                           fill
                           className="object-contain rounded-tl-[16px] rounded-tr-[16px]"
@@ -574,7 +574,7 @@ export default function AICatalystPage() {
                     >
                       <div className="relative w-[282px] h-[292px]">
                         <Image
-                          src="https://www.figma.com/api/mcp/asset/8e57fd80-15f8-4270-b9bf-2cbb434ce2d4"
+                          src="Factory.png"
                           alt="Factory"
                           fill
                           className="object-contain rounded-tl-[16px] rounded-tr-[16px]"

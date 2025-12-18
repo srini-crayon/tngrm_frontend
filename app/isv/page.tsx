@@ -313,10 +313,10 @@ export default function ISVPage() {
             <button
               onClick={() => openModal("auth", { mode: "login", role: "isv" })}
               className="border-gradient relative text-white rounded-[4px] px-[28px] cursor-pointer transition-all hover:opacity-90 hover:scale-105"
-              style={{ willChange: "transform" } as React.CSSProperties}
-            style={{
-              display: "flex",
-              height: "48px",
+              style={{
+                willChange: "transform",
+                display: "flex",
+                height: "48px",
               flexDirection: "column",
               justifyContent: "center",
               alignItems: "center",
@@ -502,13 +502,15 @@ export default function ISVPage() {
                   height: "49.02px",
                 }}
               >
-                <Image
-                  src="https://www.figma.com/api/mcp/asset/8a4eef0e-385d-4a31-bcc2-5dd56b5f4b38"
-                  alt="Accelerate Project Successes"
-                  width={24.5}
-                  height={24.5}
-                  className="object-contain"
-                />
+                <div 
+                className="bg-[#181818] rounded-[8.17px] flex items-center justify-center shrink-0 relative z-10"
+                style={{
+                  width: "49.02px",
+                  height: "49.02px",
+                }}
+              >
+                <Target className="w-6 h-6 text-white" />
+              </div>
               </div>
               
               {/* Content */}
@@ -560,6 +562,7 @@ export default function ISVPage() {
               }}
             >
               {/* Icon */}
+            
               <div 
                 className="bg-[#181818] rounded-[8.17px] flex items-center justify-center shrink-0 relative z-10"
                 style={{
@@ -567,13 +570,7 @@ export default function ISVPage() {
                   height: "49.02px",
                 }}
               >
-                <Image
-                  src="https://www.figma.com/api/mcp/asset/9c877fdb-a829-406b-969c-4ec7bff5b898"
-                  alt="Scale your operations globally"
-                  width={24.5}
-                  height={24.5}
-                  className="object-contain"
-                />
+                <Globe className="w-6 h-6 text-white" />
               </div>
              
               {/* Content */}
@@ -633,13 +630,7 @@ export default function ISVPage() {
                   height: "49.02px",
                 }}
               >
-                <Image
-                  src="https://www.figma.com/api/mcp/asset/6f100737-627e-4eb0-aae3-b04d34f9d940"
-                  alt="Get faster business results"
-                  width={24.5}
-                  height={24.5}
-                  className="object-contain"
-                />
+                <TrendingUp className="w-6 h-6 text-white" />
               </div>
               
               {/* Content */}
@@ -722,18 +713,20 @@ export default function ISVPage() {
                 {/* Logo */}
                 <div 
                   className="relative shrink-0"
-                style={{
+                  style={{
                     width: "481.33px",
                     height: "148.77px",
                     maxWidth: "100%",
+                    position: "relative",
                   }}
                 >
                   <Image
-                    src="https://www.figma.com/api/mcp/asset/7519488f-c8ba-4070-bd1d-ed93e6ff8330"
+                    src="/Mozak_logo.png"
                     alt="Mozark Logo"
-                    width={481}
+                    width={482}
                     height={149}
                     className="object-contain rounded-[8px]"
+                    unoptimized
                     style={{
                       width: "100%",
                       height: "100%",
@@ -796,22 +789,24 @@ export default function ISVPage() {
                 {/* Logo */}
             <div 
                   className="relative shrink-0"
-              style={{
+                  style={{
                     width: "481.33px",
                     height: "148.77px",
                     maxWidth: "100%",
+                    position: "relative",
                   }}
                 >
                   <Image
-                    src="https://www.figma.com/api/mcp/asset/7519488f-c8ba-4070-bd1d-ed93e6ff8330"
+                    src="/Mozak_logo.png"
                     alt="Mozark Logo"
-                    width={481}
+                    width={482}
                     height={149}
                     className="object-contain rounded-[8px]"
-                style={{
+                    unoptimized
+                    style={{
                       width: "100%",
                       height: "100%",
-                }}
+                    }}
                   />
               </div>
 
@@ -868,18 +863,20 @@ export default function ISVPage() {
                 {/* Logo */}
                 <div 
                   className="relative shrink-0"
-                style={{
+                  style={{
                     width: "481.33px",
                     height: "148.77px",
                     maxWidth: "100%",
+                    position: "relative",
                   }}
                 >
                   <Image
-                    src="https://www.figma.com/api/mcp/asset/7519488f-c8ba-4070-bd1d-ed93e6ff8330"
+                    src="/Mozak_logo.png"
                     alt="Mozark Logo"
-                    width={481}
+                    width={482}
                     height={149}
                     className="object-contain rounded-[8px]"
+                    unoptimized
                     style={{
                       width: "100%",
                       height: "100%",
@@ -941,22 +938,24 @@ export default function ISVPage() {
                 {/* Logo */}
                 <div 
                   className="relative shrink-0"
-                style={{
-                  width: "481.33px",
-                  height: "148.77px",
+                  style={{
+                    width: "481.33px",
+                    height: "148.77px",
                     maxWidth: "100%",
-                }}
-              >
+                    position: "relative",
+                  }}
+                >
                 <Image 
-                    src="https://www.figma.com/api/mcp/asset/7519488f-c8ba-4070-bd1d-ed93e6ff8330"
+                    src="/Mozak_logo.png"
                     alt="Mozark Logo"
-                    width={481}
+                    width={482}
                     height={149}
                     className="object-contain rounded-[8px]"
-                  style={{
+                    unoptimized
+                    style={{
                       width: "100%",
                       height: "100%",
-                  }}
+                    }}
                 />
               </div>
 
@@ -1013,19 +1012,21 @@ export default function ISVPage() {
                 {/* Logo */}
             <div 
                   className="relative shrink-0"
-                style={{
-                  width: "481.33px",
-                  height: "148.77px",
+                  style={{
+                    width: "481.33px",
+                    height: "148.77px",
                     maxWidth: "100%",
-                }}
+                    position: "relative",
+                  }}
               >
                 <Image 
-                    src="https://www.figma.com/api/mcp/asset/7519488f-c8ba-4070-bd1d-ed93e6ff8330"
+                    src="/Mozak_logo.png"
                     alt="Mozark Logo"
-                    width={481}
+                    width={482}
                     height={149}
                     className="object-contain rounded-[8px]"
-                  style={{
+                    unoptimized
+                    style={{
                       width: "100%",
                       height: "100%",
                     }}
@@ -1085,18 +1086,20 @@ export default function ISVPage() {
                 {/* Logo */}
             <div 
                   className="relative shrink-0"
-              style={{
+                  style={{
                     width: "481.33px",
                     height: "148.77px",
                     maxWidth: "100%",
+                    position: "relative",
                   }}
                 >
                   <Image
-                    src="https://www.figma.com/api/mcp/asset/7519488f-c8ba-4070-bd1d-ed93e6ff8330"
+                    src="/Mozak_logo.png"
                     alt="Mozark Logo"
-                    width={481}
+                    width={482}
                     height={149}
                     className="object-contain rounded-[8px]"
+                    unoptimized
                     style={{
                       width: "100%",
                       height: "100%",

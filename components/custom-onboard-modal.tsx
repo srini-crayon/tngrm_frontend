@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
@@ -105,8 +105,14 @@ const serviceNameOptions = [
 ]
 const deploymentTypeOptions = ["Cloud", "On-Prem", "Hybrid", "Edge", "Serverless"]
 
+// Capability interface
+interface Capability {
+  by_capability_id: string
+  by_capability: string
+}
+
 // Form data interface
-interface FormData {
+interface AgentFormData {
   // Tab 1: Agent Details
   agentName: string
   agentDescription: string
@@ -119,8 +125,9 @@ interface FormData {
   roiInformation: string
   demoLink: string
   
-  // Tab 2: Capabilities
-  coreCapabilities: string[]
+  // Tab 2: Capabilities - store both ID and name
+  coreCapabilities: string[] // Store capability IDs
+  coreCapabilityMap: Record<string, string> // Map capability ID to name
   
   // Tab 3: Demo Assets
   demoLinks: string[]
@@ -151,6 +158,19 @@ interface DeploymentOption {
   deploymentType: string
   cloudRegion: string
   capability: string
+  capabilityId?: string // Store capability ID for reference
+}
+
+// API response interface for deployments
+interface DeploymentApiResponse {
+  capability_id: string
+  capability_name: string
+  options: Array<{
+    service_provider: string
+    service_name: string
+    deployment: string
+    cloud_region: string
+  }>
 }
 
 interface CustomOnboardModalProps {
@@ -164,12 +184,156 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
   const [currentStep, setCurrentStep] = useState<Step>(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isAnimating, setIsAnimating] = useState(false)
+  const [capabilities, setCapabilities] = useState<Capability[]>([])
+  const [isLoadingCapabilities, setIsLoadingCapabilities] = useState(false)
+  const [loadingDeployments, setLoadingDeployments] = useState<Record<string, boolean>>({})
+  const [deploymentData, setDeploymentData] = useState<Record<string, DeploymentApiResponse>>({})
   const bulkFileInputRef = useRef<HTMLInputElement>(null)
   const readmeFileInputRef = useRef<HTMLInputElement>(null)
   const [newDemoLink, setNewDemoLink] = useState("")
   const [newAdditionalLink, setNewAdditionalLink] = useState("")
   
-  const [formData, setFormData] = useState<FormData>({
+  // Function to fetch deployments for a specific capability
+  const fetchDeploymentsForCapability = async (capabilityId: string, capabilityName: string) => {
+    setLoadingDeployments(prev => ({ ...prev, [capabilityId]: true }))
+    
+    try {
+      const apiUrl = process.env.NODE_ENV === 'development'
+        ? `http://localhost:8000/api/capabilities/${capabilityId}/deployments`
+        : `/api/capabilities/${capabilityId}/deployments`
+      
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+        },
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch deployments: ${response.status}`)
+      }
+      
+      const data: DeploymentApiResponse = await response.json()
+      
+      // Store deployment data
+      setDeploymentData(prev => ({
+        ...prev,
+        [capabilityId]: data,
+      }))
+      
+      // Auto-populate deployment options
+      if (data.options && data.options.length > 0) {
+        const newDeploymentOptions: DeploymentOption[] = data.options.map(option => ({
+          serviceProvider: option.service_provider,
+          serviceName: option.service_name,
+          deploymentType: option.deployment,
+          cloudRegion: option.cloud_region,
+          capability: capabilityName,
+          capabilityId: capabilityId,
+        }))
+        
+        // Add new options, avoiding duplicates
+        setFormData(prev => {
+          const existingOptions = prev.deploymentOptions
+          const existingKeys = new Set(
+            existingOptions.map(opt => 
+              `${opt.capabilityId}-${opt.serviceProvider}-${opt.serviceName}-${opt.deploymentType}`
+            )
+          )
+          
+          const uniqueNewOptions = newDeploymentOptions.filter(opt => {
+            const key = `${opt.capabilityId}-${opt.serviceProvider}-${opt.serviceName}-${opt.deploymentType}`
+            return !existingKeys.has(key)
+          })
+          
+          return {
+            ...prev,
+            deploymentOptions: [...existingOptions, ...uniqueNewOptions],
+          }
+        })
+      }
+    } catch (error) {
+      console.error(`Error fetching deployments for capability ${capabilityId}:`, error)
+    } finally {
+      setLoadingDeployments(prev => ({ ...prev, [capabilityId]: false }))
+    }
+  }
+  
+  // Fetch capabilities from API
+  useEffect(() => {
+    const fetchCapabilities = async () => {
+      setIsLoadingCapabilities(true)
+      try {
+        // Determine API URL - use localhost:8000 for local dev, or proxy for production
+        const apiUrl = process.env.NODE_ENV === 'development' 
+          ? 'http://localhost:8000/api/capabilities'
+          : '/api/capabilities'
+        
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'accept': 'application/json',
+          },
+        })
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch capabilities: ${response.status}`)
+        }
+        
+        const data = await response.json()
+        
+        // Extract unique capabilities (deduplicate by capability name)
+        // Keep the first occurrence of each unique capability name
+        const uniqueCapabilitiesMap = new Map<string, Capability>()
+        
+        if (data.capabilities && Array.isArray(data.capabilities)) {
+          data.capabilities.forEach((cap: Capability) => {
+            // Use capability name as key to ensure uniqueness
+            // If duplicate name exists, keep the first one
+            if (!uniqueCapabilitiesMap.has(cap.by_capability)) {
+              uniqueCapabilitiesMap.set(cap.by_capability, cap)
+            }
+          })
+        }
+        
+        const uniqueCapabilities = Array.from(uniqueCapabilitiesMap.values())
+        // Sort by capability name for better UX
+        uniqueCapabilities.sort((a, b) => a.by_capability.localeCompare(b.by_capability))
+        setCapabilities(uniqueCapabilities)
+      } catch (error) {
+        console.error('Error fetching capabilities:', error)
+        // Fallback to hardcoded capabilities if API fails
+        setCapabilities([
+          { by_capability_id: "capa_001", by_capability: "Conversational AI & Advisory" },
+          { by_capability_id: "capa_002", by_capability: "Document Processing & Analysis" },
+          { by_capability_id: "capa_003", by_capability: "Image Processing" },
+          { by_capability_id: "capa_004", by_capability: "Video Processing" },
+          { by_capability_id: "capa_005", by_capability: "Voice & Meetings" },
+          { by_capability_id: "capa_006", by_capability: "Data Analysis & Insights" },
+          { by_capability_id: "capa_007", by_capability: "Content Generation" },
+          { by_capability_id: "capa_008", by_capability: "Process Automation" },
+          { by_capability_id: "capa_009", by_capability: "Predictive Analytics" },
+          { by_capability_id: "capa_010", by_capability: "Machine Learning" },
+        ])
+      } finally {
+        setIsLoadingCapabilities(false)
+      }
+    }
+    
+    if (isOpen) {
+      fetchCapabilities()
+    }
+  }, [isOpen])
+  
+  // Add smooth step transitions
+  useEffect(() => {
+    setIsAnimating(true)
+    const timer = setTimeout(() => setIsAnimating(false), 300)
+    return () => clearTimeout(timer)
+  }, [currentStep])
+  
+  const [formData, setFormData] = useState<AgentFormData>({
     // Tab 1: Agent Details
     agentName: "",
     agentDescription: "",
@@ -183,7 +347,8 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
     demoLink: "",
     
     // Tab 2: Capabilities
-    coreCapabilities: [],
+    coreCapabilities: [], // Store capability IDs
+    coreCapabilityMap: {}, // Map capability ID to name
     
     // Tab 3: Demo Assets
     demoLinks: [],
@@ -210,10 +375,33 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
 
   const handleNext = async () => {
     if (currentStep < 5) {
-      setCurrentStep((currentStep + 1) as Step)
+      setIsAnimating(true)
+      setTimeout(() => {
+        setCurrentStep((currentStep + 1) as Step)
+      }, 150)
     } else {
       // Submit the form
       await handleSubmit()
+    }
+  }
+  
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setIsAnimating(true)
+      setTimeout(() => {
+        setCurrentStep((currentStep - 1) as Step)
+      }, 150)
+    } else {
+      onClose()
+    }
+  }
+  
+  const handleTabClick = (stepNumber: number) => {
+    if (stepNumber !== currentStep && stepNumber <= currentStep) {
+      setIsAnimating(true)
+      setTimeout(() => {
+        setCurrentStep(stepNumber as Step)
+      }, 150)
     }
   }
 
@@ -265,7 +453,10 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
         features: formData.keyFeatures || "",
         roi: formData.roiInformation,
         demo_link: formData.demoLink,
-        capabilities: formData.coreCapabilities.length > 0 ? formData.coreCapabilities.join(", ") : "",
+        capabilities: formData.coreCapabilities.length > 0 
+          ? formData.coreCapabilities.map(id => formData.coreCapabilityMap[id] || id).join(", ") 
+          : "",
+        capability_ids: formData.coreCapabilities.length > 0 ? formData.coreCapabilities.join(", ") : "",
         demo_assets: formData.demoLinks.length > 0 ? formData.demoLinks.join(", ") : "",
         sdk_details: formData.sdkDetails,
         swagger_details: formData.apiDocumentation,
@@ -297,17 +488,6 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
     }
   }
 
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep((currentStep - 1) as Step)
-    } else {
-      onClose()
-    }
-  }
-
-  const handleTabClick = (stepNumber: number) => {
-    setCurrentStep(stepNumber as Step)
-  }
 
   // File handling functions
   const handleFileUpload = (file: File, type: 'readme') => {
@@ -414,170 +594,224 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
 
   if (!isOpen) return null
 
+  // Calculate progress percentage
+  const progressPercentage = ((currentStep - 1) / (steps.length - 1)) * 100
+
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-6 animate-in fade-in duration-300 overflow-y-auto scrollbar-hide"
+      style={{
+        backgroundColor: "rgba(0, 0, 0, 0.6)",
+        backdropFilter: "blur(8px)",
+      }}
       onClick={onClose}
     >
       <div 
-        className="relative bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-top-4 duration-300 my-4"
         onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "linear-gradient(135deg, #FFFFFF 0%, #FAFBFC 100%)",
+          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05)",
+        }}
       >
-        {/* Header */}
-        <div className="px-6 py-4 flex items-start justify-between">
+        {/* Header with gradient background */}
+        <div 
+          className="px-6 py-5 flex items-start justify-between relative"
+          style={{
+            background: "linear-gradient(135deg, #F8F9FA 0%, #FFFFFF 100%)",
+            borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+          }}
+        >
           <div className="flex flex-col gap-2">
-            <button
-              onClick={handleBack}
-              className="flex items-center"
-              style={{
-                width: "45px",
-                height: "24px",
-                borderRadius: "4px",
-                gap: "4px",
-                fontFamily: "Inter, sans-serif",
-                fontWeight: 400,
-                fontStyle: "normal",
-                fontSize: "11px",
-                lineHeight: "150%",
-                letterSpacing: "0px",
-                color: "#6B7280",
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                padding: 0,
-              }}
-            >
-              <ArrowLeft className="h-4 w-4" style={{ color: "#6B7280" }} />
-              Back
-            </button>
             <h1 
+              className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent"
               style={{
-                width: "288px",
-                height: "34px",
                 fontFamily: "Poppins, sans-serif",
-                fontWeight: 600,
-                fontStyle: "normal",
-                fontSize: "26px",
+                fontWeight: 700,
+                fontSize: "28px",
                 lineHeight: "130%",
-                letterSpacing: "0px",
-                verticalAlign: "middle",
-                color: "#00092C",
+                letterSpacing: "-0.5px",
                 margin: 0,
               }}
             >
               Onboard a new agent
             </h1>
+            <p className="text-sm text-gray-500 mt-1" style={{ fontFamily: "Inter, sans-serif" }}>
+              Step {currentStep} of {steps.length} • {Math.round(progressPercentage)}% complete
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+            className="h-9 w-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-all duration-200 group"
+            style={{
+              border: "1px solid transparent",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#F3F4F6"
+              e.currentTarget.style.borderColor = "#E5E7EB"
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent"
+              e.currentTarget.style.borderColor = "transparent"
+            }}
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4 text-gray-500 group-hover:text-gray-700 transition-colors" />
           </button>
         </div>
 
-        {/* Progress Steps */}
+        {/* Enhanced Progress Steps with animated progress bar */}
         <div 
+          className="relative"
           style={{
             width: "100%",
-            height: "48px",
             padding: "0 42px",
-            display: "flex",
-            alignItems: "center",
             backgroundColor: "#FFFFFF",
-            borderBottom: "1px solid #EBEBED",
-            marginBottom: "5px",
+            borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
           }}
         >
-          <div className="flex items-center justify-between w-full">
-            {steps.map((step, index) => (
-              <div 
-                key={step.number} 
-                className="flex items-center flex-1"
-                style={{
-                  height: "48px",
-                }}
-              >
-                {index > 0 && (
-                  <div
-                    className="mr-2"
-                    style={{
-                      width: "24px",
-                      height: "24px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <ChevronRight
-                      className="text-gray-400"
-                      style={{ width: "24px", height: "24px" }}
-                    />
-                  </div>
-                )}
-                <button
-                  onClick={() => handleTabClick(step.number)}
-                  className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+          {/* Animated progress bar */}
+          <div 
+            className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500 ease-out"
+            style={{
+              width: `${progressPercentage}%`,
+              boxShadow: "0 0 8px rgba(0, 75, 236, 0.4)",
+            }}
+          />
+          
+          <div className="flex items-center justify-between w-full py-4">
+            {steps.map((step, index) => {
+              const isActive = currentStep === step.number
+              const isCompleted = currentStep > step.number
+              
+              return (
+                <div 
+                  key={step.number} 
+                  className="flex items-center flex-1 group"
                   style={{
-                    height: "48px",
-                    minWidth: "fit-content",
+                    position: "relative",
                   }}
                 >
-                  <div className="hidden md:block">
-                    <div 
-                      style={{
-                        height: "21px",
-                        fontFamily: "Poppins, sans-serif",
-                        fontWeight: 400,
-                        fontStyle: "normal",
-                        fontSize: "14px",
-                        lineHeight: "150%",
-                        letterSpacing: "0%",
-                        color: currentStep === step.number ? "#004BEC" : "#6B7280",
-                        textAlign: "left",
-                      }}
-                    >
-                      Step {step.number}
-                    </div>
+                  {index > 0 && (
                     <div
+                      className="mr-3 transition-all duration-300"
                       style={{
-                        height: "21px",
-                        fontFamily: "Poppins, sans-serif",
-                        fontWeight: 500,
-                        fontStyle: "normal",
-                        fontSize: "14px",
-                        lineHeight: "150%",
-                        letterSpacing: "0%",
-                        color: currentStep === step.number ? "#004BEC" : "#9CA3AF",
-                        whiteSpace: "nowrap",
-                        borderBottom: currentStep === step.number ? "2px solid #004BEC" : "none",
-                        paddingBottom: currentStep === step.number ? "2px" : "0",
-                        display: "inline-block",
-                        textAlign: "left",
-                        position: "relative",
-                        top: "1px",
+                        width: "32px",
+                        height: "2px",
+                        backgroundColor: isCompleted ? "#004BEC" : "#E5E7EB",
+                        borderRadius: "2px",
+                        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      }}
+                    />
+                  )}
+                  <button
+                    onClick={() => handleTabClick(step.number)}
+                    className="flex items-center gap-3 transition-all duration-200"
+                    style={{
+                      minWidth: "fit-content",
+                    }}
+                  >
+                    {/* Step indicator circle */}
+                    <div
+                      className="flex items-center justify-center rounded-full transition-all duration-300"
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        backgroundColor: isActive 
+                          ? "#004BEC" 
+                          : isCompleted 
+                            ? "#10B981" 
+                            : "#F3F4F6",
+                        border: isActive ? "2px solid #004BEC" : "2px solid transparent",
+                        boxShadow: isActive 
+                          ? "0 0 0 4px rgba(0, 75, 236, 0.1)" 
+                          : "none",
+                        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                       }}
                     >
-                      {step.label}
+                      {isCompleted ? (
+                        <Check className="h-4 w-4 text-white" />
+                      ) : (
+                        <span
+                          style={{
+                            fontFamily: "Inter, sans-serif",
+                            fontWeight: 600,
+                            fontSize: "13px",
+                            color: isActive ? "#FFFFFF" : "#6B7280",
+                          }}
+                        >
+                          {step.number}
+                        </span>
+                      )}
                     </div>
-                  </div>
-                </button>
-              </div>
-            ))}
+                    
+                    <div className="hidden md:block">
+                      <div 
+                        className="transition-all duration-200"
+                        style={{
+                          fontFamily: "Poppins, sans-serif",
+                          fontWeight: isActive ? 600 : 400,
+                          fontSize: "13px",
+                          lineHeight: "150%",
+                          color: isActive 
+                            ? "#004BEC" 
+                            : isCompleted 
+                              ? "#10B981" 
+                              : "#6B7280",
+                          textAlign: "left",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        Step {step.number}
+                      </div>
+                      <div
+                        className="transition-all duration-200"
+                        style={{
+                          fontFamily: "Poppins, sans-serif",
+                          fontWeight: isActive ? 600 : 500,
+                          fontSize: "14px",
+                          lineHeight: "150%",
+                          color: isActive 
+                            ? "#004BEC" 
+                            : isCompleted 
+                              ? "#059669" 
+                              : "#9CA3AF",
+                          whiteSpace: "nowrap",
+                          textAlign: "left",
+                          marginTop: "2px",
+                        }}
+                      >
+                        {step.label}
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              )
+            })}
           </div>
         </div>
 
-        {/* Form Content - Scrollable */}
+        {/* Form Content - Scrollable with smooth transitions */}
         <div 
-          className="flex-1 overflow-y-auto"
+          className="flex-1 overflow-y-auto relative scrollbar-hide"
           style={{
             paddingLeft: "42px",
             paddingRight: "42px",
             paddingTop: "32px",
             paddingBottom: "32px",
+            background: "linear-gradient(to bottom, #FFFFFF 0%, #FAFBFC 100%)",
+            scrollbarWidth: "none", /* Firefox */
+            msOverflowStyle: "none", /* IE and Edge */
           }}
         >
           <div className="mx-auto max-w-none">
+            {/* Step transition animation wrapper */}
+            <div
+              key={currentStep}
+              className="animate-in fade-in slide-in-from-right-4 duration-300"
+              style={{
+                animation: "fadeInSlide 0.3s ease-out",
+              }}
+            >
             {/* Tab 1: Agent Details */}
             {currentStep === 1 && (
               <div>
@@ -603,26 +837,33 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
                       placeholder="Enter your product name."
                       value={formData.agentName}
                       onChange={(e) => setFormData({ ...formData, agentName: e.target.value })}
-                      className="mt-2"
+                      className="mt-2 transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       style={{
                         width: "100%",
                         maxWidth: "940px",
-                        height: "44px",
+                        height: "48px",
                         minWidth: "240px",
-                        borderRadius: "4px",
-                        paddingTop: "11px",
+                        borderRadius: "8px",
+                        paddingTop: "12px",
                         paddingRight: "16px",
-                        paddingBottom: "11px",
+                        paddingBottom: "12px",
                         paddingLeft: "16px",
-                        border: "1px solid #E5E7EB",
-                        fontFamily: "Poppins, sans-serif",
+                        border: "1.5px solid #E5E7EB",
+                        fontFamily: "Inter, sans-serif",
                         fontWeight: 400,
-                        fontStyle: "normal",
                         fontSize: "14px",
                         lineHeight: "150%",
-                        letterSpacing: "0%",
-                        verticalAlign: "middle",
-                        color: "#6B7280",
+                        color: "#111827",
+                        backgroundColor: "#FFFFFF",
+                        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = "#004BEC"
+                        e.currentTarget.style.boxShadow = "0 0 0 3px rgba(0, 75, 236, 0.1)"
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = "#E5E7EB"
+                        e.currentTarget.style.boxShadow = "none"
                       }}
                     />
                   </div>
@@ -847,18 +1088,30 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
                                 })
                               }
                             }}
-                            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm transition-colors"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all duration-200 hover:scale-105 hover:shadow-md"
                             style={{
-                              fontFamily: "Poppins, sans-serif",
-                              fontWeight: 400,
-                              fontStyle: "normal",
+                              fontFamily: "Inter, sans-serif",
+                              fontWeight: 500,
                               fontSize: "14px",
                               lineHeight: "150%",
-                              letterSpacing: "0%",
-                              border: isSelected ? "1px solid #004BEC" : "1px solid #E5E7EB",
+                              border: isSelected ? "2px solid #004BEC" : "1.5px solid #E5E7EB",
                               backgroundColor: isSelected ? "#E6EDFD" : "#FFFFFF",
                               color: isSelected ? "#004BEC" : "#6B7280",
                               cursor: "pointer",
+                              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                              boxShadow: isSelected ? "0 2px 8px rgba(0, 75, 236, 0.15)" : "none",
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isSelected) {
+                                e.currentTarget.style.borderColor = "#004BEC"
+                                e.currentTarget.style.backgroundColor = "#F0F5FF"
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isSelected) {
+                                e.currentTarget.style.borderColor = "#E5E7EB"
+                                e.currentTarget.style.backgroundColor = "#FFFFFF"
+                              }
                             }}
                           >
                             <IconComponent className="h-4 w-4 shrink-0" />
@@ -923,66 +1176,8 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
                 <div className="space-y-6">
                   {/* Core Capabilities */}
                   <div className="space-y-2">
-                    <Label 
-                      style={{
-                        fontFamily: "Poppins, sans-serif",
-                        fontWeight: 500,
-                        fontStyle: "normal",
-                        fontSize: "14px",
-                        lineHeight: "150%",
-                        letterSpacing: "0%",
-                        color: "#111827",
-                      }}
-                    >
-                      Core Capabilities
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      {capabilityOptions.map((capability) => {
-                        const isSelected = formData.coreCapabilities.includes(capability)
-                        const IconComponent = capabilityIconMap[capability] || BarChart3
-                        return (
-                          <button
-                            key={capability}
-                            type="button"
-                            onClick={() => {
-                              if (isSelected) {
-                                setFormData({
-                                  ...formData,
-                                  coreCapabilities: formData.coreCapabilities.filter(c => c !== capability)
-                                })
-                              } else {
-                                setFormData({
-                                  ...formData,
-                                  coreCapabilities: [...formData.coreCapabilities, capability]
-                                })
-                              }
-                            }}
-                            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm transition-colors"
-                            style={{
-                              fontFamily: "Poppins, sans-serif",
-                              fontWeight: 400,
-                              fontStyle: "normal",
-                              fontSize: "14px",
-                              lineHeight: "150%",
-                              letterSpacing: "0%",
-                              border: isSelected ? "1px solid #004BEC" : "1px solid #E5E7EB",
-                              backgroundColor: isSelected ? "#E6EDFD" : "#FFFFFF",
-                              color: isSelected ? "#004BEC" : "#6B7280",
-                              cursor: "pointer",
-                            }}
-                          >
-                            <IconComponent className="h-4 w-4 shrink-0" />
-                            <span>{capability}</span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Deployment Options */}
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <Label
+                    <div className="flex items-center justify-between">
+                      <Label 
                         style={{
                           fontFamily: "Poppins, sans-serif",
                           fontWeight: 500,
@@ -993,157 +1188,374 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
                           color: "#111827",
                         }}
                       >
-                        Deployment Options
+                        Core Capabilities
                       </Label>
+                      {isLoadingCapabilities && (
+                        <span className="text-xs text-gray-500" style={{ fontFamily: "Inter, sans-serif" }}>
+                          Loading capabilities...
+                        </span>
+                      )}
+                    </div>
+                    {isLoadingCapabilities ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-500 border-t-transparent"></div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {capabilities.map((capability) => {
+                          const isSelected = formData.coreCapabilities.includes(capability.by_capability_id)
+                          const IconComponent = capabilityIconMap[capability.by_capability] || BarChart3
+                          return (
+                            <button
+                              key={capability.by_capability_id}
+                              type="button"
+                              onClick={async () => {
+                                if (isSelected) {
+                                  // Remove capability
+                                  const newCapabilities = formData.coreCapabilities.filter(
+                                    id => id !== capability.by_capability_id
+                                  )
+                                  const newMap = { ...formData.coreCapabilityMap }
+                                  delete newMap[capability.by_capability_id]
+                                  
+                                  // Remove deployment options for this capability
+                                  const newDeploymentOptions = formData.deploymentOptions.filter(
+                                    opt => opt.capabilityId !== capability.by_capability_id
+                                  )
+                                  
+                                  setFormData({
+                                    ...formData,
+                                    coreCapabilities: newCapabilities,
+                                    coreCapabilityMap: newMap,
+                                    deploymentOptions: newDeploymentOptions,
+                                  })
+                                  
+                                  // Remove deployment data
+                                  const newDeploymentData = { ...deploymentData }
+                                  delete newDeploymentData[capability.by_capability_id]
+                                  setDeploymentData(newDeploymentData)
+                                } else {
+                                  // Add capability
+                                  setFormData({
+                                    ...formData,
+                                    coreCapabilities: [...formData.coreCapabilities, capability.by_capability_id],
+                                    coreCapabilityMap: {
+                                      ...formData.coreCapabilityMap,
+                                      [capability.by_capability_id]: capability.by_capability,
+                                    },
+                                  })
+                                  
+                                  // Fetch deployments for this capability
+                                  await fetchDeploymentsForCapability(capability.by_capability_id, capability.by_capability)
+                                }
+                              }}
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all duration-200 hover:scale-105 hover:shadow-md"
+                              style={{
+                                fontFamily: "Inter, sans-serif",
+                                fontWeight: 500,
+                                fontSize: "14px",
+                                lineHeight: "150%",
+                                border: isSelected ? "2px solid #004BEC" : "1.5px solid #E5E7EB",
+                                backgroundColor: isSelected ? "#E6EDFD" : "#FFFFFF",
+                                color: isSelected ? "#004BEC" : "#6B7280",
+                                cursor: "pointer",
+                                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                                boxShadow: isSelected ? "0 2px 8px rgba(0, 75, 236, 0.15)" : "none",
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!isSelected) {
+                                  e.currentTarget.style.borderColor = "#004BEC"
+                                  e.currentTarget.style.backgroundColor = "#F0F5FF"
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isSelected) {
+                                  e.currentTarget.style.borderColor = "#E5E7EB"
+                                  e.currentTarget.style.backgroundColor = "#FFFFFF"
+                                }
+                              }}
+                            >
+                              <IconComponent className="h-4 w-4 shrink-0" />
+                              <span>{capability.by_capability}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                    {capabilities.length === 0 && !isLoadingCapabilities && (
+                      <p className="text-sm text-gray-500 py-4" style={{ fontFamily: "Inter, sans-serif" }}>
+                        No capabilities available. Please try again later.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Deployment Options */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <Label
+                          style={{
+                            fontFamily: "Poppins, sans-serif",
+                            fontWeight: 600,
+                            fontStyle: "normal",
+                            fontSize: "16px",
+                            lineHeight: "150%",
+                            letterSpacing: "0%",
+                            color: "#111827",
+                          }}
+                        >
+                          Deployment Options
+                        </Label>
+                        <p className="text-sm text-gray-500 mt-1" style={{ fontFamily: "Inter, sans-serif" }}>
+                          Automatically populated based on selected capabilities
+                        </p>
+                      </div>
                       <Button
                         type="button"
                         variant="outline"
                         onClick={addDeploymentOption}
-                        className="text-green-600 border-green-600 hover:bg-green-50"
+                        className="text-green-600 border-green-600 hover:bg-green-50 transition-all duration-200"
+                        style={{
+                          fontFamily: "Inter, sans-serif",
+                          fontWeight: 500,
+                        }}
                       >
-                        + Add Deployment Option
+                        + Add Manual Option
                       </Button>
                     </div>
 
-                    <div className="space-y-4">
-                      {formData.deploymentOptions.map((option, index) => (
-                        <div key={index} className="rounded-lg border border-gray-200 p-4">
-                          <div className="flex items-center justify-between mb-4">
-                            <h4 className="font-medium">Deployment Option {index + 1}</h4>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeDeploymentOption(index)}
-                              className="text-red-600 hover:text-red-800"
+                    {/* Loading states for capabilities */}
+                    {formData.coreCapabilities.some(id => loadingDeployments[id]) && (
+                      <div className="mb-4 p-4 rounded-lg bg-blue-50 border border-blue-200">
+                        <div className="flex items-center gap-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                          <span className="text-sm text-blue-700" style={{ fontFamily: "Inter, sans-serif" }}>
+                            Loading deployment options...
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Group deployments by capability */}
+                    {(() => {
+                      const groupedByCapability = formData.deploymentOptions.reduce((acc, option, index) => {
+                        const key = option.capabilityId || option.capability || 'other'
+                        if (!acc[key]) {
+                          acc[key] = {
+                            capabilityName: option.capability || 'Other',
+                            capabilityId: option.capabilityId,
+                            options: [],
+                          }
+                        }
+                        acc[key].options.push({ option, index })
+                        return acc
+                      }, {} as Record<string, { capabilityName: string; capabilityId?: string; options: Array<{ option: DeploymentOption; index: number }> }>)
+
+                      const groups = Object.entries(groupedByCapability)
+
+                      if (groups.length === 0) {
+                        return (
+                          <div className="text-center py-8 text-gray-500 rounded-lg border-2 border-dashed border-gray-200">
+                            <p style={{ fontFamily: "Inter, sans-serif", fontSize: "14px" }}>
+                              No deployment options yet. Select capabilities above to auto-populate options.
+                            </p>
+                          </div>
+                        )
+                      }
+
+                      return (
+                        <div className="space-y-6">
+                          {groups.map(([key, group]) => (
+                            <div
+                              key={key}
+                              className="rounded-xl border border-gray-200 bg-white overflow-hidden transition-all duration-200 hover:shadow-md"
+                              style={{
+                                borderLeft: "4px solid #004BEC",
+                              }}
                             >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <DropdownWithCustom
-                              label="Service Provider"
-                              value={option.serviceProvider}
-                              onChange={(value) => updateDeploymentOption(index, 'serviceProvider', value)}
-                              options={serviceProviderOptions}
-                              placeholder="e.g., AWS, Azure, Google Cloud"
-                            />
-
-                            <DropdownWithCustom
-                              label="Service Name"
-                              value={option.serviceName}
-                              onChange={(value) => updateDeploymentOption(index, 'serviceName', value)}
-                              options={serviceNameOptions}
-                              placeholder="Service name"
-                            />
-
-                            <DropdownWithCustom
-                              label="Deployment Type"
-                              value={option.deploymentType}
-                              onChange={(value) => updateDeploymentOption(index, 'deploymentType', value)}
-                              options={deploymentTypeOptions}
-                              placeholder="e.g., Docker, Kubernetes"
-                            />
-
-                            <div>
-                              <Label 
-                                htmlFor={`cloudRegion-${index}`}
+                              {/* Capability Header */}
+                              <div
+                                className="px-4 py-3 flex items-center justify-between"
                                 style={{
-                                  fontFamily: "Poppins, sans-serif",
-                                  fontWeight: 500,
-                                  fontStyle: "normal",
-                                  fontSize: "14px",
-                                  lineHeight: "150%",
-                                  letterSpacing: "0%",
-                                  color: "#111827",
+                                  background: "linear-gradient(135deg, #F0F5FF 0%, #E6EDFD 100%)",
+                                  borderBottom: "1px solid #E5E7EB",
                                 }}
                               >
-                                Cloud Region
-                              </Label>
-                              <Input
-                                id={`cloudRegion-${index}`}
-                                placeholder="e.g., us-east-1, eu-west-1"
-                                value={option.cloudRegion}
-                                onChange={(e) => updateDeploymentOption(index, 'cloudRegion', e.target.value)}
-                                className="mt-2"
-                                style={{
-                                  width: "100%",
-                                  maxWidth: "940px",
-                                  minWidth: "240px",
-                                  height: "44px",
-                                  borderRadius: "4px",
-                                  paddingTop: "11px",
-                                  paddingRight: "16px",
-                                  paddingBottom: "11px",
-                                  paddingLeft: "16px",
-                                  border: "1px solid #E5E7EB",
-                                  fontFamily: "Poppins, sans-serif",
-                                  fontWeight: 400,
-                                  fontStyle: "normal",
-                                  fontSize: "14px",
-                                  lineHeight: "150%",
-                                  letterSpacing: "0%",
-                                  verticalAlign: "middle",
-                                  color: "#6B7280",
-                                }}
-                              />
-                            </div>
+                                <div className="flex items-center gap-2">
+                                  <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                                  <h4
+                                    className="font-semibold"
+                                    style={{
+                                      fontFamily: "Poppins, sans-serif",
+                                      fontSize: "15px",
+                                      color: "#111827",
+                                    }}
+                                  >
+                                    {group.capabilityName}
+                                  </h4>
+                                  <span
+                                    className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700"
+                                    style={{ fontFamily: "Inter, sans-serif" }}
+                                  >
+                                    {group.options.length} {group.options.length === 1 ? 'option' : 'options'}
+                                  </span>
+                                </div>
+                              </div>
 
-                            <div className="md:col-span-2">
-                              <Label 
-                                htmlFor={`capability-${index}`}
-                                style={{
-                                  fontFamily: "Poppins, sans-serif",
-                                  fontWeight: 500,
-                                  fontStyle: "normal",
-                                  fontSize: "14px",
-                                  lineHeight: "150%",
-                                  letterSpacing: "0%",
-                                  color: "#111827",
-                                }}
-                              >
-                                Capability
-                              </Label>
-                              <Input
-                                id={`capability-${index}`}
-                                placeholder="Related capability"
-                                value={option.capability}
-                                onChange={(e) => updateDeploymentOption(index, 'capability', e.target.value)}
-                                className="mt-2"
-                                style={{
-                                  width: "100%",
-                                  maxWidth: "940px",
-                                  minWidth: "240px",
-                                  height: "44px",
-                                  borderRadius: "4px",
-                                  paddingTop: "11px",
-                                  paddingRight: "16px",
-                                  paddingBottom: "11px",
-                                  paddingLeft: "16px",
-                                  border: "1px solid #E5E7EB",
-                                  fontFamily: "Poppins, sans-serif",
-                                  fontWeight: 400,
-                                  fontStyle: "normal",
-                                  fontSize: "14px",
-                                  lineHeight: "150%",
-                                  letterSpacing: "0%",
-                                  verticalAlign: "middle",
-                                  color: "#6B7280",
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                              {/* Deployment Options for this capability */}
+                              <div className="p-4 space-y-3">
+                                {group.options.map(({ option, index }) => (
+                                  <div
+                                    key={index}
+                                    className="rounded-lg border border-gray-200 p-4 bg-gray-50 hover:bg-white transition-all duration-200 hover:shadow-sm"
+                                  >
+                                    <div className="flex items-center justify-between mb-3">
+                                      <div className="flex items-center gap-2">
+                                        <div
+                                          className="px-2 py-1 rounded text-xs font-medium"
+                                          style={{
+                                            fontFamily: "Inter, sans-serif",
+                                            backgroundColor: option.serviceProvider === "AWS" ? "#FF9900" :
+                                                          option.serviceProvider === "Azure" ? "#0078D4" :
+                                                          option.serviceProvider === "GCP" ? "#4285F4" :
+                                                          option.serviceProvider === "Open-Source" ? "#28A745" :
+                                                          "#6B7280",
+                                            color: "#FFFFFF",
+                                          }}
+                                        >
+                                          {option.serviceProvider}
+                                        </div>
+                                        <h5
+                                          className="font-medium"
+                                          style={{
+                                            fontFamily: "Inter, sans-serif",
+                                            fontSize: "14px",
+                                            color: "#111827",
+                                          }}
+                                        >
+                                          {option.serviceName || "Service Name"}
+                                        </h5>
+                                      </div>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => removeDeploymentOption(index)}
+                                        className="text-red-600 hover:text-red-800 hover:bg-red-50 h-8 w-8"
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
 
-                      {formData.deploymentOptions.length === 0 && (
-                        <div className="text-center py-8 text-gray-500">
-                          <p>No deployment options added yet</p>
-                          <p className="text-sm">Click "Add Deployment Option" to get started</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                      <div>
+                                        <Label
+                                          className="text-xs text-gray-500 mb-1 block"
+                                          style={{ fontFamily: "Inter, sans-serif" }}
+                                        >
+                                          Deployment Type
+                                        </Label>
+                                        <div className="px-3 py-2 rounded-md bg-white border border-gray-200 text-sm font-medium text-gray-900">
+                                          {option.deploymentType || "N/A"}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <Label
+                                          className="text-xs text-gray-500 mb-1 block"
+                                          style={{ fontFamily: "Inter, sans-serif" }}
+                                        >
+                                          Cloud Region
+                                        </Label>
+                                        <div className="px-3 py-2 rounded-md bg-white border border-gray-200 text-sm font-medium text-gray-900">
+                                          {option.cloudRegion || "N/A"}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <Label
+                                          className="text-xs text-gray-500 mb-1 block"
+                                          style={{ fontFamily: "Inter, sans-serif" }}
+                                        >
+                                          Capability
+                                        </Label>
+                                        <div className="px-3 py-2 rounded-md bg-white border border-gray-200 text-sm font-medium text-gray-900">
+                                          {option.capability || "N/A"}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Editable fields (hidden by default, can be made editable if needed) */}
+                                    <div className="mt-3 pt-3 border-t border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                      <DropdownWithCustom
+                                        label="Service Provider"
+                                        value={option.serviceProvider}
+                                        onChange={(value) => updateDeploymentOption(index, 'serviceProvider', value)}
+                                        options={serviceProviderOptions}
+                                        placeholder="Service Provider"
+                                      />
+                                      <DropdownWithCustom
+                                        label="Service Name"
+                                        value={option.serviceName}
+                                        onChange={(value) => updateDeploymentOption(index, 'serviceName', value)}
+                                        options={serviceNameOptions}
+                                        placeholder="Service Name"
+                                      />
+                                      <DropdownWithCustom
+                                        label="Deployment Type"
+                                        value={option.deploymentType}
+                                        onChange={(value) => updateDeploymentOption(index, 'deploymentType', value)}
+                                        options={deploymentTypeOptions}
+                                        placeholder="Deployment Type"
+                                      />
+                                      <div>
+                                        <Label
+                                          htmlFor={`cloudRegion-${index}`}
+                                          style={{
+                                            fontFamily: "Poppins, sans-serif",
+                                            fontWeight: 500,
+                                            fontSize: "13px",
+                                            color: "#111827",
+                                            marginBottom: "4px",
+                                            display: "block",
+                                          }}
+                                        >
+                                          Cloud Region
+                                        </Label>
+                                        <Input
+                                          id={`cloudRegion-${index}`}
+                                          placeholder="e.g., us-east-1, eu-west-1"
+                                          value={option.cloudRegion}
+                                          onChange={(e) => updateDeploymentOption(index, 'cloudRegion', e.target.value)}
+                                          className="mt-1"
+                                          style={{
+                                            width: "100%",
+                                            height: "40px",
+                                            borderRadius: "6px",
+                                            padding: "8px 12px",
+                                            border: "1.5px solid #E5E7EB",
+                                            fontFamily: "Inter, sans-serif",
+                                            fontSize: "13px",
+                                            transition: "all 0.2s",
+                                          }}
+                                          onFocus={(e) => {
+                                            e.currentTarget.style.borderColor = "#004BEC"
+                                            e.currentTarget.style.boxShadow = "0 0 0 3px rgba(0, 75, 236, 0.1)"
+                                          }}
+                                          onBlur={(e) => {
+                                            e.currentTarget.style.borderColor = "#E5E7EB"
+                                            e.currentTarget.style.boxShadow = "none"
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      )}
-                    </div>
+                      )
+                    })()}
+
                   </div>
                 </div>
               </div>
@@ -1318,12 +1730,23 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
                         onDragOver={(e) => {
                           e.preventDefault()
                           e.stopPropagation()
+                          e.currentTarget.style.borderColor = "#004BEC"
+                          e.currentTarget.style.backgroundColor = "#E6EDFD"
+                          e.currentTarget.style.borderWidth = "3px"
+                        }}
+                        onDragLeave={(e) => {
+                          e.currentTarget.style.borderColor = "#E5E7EB"
+                          e.currentTarget.style.backgroundColor = "#FAFBFC"
+                          e.currentTarget.style.borderWidth = "2px"
                         }}
                         onDrop={(e) => {
                           e.preventDefault()
                           e.stopPropagation()
                           const files = e.dataTransfer.files
                           if (files) handleBulkFileUpload(files)
+                          e.currentTarget.style.borderColor = "#E5E7EB"
+                          e.currentTarget.style.backgroundColor = "#FAFBFC"
+                          e.currentTarget.style.borderWidth = "2px"
                         }}
                         style={{
                           width: "100%",
@@ -1331,21 +1754,31 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
                           minWidth: "240px",
                           minHeight: "200px",
                           border: "2px dashed #E5E7EB",
-                          borderRadius: "4px",
+                          borderRadius: "12px",
                           padding: "40px 20px",
                           display: "flex",
                           flexDirection: "column",
                           alignItems: "center",
                           justifyContent: "center",
                           cursor: "pointer",
-                          backgroundColor: "#FFFFFF",
-                          transition: "border-color 0.2s",
+                          backgroundColor: "#FAFBFC",
+                          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                          position: "relative",
+                          overflow: "hidden",
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.borderColor = "#004BEC"
+                          e.currentTarget.style.backgroundColor = "#F0F5FF"
+                          e.currentTarget.style.borderWidth = "2.5px"
+                          e.currentTarget.style.transform = "scale(1.01)"
+                          e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 75, 236, 0.1)"
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.borderColor = "#E5E7EB"
+                          e.currentTarget.style.backgroundColor = "#FAFBFC"
+                          e.currentTarget.style.borderWidth = "2px"
+                          e.currentTarget.style.transform = "scale(1)"
+                          e.currentTarget.style.boxShadow = "none"
                         }}
                       >
                         <Image
@@ -1353,7 +1786,7 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
                           alt="Upload"
                           width={48}
                           height={48}
-                          className="mb-4"
+                          className="mb-4 transition-transform duration-200 hover:scale-110"
                           style={{
                             width: "48px",
                             height: "48px",
@@ -1742,21 +2175,31 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
                           minWidth: "240px",
                           minHeight: "200px",
                           border: "2px dashed #E5E7EB",
-                          borderRadius: "4px",
+                          borderRadius: "12px",
                           padding: "40px 20px",
                           display: "flex",
                           flexDirection: "column",
                           alignItems: "center",
                           justifyContent: "center",
                           cursor: "pointer",
-                          backgroundColor: "#FFFFFF",
-                          transition: "border-color 0.2s",
+                          backgroundColor: "#FAFBFC",
+                          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                          position: "relative",
+                          overflow: "hidden",
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.borderColor = "#004BEC"
+                          e.currentTarget.style.backgroundColor = "#F0F5FF"
+                          e.currentTarget.style.borderWidth = "2.5px"
+                          e.currentTarget.style.transform = "scale(1.01)"
+                          e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 75, 236, 0.1)"
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.borderColor = "#E5E7EB"
+                          e.currentTarget.style.backgroundColor = "#FAFBFC"
+                          e.currentTarget.style.borderWidth = "2px"
+                          e.currentTarget.style.transform = "scale(1)"
+                          e.currentTarget.style.boxShadow = "none"
                         }}
                       >
                         <Image
@@ -1764,7 +2207,7 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
                           alt="Upload"
                           width={48}
                           height={48}
-                          className="mb-4"
+                          className="mb-4 transition-transform duration-200 hover:scale-110"
                           style={{
                             width: "48px",
                             height: "48px",
@@ -1774,7 +2217,7 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
                         <p 
                           style={{
                             fontFamily: "Inter, sans-serif",
-                            fontWeight: 500,
+                            fontWeight: 600,
                             fontStyle: "normal",
                             fontSize: "16px",
                             lineHeight: "150%",
@@ -1958,42 +2401,95 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
               </div>
             )}
 
-            {/* Navigation Buttons */}
-            <div className="mt-12 flex justify-start">
-              <Button 
-                onClick={handleNext} 
-                disabled={isSubmitting}
-                style={{
-                  width: "217.8447265625px",
-                  height: "44px",
-                  borderRadius: "4px",
-                  paddingTop: "6px",
-                  paddingRight: "12px",
-                  paddingBottom: "6px",
-                  paddingLeft: "12px",
-                  backgroundColor: "#181818",
-                  color: "#FFFFFF",
-                  fontFamily: "Inter, sans-serif",
-                  fontWeight: 500,
-                  fontStyle: "normal",
-                  fontSize: "14px",
-                  lineHeight: "150%",
-                  letterSpacing: "0%",
-                  textAlign: "center",
-                  verticalAlign: "middle",
-                  border: "none",
-                  cursor: isSubmitting ? "not-allowed" : "pointer",
-                  opacity: isSubmitting ? 0.5 : 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                }}
-              >
-                {isSubmitting ? "Submitting..." : currentStep === 5 ? "Submit Agent" : "Next"}
-                {!isSubmitting && <ArrowRight className="h-4 w-4" />}
-              </Button>
             </div>
+          </div>
+          
+          {/* Navigation Buttons with enhanced styling */}
+          <div 
+            className="sticky bottom-0 mt-12 flex justify-between items-center py-4 border-t border-gray-100"
+            style={{
+              background: "linear-gradient(to top, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%)",
+              backdropFilter: "blur(10px)",
+              marginLeft: "-42px",
+              marginRight: "-42px",
+              paddingLeft: "42px",
+              paddingRight: "42px",
+            }}
+          >
+            <button
+              onClick={handleBack}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 hover:bg-gray-50"
+              style={{
+                fontFamily: "Inter, sans-serif",
+                fontWeight: 500,
+                fontSize: "14px",
+                color: "#6B7280",
+                border: "1px solid #E5E7EB",
+                background: "transparent",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "#D1D5DB"
+                e.currentTarget.style.color = "#374151"
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "#E5E7EB"
+                e.currentTarget.style.color = "#6B7280"
+              }}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              {currentStep === 1 ? "Cancel" : "Previous"}
+            </button>
+            
+            <Button 
+              onClick={handleNext} 
+              disabled={isSubmitting}
+              className="group relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-lg"
+              style={{
+                minWidth: "200px",
+                height: "48px",
+                borderRadius: "8px",
+                padding: "12px 24px",
+                background: isSubmitting 
+                  ? "#9CA3AF" 
+                  : "linear-gradient(135deg, #181818 0%, #000000 100%)",
+                color: "#FFFFFF",
+                fontFamily: "Inter, sans-serif",
+                fontWeight: 600,
+                fontSize: "15px",
+                border: "none",
+                cursor: isSubmitting ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                boxShadow: isSubmitting 
+                  ? "none" 
+                  : "0 4px 12px rgba(0, 0, 0, 0.15)",
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              }}
+              onMouseEnter={(e) => {
+                if (!isSubmitting) {
+                  e.currentTarget.style.boxShadow = "0 6px 20px rgba(0, 0, 0, 0.2)"
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSubmitting) {
+                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)"
+                }
+              }}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  {currentStep === 5 ? "Submit Agent" : "Continue"}
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </div>

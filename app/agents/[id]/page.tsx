@@ -15,6 +15,7 @@ import { DocumentationSection } from "../../../components/documentation-section"
 import { DemoAccessLink } from "../../../components/demo-access-link"
 import { AgentIcon } from "../../../components/agent-icon"
 import { ISVPartnerButton } from "../../../components/isv-partner-button"
+import { RelatedAgentsSidebar } from "../../../components/related-agents-sidebar"
 
 type AgentDetailApiResponse = {
   agent?: {
@@ -44,7 +45,7 @@ type AgentDetailApiResponse = {
     deployment_id?: string
     capability_name?: string
   }>
-  demo_assets?: Array<{ 
+  demo_assets?: Array<{
     demo_asset_link?: string
     demo_link?: string
     asset_url?: string
@@ -53,7 +54,7 @@ type AgentDetailApiResponse = {
     demo_asset_type?: string
     demo_asset_id?: string
   }>
-  documentation?: Array<{ 
+  documentation?: Array<{
     agent_id?: string
     sdk_details?: string
     swagger_details?: string
@@ -63,7 +64,7 @@ type AgentDetailApiResponse = {
     related_files?: string
     doc_id?: string
   }>
-  isv_info?: { 
+  isv_info?: {
     isv_id?: string
     isv_name?: string
     isv_address?: string
@@ -81,9 +82,45 @@ type BundledAgentsResponse = {
     agent_id: string
     agent_name: string
     created_at: string
-    bundled_agent_ids: string[]
-    bundled_agent_names: string[]
+    bundled_agents?: Array<{
+      agent_id: string
+      agent_name: string
+      description?: string
+      demo_preview?: string
+      admin_approved?: string
+      isv_id?: string
+      asset_type?: string
+      by_persona?: string
+      by_value?: string
+      demo_link?: string
+      features?: string
+      roi?: string
+      tags?: string
+      agents_ordering?: string | number
+      created_at?: string
+    }>
   }
+}
+
+type SimilarAgentsResponse = {
+  agent_id: string
+  similar_agents?: Array<{
+    agent_id: string
+    agent_name: string
+    description?: string
+    demo_preview?: string
+    admin_approved?: string
+    isv_id?: string
+    asset_type?: string
+    by_persona?: string
+    by_value?: string
+    demo_link?: string
+    features?: string
+    roi?: string
+    tags?: string
+    agents_ordering?: string | number
+    created_at?: string
+  }>
 }
 
 async function fetchAgentDetail(agentId: string) {
@@ -115,38 +152,63 @@ async function fetchAgentDetail(agentId: string) {
 
 async function fetchBundledAgents(agentId: string) {
   try {
-    // Try to fetch bundled agents from the API
+    // Fetch bundled agents from the API
     const res = await fetch(`https://agents-store.onrender.com/api/agents/${agentId}/bundled`, { cache: "no-store" })
     if (res.ok) {
       const data: BundledAgentsResponse = await res.json()
       // eslint-disable-next-line no-console
       console.log('Bundled Agents API Response:', JSON.stringify(data, null, 2))
-      if (data?.success && data?.data?.bundled_agent_ids && data?.data?.bundled_agent_names) {
-        // Fetch full agent details for each bundled agent
-        const agentsRes = await fetch("https://agents-store.onrender.com/api/agents", { cache: "no-store" })
-        if (agentsRes.ok) {
-          const agentsData = await agentsRes.json()
-          const bundledAgents = data.data.bundled_agent_ids
-            .map((id, idx) => {
-              const agentDetail = (agentsData?.agents || []).find((a: any) => a?.agent_id === id)
-              return {
-                agent_id: id,
-                agent_name: data.data?.bundled_agent_names[idx] || 'Agent',
-                description: agentDetail?.description || 'Agent description',
-                demo_preview: agentDetail?.demo_preview,
-              }
-            })
-            .slice(0, 3) // Limit to 3 agents for display
-          return bundledAgents
-        }
+      
+      // Check if response has bundled_agents array
+      if (data?.success && data?.data?.bundled_agents && Array.isArray(data.data.bundled_agents) && data.data.bundled_agents.length > 0) {
+        // Map bundled_agents directly to the format needed by RelatedAgentsSidebar
+        const bundledAgents = data.data.bundled_agents
+          .map((agent) => ({
+            agent_id: agent.agent_id,
+            agent_name: agent.agent_name || 'Agent',
+            description: agent.description || 'Agent description',
+            demo_preview: agent.demo_preview || '',
+          }))
+        return bundledAgents
       }
     }
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error('Bundled agents API not available, using fallback')
+    console.error('Bundled agents API error:', err)
   }
-  
-  // Fallback: return null to trigger use of related agents from main agents list
+
+  // Return null if no bundled agents found or empty list
+  return null
+}
+
+async function fetchSimilarAgents(agentId: string) {
+  try {
+    // Fetch similar agents from the API as fallback
+    const res = await fetch(`https://agents-store.onrender.com/api/agents/${agentId}/similar?limit=4`, { cache: "no-store" })
+    if (res.ok) {
+      const data: SimilarAgentsResponse = await res.json()
+      // eslint-disable-next-line no-console
+      console.log('Similar Agents API Response:', JSON.stringify(data, null, 2))
+      
+      // Check if response has similar_agents array
+      if (data?.similar_agents && Array.isArray(data.similar_agents) && data.similar_agents.length > 0) {
+        // Map similar_agents to the format needed by RelatedAgentsSidebar
+        const similarAgents = data.similar_agents
+          .map((agent) => ({
+            agent_id: agent.agent_id,
+            agent_name: agent.agent_name || 'Agent',
+            description: agent.description || 'Agent description',
+            demo_preview: agent.demo_preview || '',
+          }))
+        return similarAgents
+      }
+    }
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('Similar agents API error:', err)
+  }
+
+  // Return null if no similar agents found or empty list
   return null
 }
 
@@ -190,7 +252,7 @@ function formatCodeBlock(content: string): string {
 export default async function AgentDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const data = await fetchAgentDetail(id)
-  
+
   // If agent doesn't exist or is not approved, show error and redirect
   if (!data || !data.agent) {
     return (
@@ -204,7 +266,7 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
       </div>
     )
   }
-  
+
   const agent = data.agent
   const readmeContent = readReadmeFile()
 
@@ -223,6 +285,7 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
   let nextAgentName: string | null = null
   let prevAgentName: string | null = null
   let relatedAgents: any[] = []
+  let agentsSource: 'bundled' | 'similar' | null = null
   try {
     const agentsRes = await fetch("https://agents-store.onrender.com/api/agents", { cache: "no-store" })
     if (agentsRes.ok) {
@@ -230,30 +293,35 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
       const approvedAgents = (agentsJson?.agents || [])
         .filter((a: any) => a?.admin_approved === "yes")
         .filter((a: any) => a?.agent_id)
-      
+
       if (approvedAgents.length > 0) {
         const idx = Math.max(0, approvedAgents.findIndex((a: any) => a?.agent_id === id))
         const nextIdx = idx >= 0 ? (idx + 1) % approvedAgents.length : 0
         const prevIdx = idx >= 0 ? (idx - 1 + approvedAgents.length) % approvedAgents.length : 0
-        
+
         const nextAgent = approvedAgents[nextIdx]
         const prevAgent = approvedAgents[prevIdx]
-        
+
         nextAgentId = nextAgent?.agent_id || null
         prevAgentId = prevAgent?.agent_id || null
         nextAgentName = nextAgent?.agent_name || null
         prevAgentName = prevAgent?.agent_name || null
-        
-        // Try to fetch bundled agents first, then fallback to related agents
+
+        // Fetch bundled agents first, then fallback to similar agents
         const bundledAgents = await fetchBundledAgents(id)
         if (bundledAgents && bundledAgents.length > 0) {
           relatedAgents = bundledAgents
+          agentsSource = 'bundled'
         } else {
-          // Fallback: Get related agents (exclude current agent, take first 3)
-          relatedAgents = approvedAgents
-            .filter((a: any) => a?.agent_id !== id)
-            .slice(0, 3)
+          // Fallback: Fetch similar agents if bundled agents is empty
+          const similarAgents = await fetchSimilarAgents(id)
+          if (similarAgents && similarAgents.length > 0) {
+            relatedAgents = similarAgents
+            agentsSource = 'similar'
+          }
         }
+        // If no bundled agents or similar agents, relatedAgents remains empty array
+        // RelatedAgentsSidebar component will handle empty state by returning null
       }
     }
   } catch {
@@ -278,237 +346,239 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
         />
         <div className="w-full px-8 md:px-12 lg:px-16 mx-auto" style={{ maxWidth: "1407px" }}>
           <div className="flex flex-col lg:flex-row gap-12 items-start w-full">
-          <div style={{ flex: '0 0 40%', maxWidth: '40%' }}>
-            <Link 
-              href="/agents" 
-              className="inline-flex items-center mb-4"
-              style={{
-                color: '#091917',
-                fontFamily: 'Poppins, sans-serif',
-                fontSize: '12px',
-                fontStyle: 'normal',
-                fontWeight: 400,
-                lineHeight: '150%',
-              }}
-            >
-              <ChevronLeft className="mr-1 h-4 w-4" />
-              Back to Agent Store
-            </Link>
-            <h1 
-              className="mb-2"
-              style={{
-                color: 'var(--Interface-Color-Primary-900, #091917)',
-                fontFamily: 'Poppins, sans-serif',
-                fontSize: '52px',
-                fontStyle: 'normal',
-                fontWeight: 500,
-                lineHeight: '54px',
-              }}
-            >
-              {title}
-            </h1>
-            <div className="mt-2 space-y-2 mb-6">
-              <div className="flex items-center gap-2">
-                <span 
-                  style={{
-                    color: '#091917',
-                    fontFamily: 'Poppins, sans-serif',
-                    fontSize: '14px',
-                    fontStyle: 'normal',
-                    fontWeight: 500,
-                    lineHeight: 'normal',
-                  }}
-                >
-                  Agent
-                </span>
-                <span 
-                  style={{
-                    color: '#E3E3E3',
-                    fontFamily: 'Poppins, sans-serif',
-                    fontSize: '14px',
-                    fontStyle: 'normal',
-                    fontWeight: 500,
-                    lineHeight: 'normal',
-                  }}
-                >
-                  |
-                </span>
-                <span 
-                  style={{
-                    color: '#091917',
-                    fontFamily: 'Poppins, sans-serif',
-                    fontSize: '14px',
-                    fontStyle: 'normal',
-                    fontWeight: 500,
-                    lineHeight: 'normal',
-                  }}
-                >
-                  Built by :
-                </span>
-                {data?.isv_info?.isv_domain ? (
-                  <a
-                    href={data.isv_info.isv_domain.startsWith('http') ? data.isv_info.isv_domain : `https://${data.isv_info.isv_domain}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+            <div style={{ flex: '0 0 40%', maxWidth: '40%' }}>
+              <Link
+                href="/agents"
+                className="inline-flex items-center mb-4"
+                style={{
+                  color: '#091917',
+                  fontFamily: 'Poppins, sans-serif',
+                  fontSize: '12px',
+                  fontStyle: 'normal',
+                  fontWeight: 400,
+                  lineHeight: '150%',
+                }}
+              >
+                <ChevronLeft className="mr-1 h-4 w-4" />
+                Back to Agent Store
+              </Link>
+              <h1
+                className="mb-2"
+                style={{
+                  color: 'var(--Interface-Color-Primary-900, #091917)',
+                  fontFamily: 'Poppins, sans-serif',
+                  fontSize: '52px',
+                  fontStyle: 'normal',
+                  fontWeight: 500,
+                  lineHeight: '54px',
+                }}
+              >
+                {title}
+              </h1>
+              <div className="mt-2 space-y-2 mb-6">
+                <div className="flex items-center gap-2">
+                  <span
                     style={{
-                      color: '#155EEF',
+                      color: '#091917',
                       fontFamily: 'Poppins, sans-serif',
                       fontSize: '14px',
                       fontStyle: 'normal',
-                      fontWeight: 600,
-                      lineHeight: 'normal',
-                      textDecoration: 'none',
-                    }}
-                    className="hover:underline"
-                  >
-                    {data?.isv_info?.isv_name || 'Crayon Data India Pvt Ltd'}
-                  </a>
-                ) : (
-                  <span 
-                    style={{
-                      color: '#155EEF',
-                      fontFamily: 'Poppins, sans-serif',
-                      fontSize: '14px',
-                      fontStyle: 'normal',
-                      fontWeight: 600,
+                      fontWeight: 500,
                       lineHeight: 'normal',
                     }}
                   >
-                    {data?.isv_info?.isv_name || 'Crayon Data India Pvt Ltd'}
+                    Agent
                   </span>
-                )}
+                  <span
+                    style={{
+                      color: '#E3E3E3',
+                      fontFamily: 'Poppins, sans-serif',
+                      fontSize: '14px',
+                      fontStyle: 'normal',
+                      fontWeight: 500,
+                      lineHeight: 'normal',
+                    }}
+                  >
+                    |
+                  </span>
+                  <span
+                    style={{
+                      color: '#091917',
+                      fontFamily: 'Poppins, sans-serif',
+                      fontSize: '14px',
+                      fontStyle: 'normal',
+                      fontWeight: 500,
+                      lineHeight: 'normal',
+                    }}
+                  >
+                    Built by :
+                  </span>
+                  {data?.isv_info?.isv_domain ? (
+                    <a
+                      href={data.isv_info.isv_domain.startsWith('http') ? data.isv_info.isv_domain : `https://${data.isv_info.isv_domain}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        color: '#155EEF',
+                        fontFamily: 'Poppins, sans-serif',
+                        fontSize: '14px',
+                        fontStyle: 'normal',
+                        fontWeight: 600,
+                        lineHeight: 'normal',
+                        textDecoration: 'none',
+                      }}
+                      className="hover:underline"
+                    >
+                      {data?.isv_info?.isv_name || 'Crayon Data India Pvt Ltd'}
+                    </a>
+                  ) : (
+                    <span
+                      style={{
+                        color: '#155EEF',
+                        fontFamily: 'Poppins, sans-serif',
+                        fontSize: '14px',
+                        fontStyle: 'normal',
+                        fontWeight: 600,
+                        lineHeight: 'normal',
+                      }}
+                    >
+                      {data?.isv_info?.isv_name || 'Crayon Data India Pvt Ltd'}
+                    </span>
+                  )}
                 </div>
               </div>
 
               <div className="mb-8">
-              <div
-                style={{
-                  color: '#344054',
-                  fontFamily: 'Poppins, sans-serif',
-                  fontSize: '14px',
-                  fontStyle: 'normal',
-                  fontWeight: 400,
-                  lineHeight: '140%',
-                  maxWidth: '582px',
-                }}
-              >
-                <ReadMore text={description.replace(/\\n/g, '\n')} className="mb-6" />
-              </div>
+                <div
+                  style={{
+                    color: '#344054',
+                    fontFamily: 'Poppins, sans-serif',
+                    fontSize: '14px',
+                    fontStyle: 'normal',
+                    fontWeight: 400,
+                    lineHeight: '140%',
+                    maxWidth: '582px',
+                  }}
+                >
+                  <ReadMore text={description.replace(/\\n/g, '\n')} className="mb-6" />
+                </div>
               </div>
 
               <div className="mb-8 space-y-3">
                 <div className="flex items-start gap-3">
-                <span 
-                  className="whitespace-nowrap min-w-[130px]"
-                  style={{
-                    color: '#101828',
-                    fontFamily: 'Poppins, sans-serif',
-                    fontSize: '14px',
-                    fontStyle: 'normal',
-                    fontWeight: 500,
-                    lineHeight: 'normal',
-                  }}
-                >
-                  Categories :
-                </span>
+                  <span
+                    className="whitespace-nowrap min-w-[130px]"
+                    style={{
+                      color: '#101828',
+                      fontFamily: 'Poppins, sans-serif',
+                      fontSize: '14px',
+                      fontStyle: 'normal',
+                      fontWeight: 500,
+                      lineHeight: 'normal',
+                    }}
+                  >
+                    Categories :
+                  </span>
                   <div className="flex flex-wrap gap-2">
                     {categories.map((c, i) => (
-                    <Badge key={i} variant="default" className="text-xs rounded-[4px]">
+                      <Badge key={i} variant="default" className="text-xs rounded-[4px]">
                         {c}
                       </Badge>
                     ))}
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                <span 
-                  className="whitespace-nowrap min-w-[130px]"
-                  style={{
-                    color: '#101828',
-                    fontFamily: 'Poppins, sans-serif',
-                    fontSize: '14px',
-                    fontStyle: 'normal',
-                    fontWeight: 500,
-                    lineHeight: 'normal',
-                  }}
-                >
-                  Tags :
-                </span>
+                  <span
+                    className="whitespace-nowrap min-w-[130px]"
+                    style={{
+                      color: '#101828',
+                      fontFamily: 'Poppins, sans-serif',
+                      fontSize: '14px',
+                      fontStyle: 'normal',
+                      fontWeight: 500,
+                      lineHeight: 'normal',
+                    }}
+                  >
+                    Tags :
+                  </span>
                   <div className="flex flex-wrap gap-2">
                     {(agent?.tags ? agent.tags.split(',').map(t => t.trim()).filter(Boolean) : []).map((t, i) => (
-                    <Badge key={i} variant="default" className="text-xs rounded-[4px]">
+                      <Badge key={i} variant="default" className="text-xs rounded-[4px]">
                         {t}
                       </Badge>
                     ))}
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                <span 
-                  className="whitespace-nowrap min-w-[130px]"
-                  style={{
-                    color: '#101828',
-                    fontFamily: 'Poppins, sans-serif',
-                    fontSize: '14px',
-                    fontStyle: 'normal',
-                    fontWeight: 500,
-                    lineHeight: 'normal',
-                  }}
-                >
-                  Target Personas :
-                </span>
+                  <span
+                    className="whitespace-nowrap min-w-[130px]"
+                    style={{
+                      color: '#101828',
+                      fontFamily: 'Poppins, sans-serif',
+                      fontSize: '14px',
+                      fontStyle: 'normal',
+                      fontWeight: 500,
+                      lineHeight: 'normal',
+                    }}
+                  >
+                    Target Personas :
+                  </span>
                   <div className="flex flex-wrap gap-2">
                     {personas.map((p, i) => (
-                    <Badge key={i} variant="default" className="text-xs rounded-[4px]">
+                      <Badge key={i} variant="default" className="text-xs rounded-[4px]">
                         {p}
                       </Badge>
                     ))}
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                <span 
-                  className="whitespace-nowrap min-w-[130px]"
-                  style={{
-                    color: '#101828',
-                    fontFamily: 'Poppins, sans-serif',
-                    fontSize: '14px',
-                    fontStyle: 'normal',
-                    fontWeight: 500,
-                    lineHeight: 'normal',
-                  }}
-                >
-                  Value Propositions:
-                </span>
+                  <span
+                    className="whitespace-nowrap min-w-[130px]"
+                    style={{
+                      color: '#101828',
+                      fontFamily: 'Poppins, sans-serif',
+                      fontSize: '14px',
+                      fontStyle: 'normal',
+                      fontWeight: 500,
+                      lineHeight: 'normal',
+                    }}
+                  >
+                    Value Propositions:
+                  </span>
                   <div className="flex flex-wrap gap-2">
                     {valueProps.map((v, i) => (
-                    <Badge key={i} variant="default" className="text-xs rounded-[4px]">
+                      <Badge key={i} variant="default" className="text-xs rounded-[4px]">
                         {v}
                       </Badge>
                     ))}
                   </div>
                 </div>
+              </div>
+            </div>
+            {/* Image Container */}
+            <div style={{ flex: '0 0 60%', maxWidth: '60%' }} className="w-full">
+              {((data?.demo_assets && data.demo_assets.length > 0) || data?.agent?.demo_preview) && (
+                <DemoAssetsViewer
+                  assets={data.demo_assets || []}
+                  demoPreview={data?.agent?.demo_preview}
+                />
+              )}
             </div>
           </div>
-          {/* Image Container */}
-          <div style={{ flex: '0 0 60%', maxWidth: '60%' }} className="w-full">
-            {((data?.demo_assets && data.demo_assets.length > 0) || data?.agent?.demo_preview) && (
-              <DemoAssetsViewer 
-                assets={data.demo_assets || []} 
-                demoPreview={data?.agent?.demo_preview}
-              />
-            )}
+          <div style={{ marginTop: '42px', display: 'flex', justifyContent: 'center', width: '100%' }}>
+            <ISVPartnerButton demoLink={data?.agent?.demo_link} />
           </div>
-              </div>
-              <div style={{ marginTop: '42px', display: 'flex', justifyContent: 'center', width: '100%' }}>
-                <ISVPartnerButton demoLink={data?.agent?.demo_link} />
-              </div>
-          </div>
+        </div>
       </section>
 
       {/* Features, ROI, Deployment, Docs Section */}
       <section className="relative py-12 px-8 md:px-12 lg:px-16" style={{ overflowX: "hidden" }}>
         <div className="w-full mx-auto" style={{ maxWidth: "1407px" }}>
-          <Tabs defaultValue="features" className="w-full">
+          <div className="flex gap-8 items-start justify-center">
+            <div className="flex-1" style={{ maxWidth: '740px' }}>
+              <Tabs defaultValue="features" className="w-full">
                 <TabsList className="relative flex gap-8 justify-start bg-transparent p-0 h-auto rounded-none" style={{ borderBottom: "none", marginBottom: "8px" }}>
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="features"
                     className="relative pb-2 bg-transparent border-0 rounded-none data-[state=active]:bg-transparent data-[state=inactive]:bg-transparent h-auto shadow-none data-[state=active]:shadow-none text-left"
                     style={{
@@ -526,7 +596,7 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
                   >
                     Features
                   </TabsTrigger>
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="roi"
                     className="relative pb-2 bg-transparent border-0 rounded-none data-[state=active]:bg-transparent data-[state=inactive]:bg-transparent h-auto shadow-none data-[state=active]:shadow-none text-left"
                     style={{
@@ -544,42 +614,52 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
                   >
                     ROI
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="deployment"
-                    className="relative pb-2 bg-transparent border-0 rounded-none data-[state=active]:bg-transparent data-[state=inactive]:bg-transparent h-auto shadow-none data-[state=active]:shadow-none text-left"
-                    style={{
-                      fontFamily: "Poppins, sans-serif",
-                      fontSize: "14px",
-                      fontWeight: 500,
-                      color: "#344054",
-                      padding: "8px",
-                      whiteSpace: "nowrap",
-                      cursor: "pointer",
-                      transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-weight 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                      boxShadow: "none",
-                      textAlign: "left",
-                    }}
-                  >
-                    Deployment
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="docs"
-                    className="relative pb-2 bg-transparent border-0 rounded-none data-[state=active]:bg-transparent data-[state=inactive]:bg-transparent h-auto shadow-none data-[state=active]:shadow-none text-left"
-                    style={{
-                      fontFamily: "Poppins, sans-serif",
-                      fontSize: "14px",
-                      fontWeight: 500,
-                      color: "#344054",
-                      padding: "8px",
-                      whiteSpace: "nowrap",
-                      cursor: "pointer",
-                      transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-weight 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                      boxShadow: "none",
-                      textAlign: "left",
-                    }}
-                  >
-                    Docs
-                  </TabsTrigger>
+                  {data?.deployments && data.deployments.length > 0 && (
+                    <TabsTrigger
+                      value="deployment"
+                      className="relative pb-2 bg-transparent border-0 rounded-none data-[state=active]:bg-transparent data-[state=inactive]:bg-transparent h-auto shadow-none data-[state=active]:shadow-none text-left"
+                      style={{
+                        fontFamily: "Poppins, sans-serif",
+                        fontSize: "14px",
+                        fontWeight: 500,
+                        color: "#344054",
+                        padding: "8px",
+                        whiteSpace: "nowrap",
+                        cursor: "pointer",
+                        transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-weight 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                        boxShadow: "none",
+                        textAlign: "left",
+                      }}
+                    >
+                      Deployment
+                    </TabsTrigger>
+                  )}
+                  {data?.documentation && data.documentation.length > 0 && data.documentation[0] && (
+                    (() => {
+                      const doc = data.documentation[0]
+                      const hasContent = doc.sdk_details || doc.swagger_details || doc.sample_input || doc.sample_output || doc.security_details || doc.related_files
+                      return hasContent ? (
+                        <TabsTrigger
+                          value="docs"
+                          className="relative pb-2 bg-transparent border-0 rounded-none data-[state=active]:bg-transparent data-[state=inactive]:bg-transparent h-auto shadow-none data-[state=active]:shadow-none text-left"
+                          style={{
+                            fontFamily: "Poppins, sans-serif",
+                            fontSize: "14px",
+                            fontWeight: 500,
+                            color: "#344054",
+                            padding: "8px",
+                            whiteSpace: "nowrap",
+                            cursor: "pointer",
+                            transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-weight 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                            boxShadow: "none",
+                            textAlign: "left",
+                          }}
+                        >
+                          Docs
+                        </TabsTrigger>
+                      ) : null
+                    })()
+                  )}
                 </TabsList>
                 <TabsContent value="features" style={{ marginTop: "8px" }}>
                   {agent?.features && agent.features !== "na" ? (
@@ -589,7 +669,7 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
                         .split(/[;\n]+/)
                         .map(s => s.trim().replace(/^[,\-\s]+|[,\-\s]+$/g, ''))
                         .filter(Boolean)
-                      
+
                       // Split into Scope (first items) and Instructions (numbered items or remaining)
                       const scopeItems = items.filter((item, idx) => {
                         // If item starts with a number, it's likely an instruction
@@ -598,211 +678,80 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
                       const instructionItems = items.filter((item) => {
                         return /^\d+\./.test(item.trim())
                       }).map(item => item.replace(/^\d+\.\s*/, '').trim())
-                      
+
                       return (
-                        <div className="flex gap-8">
-                          <div className="flex-1" style={{ maxWidth: '740px' }}>
-                            {scopeItems.length > 0 && (
-                              <div style={{ maxWidth: '640px', marginBottom: '8px' }}>
-                                <h3 
-                                  style={{
-                                    fontFamily: 'Poppins, sans-serif',
-                                    fontSize: '14px',
-                                    fontWeight: 600,
-                                    color: '#101828',
-                                    marginBottom: '8px',
-                                  }}
-                                >
-                                  Scope
-                                </h3>
-                                <ul 
-                                  style={{
-                                    fontFamily: 'Poppins, sans-serif',
-                                    fontSize: '14px',
-                                    fontStyle: 'normal',
-                                    fontWeight: 400,
-                                    color: '#344054',
-                                    lineHeight: '150%',
-                                    listStyle: 'disc',
-                                    paddingLeft: '21px',
-                                  }}
-                                  className="space-y-0"
-                                >
-                                  {scopeItems.map((it, i) => (
-                                    <li key={i} style={{ marginBottom: i < scopeItems.length - 1 ? '8px' : '0' }}>
-                                      {it}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                            
-                            {instructionItems.length > 0 && (
-                              <div>
-                                <h3 
-                                  style={{
-                                    fontFamily: 'Inter, sans-serif',
-                                    fontSize: '14px',
-                                    fontWeight: 600,
-                                    color: '#101828',
-                                    marginBottom: '8px',
-                                  }}
-                                >
-                                  Instructions
-                                </h3>
-                                <ol 
-                                  style={{
-                                    fontFamily: 'Inter, sans-serif',
-                                    fontSize: '14px',
-                                    fontWeight: 400,
-                                    color: '#344054',
-                                    lineHeight: '1.5',
-                                    listStyle: 'decimal',
-                                    paddingLeft: '21px',
-                                  }}
-                                  className="space-y-0"
-                                >
-                                  {instructionItems.map((it, i) => (
-                                    <li key={i} style={{ marginBottom: i < instructionItems.length - 1 ? '0' : '0' }}>
-                                      {it}
-                                    </li>
-                                  ))}
-                                </ol>
-                              </div>
-                            )}
-                            
-                            {scopeItems.length === 0 && instructionItems.length === 0 && (
-                              <ul 
+                        <div>
+                          {scopeItems.length > 0 && (
+                            <div style={{ maxWidth: '640px', marginBottom: '8px' }}>
+                              <h3
+                                style={{
+                                  fontFamily: 'Poppins, sans-serif',
+                                  fontSize: '14px',
+                                  fontWeight: 600,
+                                  color: '#101828',
+                                  marginBottom: '8px',
+                                }}
+                              >
+                                Scope
+                              </h3>
+                              <ul
+                                style={{
+                                  fontFamily: 'Poppins, sans-serif',
+                                  fontSize: '14px',
+                                  fontStyle: 'normal',
+                                  fontWeight: 400,
+                                  color: '#344054',
+                                  lineHeight: '150%',
+                                  listStyle: 'disc',
+                                  paddingLeft: '21px',
+                                }}
+                                className="space-y-0"
+                              >
+                                {scopeItems.map((it, i) => (
+                                  <li key={i} style={{ marginBottom: i < scopeItems.length - 1 ? '8px' : '0' }}>
+                                    {it}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {instructionItems.length > 0 && (
+                            <div>
+                              <h3
+                                style={{
+                                  fontFamily: 'Inter, sans-serif',
+                                  fontSize: '14px',
+                                  fontWeight: 600,
+                                  color: '#101828',
+                                  marginBottom: '8px',
+                                }}
+                              >
+                                Instructions
+                              </h3>
+                              <ol
                                 style={{
                                   fontFamily: 'Inter, sans-serif',
                                   fontSize: '14px',
                                   fontWeight: 400,
                                   color: '#344054',
                                   lineHeight: '1.5',
-                                  listStyle: 'disc',
+                                  listStyle: 'decimal',
                                   paddingLeft: '21px',
                                 }}
                                 className="space-y-0"
                               >
-                          {items.map((it, i) => (
-                                  <li key={i} style={{ marginBottom: i < items.length - 1 ? '0' : '0' }}>
+                                {instructionItems.map((it, i) => (
+                                  <li key={i} style={{ marginBottom: i < instructionItems.length - 1 ? '0' : '0' }}>
                                     {it}
                                   </li>
-                          ))}
-                        </ul>
-                            )}
-                          </div>
-                          
-                          {relatedAgents.length > 0 && (
-                            <div 
-                              style={{
-                                maxWidth: '490px',
-                                width: '100%',
-                                backgroundColor: '#F9FAFB',
-                                padding: '24px',
-                                borderRadius: '8px',
-                                position: 'relative',
-                                height: 'auto',
-                                marginLeft: '0',
-                                alignSelf: 'flex-start',
-                              }}
-                              className="flex-shrink-0"
-                            >
-                              <h4 
-                                style={{
-                                  fontFamily: 'Poppins, sans-serif',
-                                  fontSize: '16px',
-                                  fontWeight: 600,
-                                  color: '#111827',
-                                  marginBottom: '16px',
-                                  lineHeight: '21px',
-                                }}
-                              >
-                                {agent?.agent_name || 'Agent'} powered by Agents
-                              </h4>
-                              <div className="space-y-3">
-                                {relatedAgents.map((relatedAgent: any, idx: number) => (
-                                  <Link
-                                    key={relatedAgent.agent_id || idx}
-                                    href={`/agents/${relatedAgent.agent_id}`}
-                                    className="block bg-white rounded-2xl p-2 border border-gray-100"
-                                  >
-                                    <div className="flex gap-2 items-center">
-                                      <div 
-                                        style={{
-                                          width: '60px',
-                                          height: '60px',
-                                          borderRadius: '12px',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          flexShrink: 0,
-                                          border: '1px solid #F3F4F6',
-                                          position: 'relative',
-                                          overflow: 'hidden',
-                                        }}
-                                      >
-                                        <AgentIcon
-                                          demoPreview={relatedAgent?.demo_preview}
-                                          agentName={relatedAgent?.agent_name || 'Agent'}
-                                          size={40}
-                                        />
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <h5 
-                                          style={{
-                                            fontFamily: 'Poppins, sans-serif',
-                                            fontSize: '14px',
-                                            fontWeight: 500,
-                                            color: '#111827',
-                                            marginBottom: '4px',
-                                            lineHeight: '21px',
-                                          }}
-                                          className="truncate"
-                                        >
-                                          {relatedAgent.agent_name || 'Agent Name'}
-                                        </h5>
-                                        <p 
-                                          style={{
-                                            fontFamily: 'Poppins, sans-serif',
-                                            fontSize: '12px',
-                                            fontWeight: 400,
-                                            color: '#344054',
-                                            lineHeight: '1.5',
-                                            display: '-webkit-box',
-                                            WebkitLineClamp: 2,
-                                            WebkitBoxOrient: 'vertical',
-                                            overflow: 'hidden',
-                                          }}
-                                        >
-                                          {relatedAgent.description || 'Agent description'}
-                                        </p>
-                                      </div>
-                                    </div>
-                                  </Link>
                                 ))}
-                              </div>
+                              </ol>
                             </div>
                           )}
-                        </div>
-                      )
-                    })()
-                  ) : (
-                    <p className="text-muted-foreground">Features information is not available for this agent.</p>
-                  )}
-                </TabsContent>
-                <TabsContent value="roi" className="mt-6">
-                  <div className="flex gap-8">
-                    <div className="flex-1" style={{ maxWidth: '740px' }}>
-                  {agent?.roi && agent.roi !== "na" ? (
-                    (() => {
-                      const items = agent.roi
-                        .replace(/\\n/g, '\n')
-                        .split(/[;\n]+/)
-                        .map(s => s.trim().replace(/^[,\-\s]+|[,\-\s]+$/g, ''))
-                        .filter(Boolean)
-                      return (
-                            <ul 
+
+                          {scopeItems.length === 0 && instructionItems.length === 0 && (
+                            <ul
                               style={{
                                 fontFamily: 'Inter, sans-serif',
                                 fontSize: '14px',
@@ -814,392 +763,164 @@ export default async function AgentDetailsPage({ params }: { params: Promise<{ i
                               }}
                               className="space-y-0"
                             >
-                          {items.map((it, i) => (
+                              {items.map((it, i) => (
                                 <li key={i} style={{ marginBottom: i < items.length - 1 ? '0' : '0' }}>
                                   {it}
                                 </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )
+                    })()
+                  ) : (
+                    <p className="text-muted-foreground">Features information is not available for this agent.</p>
+                  )}
+                </TabsContent>
+                <TabsContent value="roi" className="mt-6">
+                  {agent?.roi && agent.roi !== "na" ? (
+                    (() => {
+                      const items = agent.roi
+                        .replace(/\\n/g, '\n')
+                        .split(/[;\n]+/)
+                        .map(s => s.trim().replace(/^[,\-\s]+|[,\-\s]+$/g, ''))
+                        .filter(Boolean)
+                      return (
+                        <ul
+                          style={{
+                            fontFamily: 'Inter, sans-serif',
+                            fontSize: '14px',
+                            fontWeight: 400,
+                            color: '#344054',
+                            lineHeight: '1.5',
+                            listStyle: 'disc',
+                            paddingLeft: '21px',
+                          }}
+                          className="space-y-0"
+                        >
+                          {items.map((it, i) => (
+                            <li key={i} style={{ marginBottom: i < items.length - 1 ? '0' : '0' }}>
+                              {it}
+                            </li>
                           ))}
                         </ul>
                       )
                     })()
                   ) : (
-                        <p 
-                          style={{
-                            fontFamily: 'Inter, sans-serif',
-                            fontSize: '14px',
-                            color: '#6B7280',
-                          }}
-                        >
-                          ROI information is not available for this agent.
-                        </p>
-                      )}
-                    </div>
-                    {relatedAgents.length > 0 && (
-                      <div 
-                        style={{
-                          maxWidth: '490px',
-                          width: '100%',
-                          backgroundColor: '#F9FAFB',
-                          padding: '24px',
-                          borderRadius: '8px',
-                          position: 'relative',
-                          height: 'auto',
-                          marginLeft: '0',
-                          alignSelf: 'flex-start',
-                        }}
-                        className="flex-shrink-0"
-                      >
-                        <h4 
-                          style={{
-                            fontFamily: 'Poppins, sans-serif',
-                            fontSize: '16px',
-                            fontWeight: 600,
-                            color: '#111827',
-                            marginBottom: '16px',
-                            lineHeight: '21px',
-                          }}
-                        >
-                          {agent?.agent_name || 'Agent'} powered by Agents
-                        </h4>
-                        <div className="space-y-3">
-                          {relatedAgents.map((relatedAgent: any, idx: number) => (
-                            <Link
-                              key={relatedAgent.agent_id || idx}
-                              href={`/agents/${relatedAgent.agent_id}`}
-                              className="block bg-white rounded-2xl p-2 border border-gray-100"
-                            >
-                              <div className="flex gap-2 items-center">
-                                <div 
-                                  style={{
-                                    width: '60px',
-                                    height: '60px',
-                                    borderRadius: '12px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0,
-                                    border: '1px solid #F3F4F6',
-                                    position: 'relative',
-                                    overflow: 'hidden',
-                                  }}
-                                >
-                                  <AgentIcon
-                                    demoPreview={relatedAgent?.demo_preview}
-                                    agentName={relatedAgent?.agent_name || 'Agent'}
-                                    size={40}
-                                  />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h5 
-                                    style={{
-                                      fontFamily: 'Poppins, sans-serif',
-                                      fontSize: '14px',
-                                      fontWeight: 500,
-                                      color: '#111827',
-                                      marginBottom: '4px',
-                                      lineHeight: '21px',
-                                    }}
-                                    className="truncate"
-                                  >
-                                    {relatedAgent.agent_name || 'Agent Name'}
-                                  </h5>
-                                  <p 
-                                    style={{
-                                      fontFamily: 'Poppins, sans-serif',
-                                      fontSize: '12px',
-                                      fontWeight: 400,
-                                      color: '#344054',
-                                      lineHeight: '1.5',
-                                      display: '-webkit-box',
-                                      WebkitLineClamp: 2,
-                                      WebkitBoxOrient: 'vertical',
-                                      overflow: 'hidden',
-                                    }}
-                                  >
-                                    {relatedAgent.description || 'Agent description'}
-                                  </p>
-                                </div>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                    <p
+                      style={{
+                        fontFamily: 'Inter, sans-serif',
+                        fontSize: '14px',
+                        color: '#6B7280',
+                      }}
+                    >
+                      ROI information is not available for this agent.
+                    </p>
+                  )}
                 </TabsContent>
-                <TabsContent value="deployment" className="mt-6">
-                  <div className="flex gap-8">
-                    <div className="flex-1" style={{ maxWidth: '740px' }}>
-                  {(!data?.deployments || data.deployments.length === 0) ? (
-                    <p className="text-muted-foreground">No deployment information available.</p>
-                  ) : (
-                        (() => {
-                        const groups: Record<string, typeof data.deployments> = {}
-                        for (const d of (data?.deployments || [])) {
-                          const key = d?.service_provider || 'Other'
-                          if (!groups[key]) groups[key] = []
-                          groups[key].push(d)
-                        }
-                        const entries = Object.entries(groups)
-                        return (
-                          <Accordion type="multiple" className="w-full rounded-md border">
-                            {entries.map(([provider, items]) => (
-                              <AccordionItem key={provider} value={provider} className="px-4">
-                                <AccordionTrigger className="text-sm font-semibold">
-                                  {provider}
-                                </AccordionTrigger>
-                                <AccordionContent>
-                                  <div className="grid gap-3 md:grid-cols-2">
-                                    {items.map((d, idx) => (
-                                      <div key={(d?.service_id || provider) + idx} className="rounded-lg border bg-white p-4">
-                                        <div className="mb-1 text-sm font-semibold text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>
-                                          {d?.service_name || 'Service'}
-                                        </div>
-                                        <div className="mb-3 text-xs text-[#344054]" style={{ fontFamily: 'Inter, sans-serif', lineHeight: '150%' }}>
-                                          {d?.by_capability || d?.capability_name || 'Capability'}
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-2">
-                                          <Badge variant="outline">{d?.deployment || 'Cloud/On-Prem'}</Badge>
-                                          <Badge variant="default">{d?.cloud_region || 'Regions'}</Badge>
-                                        </div>
+                {data?.deployments && data.deployments.length > 0 && (
+                  <TabsContent value="deployment" className="mt-6">
+                    {(() => {
+                      const groups: Record<string, typeof data.deployments> = {}
+                      for (const d of (data?.deployments || [])) {
+                        const key = d?.service_provider || 'Other'
+                        if (!groups[key]) groups[key] = []
+                        groups[key].push(d)
+                      }
+                      const entries = Object.entries(groups)
+                      return (
+                        <Accordion type="multiple" className="w-full rounded-md border">
+                          {entries.map(([provider, items]) => (
+                            <AccordionItem key={provider} value={provider} className="px-4">
+                              <AccordionTrigger className="text-sm font-semibold">
+                                {provider}
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid gap-3 md:grid-cols-2">
+                                  {items.map((d, idx) => (
+                                    <div key={(d?.service_id || provider) + idx} className="rounded-lg border bg-white p-4">
+                                      <div className="mb-1 text-sm font-semibold text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>
+                                        {d?.service_name || 'Service'}
                                       </div>
-                                    ))}
-                                  </div>
-                                </AccordionContent>
-                              </AccordionItem>
-                            ))}
-                          </Accordion>
-                        )
-                          })()
-                      )}
-                    </div>
-                    {relatedAgents.length > 0 && (
-                      <div 
-                        style={{
-                          maxWidth: '490px',
-                          width: '100%',
-                          backgroundColor: '#F9FAFB',
-                          padding: '24px',
-                          borderRadius: '8px',
-                          position: 'relative',
-                          height: 'auto',
-                          marginLeft: '0',
-                          alignSelf: 'flex-start',
-                        }}
-                        className="flex-shrink-0"
-                      >
-                        <h4 
-                          style={{
-                            fontFamily: 'Poppins, sans-serif',
-                            fontSize: '16px',
-                            fontWeight: 600,
-                            color: '#111827',
-                            marginBottom: '16px',
-                            lineHeight: '21px',
-                          }}
-                        >
-                          {agent?.agent_name || 'Agent'} powered by Agents
-                        </h4>
-                        <div className="space-y-3">
-                          {relatedAgents.map((relatedAgent: any, idx: number) => (
-                            <Link
-                              key={relatedAgent.agent_id || idx}
-                              href={`/agents/${relatedAgent.agent_id}`}
-                              className="block bg-white rounded-2xl p-2 border border-gray-100"
-                            >
-                              <div className="flex gap-2 items-center">
-                                <div 
-                                  style={{
-                                    width: '60px',
-                                    height: '60px',
-                                    borderRadius: '12px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0,
-                                    border: '1px solid #F3F4F6',
-                                    position: 'relative',
-                                    overflow: 'hidden',
-                                  }}
-                                >
-                                  <AgentIcon
-                                    demoPreview={relatedAgent?.demo_preview}
-                                    agentName={relatedAgent?.agent_name || 'Agent'}
-                                    size={40}
-                                  />
+                                      <div className="mb-3 text-xs text-[#344054]" style={{ fontFamily: 'Inter, sans-serif', lineHeight: '150%' }}>
+                                        {d?.by_capability || d?.capability_name || 'Capability'}
+                                      </div>
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <Badge variant="outline">{d?.deployment || 'Cloud/On-Prem'}</Badge>
+                                        <Badge variant="default">{d?.cloud_region || 'Regions'}</Badge>
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <h5 
-                                    style={{
-                                      fontFamily: 'Poppins, sans-serif',
-                                      fontSize: '14px',
-                                      fontWeight: 500,
-                                      color: '#111827',
-                                      marginBottom: '4px',
-                                      lineHeight: '21px',
-                                    }}
-                                    className="truncate"
-                                  >
-                                    {relatedAgent.agent_name || 'Agent Name'}
-                                  </h5>
-                                  <p 
-                                    style={{
-                                      fontFamily: 'Poppins, sans-serif',
-                                      fontSize: '12px',
-                                      fontWeight: 400,
-                                      color: '#344054',
-                                      lineHeight: '1.5',
-                                      display: '-webkit-box',
-                                      WebkitLineClamp: 2,
-                                      WebkitBoxOrient: 'vertical',
-                                      overflow: 'hidden',
-                                    }}
-                                  >
-                                    {relatedAgent.description || 'Agent description'}
-                                  </p>
-                                </div>
-                              </div>
-                            </Link>
+                              </AccordionContent>
+                            </AccordionItem>
                           ))}
-                        </div>
-                    </div>
-                  )}
-                  </div>
-                </TabsContent>
-                <TabsContent value="docs" className="mt-6">
-                  <div className="flex gap-8">
-                    <div className="flex-1" style={{ maxWidth: '740px' }}>
-                  {data?.documentation && data.documentation.length > 0 && data.documentation[0] ? (
-                    <DocumentationSection documentation={data.documentation[0]} />
-                  ) : (
-                    <p className="text-muted-foreground">Documentation is not available for this agent.</p>
-                  )}
-                    </div>
-                    {relatedAgents.length > 0 && (
-                      <div 
-                        style={{
-                          maxWidth: '490px',
-                          width: '100%',
-                          backgroundColor: '#F9FAFB',
-                          padding: '24px',
-                          borderRadius: '8px',
-                          position: 'relative',
-                          height: 'auto',
-                          marginLeft: '0',
-                          alignSelf: 'flex-start',
-                        }}
-                        className="flex-shrink-0"
-                      >
-                        <h4 
-                          style={{
-                            fontFamily: 'Poppins, sans-serif',
-                            fontSize: '16px',
-                            fontWeight: 600,
-                            color: '#111827',
-                            marginBottom: '16px',
-                            lineHeight: '21px',
-                          }}
-                        >
-                          {agent?.agent_name || 'Agent'} powered by Agents
-                        </h4>
-                        <div className="space-y-3">
-                          {relatedAgents.map((relatedAgent: any, idx: number) => (
-                            <Link
-                              key={relatedAgent.agent_id || idx}
-                              href={`/agents/${relatedAgent.agent_id}`}
-                              className="block bg-white rounded-2xl p-2 border border-gray-100"
-                            >
-                              <div className="flex gap-2 items-center">
-                                <div 
-                                  style={{
-                                    width: '60px',
-                                    height: '60px',
-                                    borderRadius: '12px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0,
-                                    border: '1px solid #F3F4F6',
-                                    position: 'relative',
-                                    overflow: 'hidden',
-                                  }}
-                                >
-                                  <AgentIcon
-                                    demoPreview={relatedAgent?.demo_preview}
-                                    agentName={relatedAgent?.agent_name || 'Agent'}
-                                    size={40}
-                                  />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h5 
-                                    style={{
-                                      fontFamily: 'Poppins, sans-serif',
-                                      fontSize: '14px',
-                                      fontWeight: 500,
-                                      color: '#111827',
-                                      marginBottom: '4px',
-                                      lineHeight: '21px',
-                                    }}
-                                    className="truncate"
-                                  >
-                                    {relatedAgent.agent_name || 'Agent Name'}
-                                  </h5>
-                                  <p 
-                                    style={{
-                                      fontFamily: 'Poppins, sans-serif',
-                                      fontSize: '12px',
-                                      fontWeight: 400,
-                                      color: '#344054',
-                                      lineHeight: '1.5',
-                                      display: '-webkit-box',
-                                      WebkitLineClamp: 2,
-                                      WebkitBoxOrient: 'vertical',
-                                      overflow: 'hidden',
-                                    }}
-                                  >
-                                    {relatedAgent.description || 'Agent description'}
-                                  </p>
-                                </div>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
+                        </Accordion>
+                      )
+                    })()}
+                  </TabsContent>
+                )}
+                {data?.documentation && data.documentation.length > 0 && data.documentation[0] && (
+                  (() => {
+                    const doc = data.documentation[0]
+                    const hasContent = doc.sdk_details || doc.swagger_details || doc.sample_input || doc.sample_output || doc.security_details || doc.related_files
+                    return hasContent ? (
+                      <TabsContent value="docs" className="mt-6">
+                        <DocumentationSection documentation={doc} />
+                      </TabsContent>
+                    ) : null
+                  })()
+                )}
               </Tabs>
+            </div>
+
+            {/* Sidebar - Independent of tabs, always visible to maintain layout */}
+            <div className="flex-shrink-0" style={{ minWidth: '490px', width: 'fit-content', maxWidth: '490px', marginTop: '30px', marginRight: '100px' }}>
+              {relatedAgents.length > 0 ? (
+                <div className="w-full bg-white rounded-xl shadow-md border border-gray-200">
+                  <RelatedAgentsSidebar
+                    relatedAgents={relatedAgents}
+                    agentName={agent?.agent_name}
+                    agentsSource={agentsSource}
+                  />
+                </div>
+              ) : (
+                <div style={{ minWidth: '490px', width: 'fit-content', maxWidth: '600px', height: '1px' }} aria-hidden="true" />
+              )}
+            </div>
+
+          </div>
 
           <div className="mt-10 flex items-center justify-between w-full">
-                {prevAgentId ? (
-                  <Link href={`/agents/${prevAgentId}`} className="inline-flex items-center gap-2 text-blue-600">
-                    <ChevronLeft className="h-4 w-4" />
-                    <span className="font-medium">
-                      {prevAgentName || "Previous agent"}
-                    </span>
-                  </Link>
-                ) : (
-                  <span className="inline-flex items-center gap-2 text-gray-400 cursor-not-allowed">
-                    <ChevronLeft className="h-4 w-4" />
-                    <span className="font-medium">Previous agent</span>
-                  </span>
-                )}
+            {prevAgentId ? (
+              <Link href={`/agents/${prevAgentId}`} className="inline-flex items-center gap-2 text-blue-600">
+                <ChevronLeft className="h-4 w-4" />
+                <span className="font-medium">
+                  {prevAgentName || "Previous agent"}
+                </span>
+              </Link>
+            ) : (
+              <span className="inline-flex items-center gap-2 text-gray-400 cursor-not-allowed">
+                <ChevronLeft className="h-4 w-4" />
+                <span className="font-medium">Previous agent</span>
+              </span>
+            )}
 
-                {nextAgentId ? (
-                  <Link href={`/agents/${nextAgentId}`} className="inline-flex items-center gap-2 text-blue-600 ml-auto">
-                    <span className="font-medium">
-                      {nextAgentName || "Next agent"}
-                    </span>
-                    <ChevronRight className="h-4 w-4" />
-                  </Link>
-                ) : (
-                  <span className="inline-flex items-center gap-2 text-gray-400 cursor-not-allowed ml-auto">
-                    <span className="font-medium">Next agent</span>
-                    <ChevronRight className="h-4 w-4" />
-                  </span>
-                )}
-              </div>
-            </div>
+            {nextAgentId ? (
+              <Link href={`/agents/${nextAgentId}`} className="inline-flex items-center gap-2 text-blue-600 ml-auto">
+                <span className="font-medium">
+                  {nextAgentName || "Next agent"}
+                </span>
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            ) : (
+              <span className="inline-flex items-center gap-2 text-gray-400 cursor-not-allowed ml-auto">
+                <span className="font-medium">Next agent</span>
+                <ChevronRight className="h-4 w-4" />
+              </span>
+            )}
+          </div>
+        </div>
       </section>
 
     </>

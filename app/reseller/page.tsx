@@ -975,14 +975,16 @@ export default function ResellerPage() {
                     width: "481.33px",
                     height: "148.77px",
                     maxWidth: "100%",
+                    position: "relative",
                   }}
                 >
                   <Image
-                    src="https://www.figma.com/api/mcp/asset/7519488f-c8ba-4070-bd1d-ed93e6ff8330"
+                    src="/Mozak_logo.png"
                     alt="Mozark Logo"
-                    width={481}
+                    width={482}
                     height={149}
                     className="object-contain rounded-[8px]"
+                    unoptimized
                     style={{
                       width: "100%",
                       height: "100%",
@@ -1048,14 +1050,16 @@ export default function ResellerPage() {
                     width: "481.33px",
                     height: "148.77px",
                     maxWidth: "100%",
+                    position: "relative",
                   }}
                 >
                   <Image
-                    src="https://www.figma.com/api/mcp/asset/7519488f-c8ba-4070-bd1d-ed93e6ff8330"
+                    src="/Mozak_logo.png"
                     alt="Mozark Logo"
-                    width={481}
+                    width={482}
                     height={149}
                     className="object-contain rounded-[8px]"
+                    unoptimized
                     style={{
                       width: "100%",
                       height: "100%",
@@ -1121,14 +1125,16 @@ export default function ResellerPage() {
                     width: "481.33px",
                     height: "148.77px",
                     maxWidth: "100%",
+                    position: "relative",
                   }}
                 >
                   <Image
-                    src="https://www.figma.com/api/mcp/asset/7519488f-c8ba-4070-bd1d-ed93e6ff8330"
+                    src="/Mozak_logo.png"
                     alt="Mozark Logo"
-                    width={481}
+                    width={482}
                     height={149}
                     className="object-contain rounded-[8px]"
+                    unoptimized
                     style={{
                       width: "100%",
                       height: "100%",
@@ -1195,14 +1201,16 @@ export default function ResellerPage() {
                     width: "481.33px",
                     height: "148.77px",
                     maxWidth: "100%",
+                    position: "relative",
                   }}
                 >
                   <Image 
-                    src="https://www.figma.com/api/mcp/asset/7519488f-c8ba-4070-bd1d-ed93e6ff8330"
+                    src="/Mozak_logo.png"
                     alt="Mozark Logo"
-                    width={481}
+                    width={482}
                     height={149}
                     className="object-contain rounded-[8px]"
+                    unoptimized
                     style={{
                       width: "100%",
                       height: "100%",
@@ -1268,14 +1276,16 @@ export default function ResellerPage() {
                     width: "481.33px",
                     height: "148.77px",
                     maxWidth: "100%",
+                    position: "relative",
                   }}
                 >
                   <Image 
-                    src="https://www.figma.com/api/mcp/asset/7519488f-c8ba-4070-bd1d-ed93e6ff8330"
+                    src="/Mozak_logo.png"
                     alt="Mozark Logo"
-                    width={481}
+                    width={482}
                     height={149}
                     className="object-contain rounded-[8px]"
+                    unoptimized
                     style={{
                       width: "100%",
                       height: "100%",
@@ -1341,14 +1351,16 @@ export default function ResellerPage() {
                     width: "481.33px",
                     height: "148.77px",
                     maxWidth: "100%",
+                    position: "relative",
                   }}
                 >
                   <Image
-                    src="https://www.figma.com/api/mcp/asset/7519488f-c8ba-4070-bd1d-ed93e6ff8330"
+                    src="/Mozak_logo.png"
                     alt="Mozark Logo"
-                    width={481}
+                    width={482}
                     height={149}
                     className="object-contain rounded-[8px]"
+                    unoptimized
                     style={{
                       width: "100%",
                       height: "100%",
