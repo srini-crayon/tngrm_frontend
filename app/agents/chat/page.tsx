@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useChatStore } from "../../../lib/store/chat.store";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 import { ToggleGroup, ToggleGroupItem } from "../../../components/ui/toggle-group";
 import { VoiceInputControls } from "../../../components/voice-input-controls";
 import { formatTime, formatDateTime } from "../../../lib/utils";
@@ -333,6 +334,250 @@ function processMegaTrendsMarkdown(markdown: string): string {
   processed = processed.replace(/\n{3,}/g, '\n\n').trim();
   
   return processed;
+}
+
+// Comprehensive Markdown Components Factory for beautiful LLM response formatting
+// Supports: headings, paragraphs, lists, code blocks, blockquotes, tables, links, emphasis
+function createChatMarkdownComponents(options: {
+  isUserMessage?: boolean;
+  agents?: Agent[];
+  onAgentClick?: (agentId: string) => void;
+}) {
+  const { isUserMessage = false, agents = [] } = options;
+  
+  const textColor = isUserMessage ? "#FFFFFF" : "#374151";
+  const headingColor = isUserMessage ? "#FFFFFF" : "#111827";
+  const mutedColor = isUserMessage ? "rgba(255,255,255,0.8)" : "#6b7280";
+  const codeBackground = isUserMessage ? "rgba(255,255,255,0.15)" : "#f3f4f6";
+  const codeBorderColor = isUserMessage ? "rgba(255,255,255,0.2)" : "#e5e7eb";
+  const blockquoteBorder = isUserMessage ? "rgba(255,255,255,0.4)" : "#3b82f6";
+  const tableBorderColor = isUserMessage ? "rgba(255,255,255,0.2)" : "#e5e7eb";
+
+  return {
+    // Headings
+    h1: ({ children }: any) => (
+      <h1 style={{ 
+        fontFamily: "Poppins, sans-serif", 
+        fontWeight: 700, 
+        fontSize: "24px", 
+        lineHeight: "1.3", 
+        color: headingColor,
+        marginTop: "20px",
+        marginBottom: "12px",
+      }}>{children}</h1>
+    ),
+    h2: ({ children }: any) => (
+      <h2 style={{ 
+        fontFamily: "Poppins, sans-serif", 
+        fontWeight: 600, 
+        fontSize: "20px", 
+        lineHeight: "1.3", 
+        color: headingColor,
+        marginTop: "18px",
+        marginBottom: "10px",
+      }}>{children}</h2>
+    ),
+    h3: ({ children }: any) => (
+      <h3 style={{ 
+        fontFamily: "Poppins, sans-serif", 
+        fontWeight: 600, 
+        fontSize: "17px", 
+        lineHeight: "1.3", 
+        color: headingColor,
+        marginTop: "16px",
+        marginBottom: "8px",
+      }}>{children}</h3>
+    ),
+    h4: ({ children }: any) => (
+      <h4 style={{ 
+        fontFamily: "Poppins, sans-serif", 
+        fontWeight: 600, 
+        fontSize: "15px", 
+        lineHeight: "1.4", 
+        color: headingColor,
+        marginTop: "14px",
+        marginBottom: "6px",
+      }}>{children}</h4>
+    ),
+    
+    // Paragraphs
+    p: ({ children }: any) => (
+      <p style={{ 
+        color: textColor, 
+        fontSize: "14px", 
+        lineHeight: "22px", 
+        fontFamily: "Poppins, sans-serif", 
+        fontWeight: 400,
+        marginBottom: "12px",
+      }}>{children}</p>
+    ),
+    
+    // Lists
+    ul: ({ children }: any) => (
+      <ul style={{ 
+        color: textColor,
+        fontSize: "14px",
+        lineHeight: "22px",
+        fontFamily: "Poppins, sans-serif",
+        marginBottom: "12px",
+        paddingLeft: "20px",
+        listStyleType: "disc",
+      }}>{children}</ul>
+    ),
+    ol: ({ children }: any) => (
+      <ol style={{ 
+        color: textColor,
+        fontSize: "14px",
+        lineHeight: "22px",
+        fontFamily: "Poppins, sans-serif",
+        marginBottom: "12px",
+        paddingLeft: "20px",
+        listStyleType: "decimal",
+      }}>{children}</ol>
+    ),
+    li: ({ children }: any) => (
+      <li style={{ 
+        color: textColor,
+        marginBottom: "6px",
+        paddingLeft: "4px",
+      }}>{children}</li>
+    ),
+    
+    // Code blocks
+    code: ({ inline, className, children }: any) => {
+      if (inline) {
+        return (
+          <code style={{
+            fontFamily: "'Fira Code', 'Consolas', monospace",
+            fontSize: "13px",
+            backgroundColor: codeBackground,
+            padding: "2px 6px",
+            borderRadius: "4px",
+            color: isUserMessage ? "#FFFFFF" : "#e11d48",
+          }}>{children}</code>
+        );
+      }
+      // Block code
+      return (
+        <pre style={{
+          backgroundColor: codeBackground,
+          border: `1px solid ${codeBorderColor}`,
+          borderRadius: "8px",
+          padding: "12px 16px",
+          marginBottom: "12px",
+          overflow: "auto",
+        }}>
+          <code style={{
+            fontFamily: "'Fira Code', 'Consolas', monospace",
+            fontSize: "13px",
+            lineHeight: "1.5",
+            color: isUserMessage ? "#FFFFFF" : "#1f2937",
+          }}>{children}</code>
+        </pre>
+      );
+    },
+    pre: ({ children }: any) => <>{children}</>,
+    
+    // Blockquotes
+    blockquote: ({ children }: any) => (
+      <blockquote style={{
+        borderLeft: `4px solid ${blockquoteBorder}`,
+        paddingLeft: "16px",
+        marginLeft: "0",
+        marginBottom: "12px",
+        fontStyle: "italic",
+        color: mutedColor,
+      }}>{children}</blockquote>
+    ),
+    
+    // Tables
+    table: ({ children }: any) => (
+      <div style={{ overflowX: "auto", marginBottom: "12px" }}>
+        <table style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          fontSize: "14px",
+          fontFamily: "Poppins, sans-serif",
+        }}>{children}</table>
+      </div>
+    ),
+    thead: ({ children }: any) => (
+      <thead style={{
+        backgroundColor: isUserMessage ? "rgba(255,255,255,0.1)" : "#f9fafb",
+      }}>{children}</thead>
+    ),
+    tbody: ({ children }: any) => <tbody>{children}</tbody>,
+    tr: ({ children }: any) => (
+      <tr style={{
+        borderBottom: `1px solid ${tableBorderColor}`,
+      }}>{children}</tr>
+    ),
+    th: ({ children }: any) => (
+      <th style={{
+        padding: "10px 12px",
+        textAlign: "left",
+        fontWeight: 600,
+        color: headingColor,
+        borderBottom: `2px solid ${tableBorderColor}`,
+      }}>{children}</th>
+    ),
+    td: ({ children }: any) => (
+      <td style={{
+        padding: "10px 12px",
+        color: textColor,
+      }}>{children}</td>
+    ),
+    
+    // Links
+    a: ({ href, children }: any) => {
+      // Check if it's an agent link
+      if (href?.startsWith('/agents/')) {
+        const agentId = href.replace('/agents/', '');
+        const agent = agents.find(a => a.agent_id === agentId);
+        if (agent) {
+          return (
+            <a 
+              href={href}
+              style={{
+                color: isUserMessage ? "#93c5fd" : "#2563eb",
+                textDecoration: "none",
+                fontWeight: 500,
+                borderBottom: `1px dashed ${isUserMessage ? "#93c5fd" : "#2563eb"}`,
+              }}
+            >{children}</a>
+          );
+        }
+      }
+      return (
+        <a 
+          href={href} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{
+            color: isUserMessage ? "#93c5fd" : "#2563eb",
+            textDecoration: "none",
+          }}
+        >{children}</a>
+      );
+    },
+    
+    // Emphasis
+    strong: ({ children }: any) => (
+      <strong style={{ fontWeight: 600, color: "inherit" }}>{children}</strong>
+    ),
+    em: ({ children }: any) => (
+      <em style={{ fontStyle: "italic" }}>{children}</em>
+    ),
+    
+    // Horizontal rule
+    hr: () => (
+      <hr style={{
+        border: "none",
+        borderTop: `1px solid ${tableBorderColor}`,
+        margin: "16px 0",
+      }} />
+    ),
+  };
 }
 
 // Intro Text Component - Displays plain text without card
@@ -1488,7 +1733,6 @@ function InlineAgentCard({ agent }: { agent: Agent }) {
 export default function AgentsChatPage() {
   const router = useRouter();
   const [chatInput, setChatInput] = useState("");
-  const [charCount, setCharCount] = useState(0);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -1717,7 +1961,6 @@ export default function AgentsChatPage() {
   const handleSendChatMessage = async (messageText: string) => {
     const timeString = formatTime();
     const userText = messageText;
-    setCharCount(0);
     setFeedback({ type: 'success', message: 'Message sent!' });
     setTimeout(() => setFeedback(null), 2000);
     addMessage({ id: crypto.randomUUID(), role: "user", text: userText, time: timeString });
@@ -1827,13 +2070,29 @@ export default function AgentsChatPage() {
     }
   }, [messages, isMounted]);
 
-  // Auto-resize chat input
+  // Auto-resize chat input - optimized with requestAnimationFrame
+  const resizeTextarea = useRef<number | null>(null);
+  
   useEffect(() => {
     const el = chatInputRef.current;
     if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
-    el.style.maxHeight = '200px';
+    
+    // Cancel any pending resize
+    if (resizeTextarea.current) {
+      cancelAnimationFrame(resizeTextarea.current);
+    }
+    
+    // Use requestAnimationFrame for smoother resizing
+    resizeTextarea.current = requestAnimationFrame(() => {
+      el.style.height = 'auto';
+      el.style.height = `${Math.min(el.scrollHeight, 150)}px`;
+    });
+    
+    return () => {
+      if (resizeTextarea.current) {
+        cancelAnimationFrame(resizeTextarea.current);
+      }
+    };
   }, [chatInput]);
 
   // Enhanced Thinking Component with wave dots
@@ -1888,31 +2147,24 @@ export default function AgentsChatPage() {
 
   return (
     <div 
-      className="flex flex-col h-screen overflow-hidden"
+      className="flex flex-col h-screen"
       style={{
-        animation: "fadeInSlideUp 0.4s ease-out",
-        backgroundColor: "#f8fafd",
-        paddingBottom:"150px",
+        backgroundColor: "#f8fafc",
         fontFamily: "Poppins, sans-serif",
       }}
     >
-      {/* Messages Area - Scrollable content only - Centered 50% width container */}
+      {/* Single scrollable container for entire chat */}
       <div 
-        className="flex-1 overflow-y-auto smooth-scroll" 
+        className="flex-1 overflow-y-auto"
         style={{ 
-          backgroundColor: "#f8fafc",
-          minHeight: 0,
-          display: "flex",
-          justifyContent: "center",
-          
+          scrollBehavior: "smooth",
         }}
       >
+        {/* Centered content wrapper */}
         <div 
-          className="w-full md:w-[60vw] py-8 px-4"
+          className="w-full max-w-3xl mx-auto px-4 py-6"
           style={{
-            maxWidth: "720px",
-            minWidth: "360px",
-            paddingBottom: "320px",
+            paddingBottom: "180px", // Space for fixed input
           }}
         >
           <div className="space-y-4">
@@ -1926,40 +2178,39 @@ export default function AgentsChatPage() {
               }}
             >
               <div
-                className={`message-bubble ${message.role === "user" ? "rounded-2xl px-4 py-3 user-message-enter" : ""}`}
+                className={`message-bubble ${message.role === "user" ? "rounded-2xl px-5 py-3" : ""}`}
                 style={{
                   fontFamily: "Poppins, sans-serif",
                   fontSize: "14px",
-                  lineHeight: "21px",
+                  lineHeight: "22px",
                   fontWeight: 400,
-                  letterSpacing: "0%",
-                  backgroundColor: message.role === "user" ? "#111827" : "transparent",
+                  backgroundColor: message.role === "user" ? "#1f2937" : "transparent",
                   color: message.role === "user" ? "#FFFFFF" : "#374151",
                   width: message.role === "user" ? "fit-content" : "100%",
-                  maxWidth: message.role === "user" ? "85%" : "100%",
-                  animationDelay: message.role === "user" ? `${index * 50}ms` : undefined,
+                  maxWidth: message.role === "user" ? "80%" : "100%",
+                  boxShadow: message.role === "user" ? "0 2px 8px rgba(0, 0, 0, 0.12)" : "none",
                 }}
               >
                 {message.role === "assistant" && message.text === "AI thinking..." ? (
                   <div 
-                    className="w-full rounded-xl"
+                    className="w-full rounded-2xl"
                     style={{
-                      backgroundColor: "#E5E7EB",
-                      border: "10px solid #E5E7EB",
-                      boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-                      padding: "10px",
+                      backgroundColor: "#F3F4F6",
+                      border: "1px solid #e5e7eb",
+                      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06)",
+                      padding: "16px 20px",
                     }}
                   >
                   <SimpleThinking />
                   </div>
                 ) : message.role === "assistant" ? (
                   <div 
-                    className="w-full rounded-xl"
+                    className="w-full rounded-2xl"
                     style={{
-                      backgroundColor: "#E5E7EB",
-                      border: "10px solid #E5E7EB",
-                      boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-                      padding: "10px",
+                      backgroundColor: "#F3F4F6",
+                      border: "1px solid #e5e7eb",
+                      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06)",
+                      padding: "20px",
                     }}
                   >
                     {/* Main Response */}
@@ -2125,49 +2376,53 @@ export default function AgentsChatPage() {
                           return <ol className="list-decimal list-inside mb-2 space-y-1" style={{ color: isUserMessage ? "#FFFFFF" : "inherit" }}>{children}</ol>;
                         },
                         li: ({ children }: any) => {
-                          // Extract text content to check if it's a section label
+                          // Check if this is a section header like "Benefits:", "Description:", etc.
                           const textContent = extractTextFromChildren(children);
-                          const parsed = parseSectionLabel(textContent);
+                          const sectionHeaders = ['benefits', 'description', 'value proposition', 'key features', 'features'];
+                          const lowerText = textContent.toLowerCase().trim();
                           
-                          // If it's a section label, render as a heading instead of a bullet point
-                          if (parsed.isLabel && parsed.label) {
-                              return (
-                              <div style={{ marginTop: "16px", marginBottom: "8px", listStyle: "none", marginLeft: 0, paddingLeft: 0 }}>
-                                <h4 
-                                  className="font-semibold mb-2 first:mt-0" 
+                          // Check if it starts with a section header (with or without bold)
+                          const matchedHeader = sectionHeaders.find(header => 
+                            lowerText.startsWith(header + ':') || 
+                            lowerText.startsWith(header + ' :') ||
+                            lowerText === header ||
+                            lowerText === header + ':'
+                          );
+                          
+                          if (matchedHeader) {
+                            // Render as a heading without bullet
+                            return (
+                              <div style={{ marginTop: "12px", marginBottom: "4px" }}>
+                                <span 
                                   style={{ 
                                     color: isUserMessage ? "#FFFFFF" : "#111827", 
-                                    fontSize: "16px", 
-                                    lineHeight: "1.4", 
+                                    fontSize: "14px", 
+                                    lineHeight: "22px", 
                                     fontFamily: "Poppins, sans-serif", 
                                     fontWeight: 600,
-                                    marginBottom: parsed.content ? "8px" : "0",
                                   }}
                                 >
-                                  {parsed.label}
-                                  </h4>
-                                {parsed.content && (
-                                  <p 
-                                    className="mb-0" 
-                                    style={{ 
-                                      color: isUserMessage ? "#FFFFFF" : "#4b5563", 
-                                      fontSize: "14px", 
-                                      lineHeight: "21px", 
-                                      fontFamily: "Poppins, sans-serif", 
-                                      fontWeight: 400, 
-                                      letterSpacing: "0%",
-                                      marginTop: "0",
-                                    }}
-                                  >
-                                    {parsed.content}
-                                  </p>
-                                )}
+                                  {children}
+                                </span>
                               </div>
                             );
                           }
                           
                           // Regular list item - render with bullet
-                          return <li className="ml-2" style={{ color: isUserMessage ? "#FFFFFF" : "inherit", fontSize: "14px", lineHeight: "21px", fontFamily: "Poppins, sans-serif", fontWeight: 400, letterSpacing: "0%" }}>{children}</li>;
+                          return (
+                            <li 
+                              className="ml-2 mb-1" 
+                              style={{ 
+                                color: isUserMessage ? "#FFFFFF" : "inherit", 
+                                fontSize: "14px", 
+                                lineHeight: "22px", 
+                                fontFamily: "Poppins, sans-serif", 
+                                fontWeight: 400,
+                              }}
+                            >
+                              {children}
+                            </li>
+                          );
                         },
                         a: ({ href, children }: any) => <AgentLink href={href}>{children}</AgentLink>,
                         strong: ({ children }: any) => <strong className="font-semibold" style={{ color: isUserMessage ? "#FFFFFF" : "inherit" }}>{children}</strong>,
@@ -2246,142 +2501,102 @@ export default function AgentsChatPage() {
       {/* Feedback Toast */}
       {feedback && (
         <div 
-          className={`fixed bottom-24 right-4 z-50 px-4 py-2 rounded-lg shadow-lg ${
+          className={`fixed bottom-32 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl shadow-lg ${
             feedback.type === 'success' 
-              ? 'bg-green-500 text-white' 
+              ? 'bg-emerald-500 text-white' 
               : 'bg-red-500 text-white'
-          } toast-enter`}
-          style={{ fontFamily: 'Poppins, sans-serif' }}
+          }`}
+          style={{ fontFamily: 'Poppins, sans-serif', fontSize: '14px' }}
         >
           {feedback.message}
         </div>
       )}
 
-      {/* Chat Input - Fixed at bottom - Centered 50% width container */}
+      {/* Chat Input - Fixed at bottom */}
       <div 
-        className="fixed bottom-0 left-0 right-0 z-50" 
+        className="fixed bottom-0 left-0 right-0 z-50"
         style={{ 
-          backgroundColor: "#f8fafc",
-          display: "flex",
-          justifyContent: "center",
-          paddingTop: "16px",
-          paddingBottom: "16px",
-          fontFamily: "Poppins, sans-serif",
+          background: "linear-gradient(to top, #f8fafc 85%, transparent)",
+          paddingTop: "24px",
+          paddingBottom: "20px",
         }}
       >
-        <div 
-          className="w-full md:w-[50vw] px-4"
-          style={{
-            maxWidth: "720px",
-            minWidth: "360px",
-            margin: "0 auto",
-          }}
-        >
+        <div className="max-w-3xl mx-auto px-4">
           <div
             className="rounded-2xl bg-white p-4"
             style={{
-              border: "1px solid #E5E7EB",
-              boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
             }}
           >
-            {/* Upper section: Input */}
-            <div className="flex flex-col gap-2 mb-4">
-              <div className="flex items-center gap-3">
-                <div className="flex-1 flex items-start gap-2">
-                  <textarea
-                    ref={chatInputRef}
-                    value={chatInput}
-                    onChange={(e) => {
-                      setChatInput(e.target.value);
-                      setCharCount(e.target.value.length);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        if (chatInput.trim() && !isSending) {
-                          handleSendChatMessage(chatInput.trim());
-                        }
-                      }
-                    }}
-                    placeholder="I want an agent to review NDAs"
-                    className="w-full text-lg py-2 flex-1 resize-none border-none input-focus-ring focus:outline-none focus:bg-transparent focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
-                    style={{ 
-                      outline: 'none', 
-                      boxShadow: 'none', 
-                      border: 'none', 
-                      borderWidth: '0',
-                      WebkitAppearance: 'none',
-                      MozAppearance: 'none',
-                      overflowY: 'auto',
-                      minHeight: '40px',
-                      maxHeight: '200px',
-                      backgroundColor: 'transparent',
-                      fontFamily: 'Poppins, sans-serif',
-                    }}
-                    rows={1}
-                  />
-                </div>
-              </div>
-              {charCount > 0 && (
-                <div className="text-xs text-gray-500 counter-enter px-1" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                  {charCount} {charCount === 1 ? 'character' : 'characters'}
-                </div>
-              )}
+            {/* Input area */}
+            <div className="mb-3">
+              <textarea
+                ref={chatInputRef}
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (chatInput.trim() && !isSending) {
+                      handleSendChatMessage(chatInput.trim());
+                    }
+                  }
+                }}
+                placeholder="Ask me about AI agents..."
+                className="w-full py-2 resize-none border-none focus:outline-none bg-transparent"
+                style={{ 
+                  fontSize: '15px',
+                  lineHeight: '1.5',
+                  minHeight: '44px',
+                  maxHeight: '150px',
+                  fontFamily: 'Poppins, sans-serif',
+                  color: '#1f2937',
+                }}
+                rows={1}
+              />
             </div>
 
-            {/* Lower section: Buttons and controls */}
+            {/* Controls */}
             <div className="flex items-center justify-between gap-4">
-              {/* Left side: Mode toggle */}
-              <div className="flex items-center">
-                <ToggleGroup
-                  type="single"
-                  value={mode}
-                  onValueChange={(value) => {
-                    if (value) setMode(value as "explore" | "create");
+              {/* Mode toggle */}
+              <ToggleGroup
+                type="single"
+                value={mode}
+                onValueChange={(value) => {
+                  if (value) setMode(value as "explore" | "create");
+                }}
+                className="bg-gray-100 rounded-xl p-1"
+              >
+                <ToggleGroupItem
+                  value="explore"
+                  aria-label="Explore"
+                  className="px-4 py-2 text-sm rounded-lg data-[state=on]:bg-white data-[state=on]:text-gray-900 data-[state=on]:shadow-sm data-[state=off]:text-gray-500 transition-all"
+                  style={{
+                    fontFamily: "Poppins, sans-serif",
+                    fontWeight: 500,
+                    fontSize: "13px",
                   }}
-                  className="bg-gray-100 rounded-lg p-1"
                 >
-                  <ToggleGroupItem
-                    value="explore"
-                    aria-label="Explore"
-                    className="px-4 py-2 text-sm rounded-md data-[state=on]:bg-gray-900 data-[state=on]:text-white data-[state=off]:text-gray-600 data-[state=off]:hover:text-gray-900"
-                    style={{
-                      fontFamily: "Poppins, sans-serif",
-                      fontWeight: 600,
-                      fontStyle: "normal",
-                      fontSize: "14px",
-                      lineHeight: "21px",
-                      letterSpacing: "0%",
-                      verticalAlign: "middle",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Explore
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    value="create"
-                    aria-label="Create"
-                    className="px-4 py-2 text-sm rounded-md data-[state=on]:bg-gray-900 data-[state=on]:text-white data-[state=off]:text-gray-600 data-[state=off]:hover:text-gray-900"
-                    style={{
-                      fontFamily: "Poppins, sans-serif",
-                      fontWeight: 600,
-                      fontStyle: "normal",
-                      fontSize: "14px",
-                      lineHeight: "21px",
-                      letterSpacing: "0%",
-                      verticalAlign: "middle",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Create
-                  </ToggleGroupItem>
-                </ToggleGroup>
-              </div>
+                  Explore
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="create"
+                  aria-label="Create"
+                  className="px-4 py-2 text-sm rounded-lg data-[state=on]:bg-white data-[state=on]:text-gray-900 data-[state=on]:shadow-sm data-[state=off]:text-gray-500 transition-all"
+                  style={{
+                    fontFamily: "Poppins, sans-serif",
+                    fontWeight: 500,
+                    fontSize: "13px",
+                  }}
+                >
+                  Create
+                </ToggleGroupItem>
+              </ToggleGroup>
 
-              {/* Right side: Microphone and Submit button */}
-              <div className="flex items-center gap-3">
-                {/* VoiceInputControls styled to show only mic button */}
-                <div className="[&>div>button:first-child]:hidden [&>div>button:last-child]:h-10 [&>div>button:last-child]:w-10 [&>div>button:last-child]:rounded-full [&>div>button:last-child]:bg-white [&>div>button:last-child]:hover:bg-gray-50">
+              {/* Action buttons */}
+              <div className="flex items-center gap-2">
+                <div className="[&>div>button:first-child]:hidden [&>div>button:last-child]:h-10 [&>div>button:last-child]:w-10 [&>div>button:last-child]:rounded-xl [&>div>button:last-child]:bg-gray-100 [&>div>button:last-child]:hover:bg-gray-200 [&>div>button:last-child]:border-0">
                   <VoiceInputControls
                     value={chatInput}
                     onValueChange={setChatInput}
@@ -2397,17 +2612,19 @@ export default function AgentsChatPage() {
                     }
                   }}
                   disabled={!chatInput.trim() || isSending}
-                  className="h-10 w-10 rounded-full bg-gray-800 hover:bg-gray-900 text-white flex items-center justify-center transition-all duration-200 button-shine active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label="Submit message"
-                  onMouseDown={(e) => {
-                    if (!isSending && chatInput.trim()) {
-                      e.currentTarget.classList.add('button-press');
-                      setTimeout(() => e.currentTarget.classList.remove('button-press'), 200);
-                    }
+                  className="h-10 w-10 rounded-xl text-white flex items-center justify-center transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    background: chatInput.trim() && !isSending 
+                      ? "linear-gradient(135deg, #1f2937 0%, #374151 100%)" 
+                      : "#d1d5db",
+                    boxShadow: chatInput.trim() && !isSending 
+                      ? "0 2px 8px rgba(31, 41, 55, 0.3)" 
+                      : "none",
                   }}
+                  aria-label="Submit message"
                 >
                   {isSending ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full send-spinner" />
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <ArrowUp className="h-5 w-5" />
                   )}
