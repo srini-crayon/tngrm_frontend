@@ -81,13 +81,13 @@ export function ModalWrapper({ isOpen, onClose, children, showOverlay = false, o
         display: "flex", 
         flexDirection: "column", 
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "flex-start",
         position: "relative",
       }}>
         {/* Outer container with pattern background - extends 10px beyond inner content */}
         <div
           ref={modalRef}
-          className="relative max-h-[90vh] overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+          className="relative max-h-[85vh] overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200"
           onClick={(e) => e.stopPropagation()}
           style={{
             width: "540px",
@@ -106,11 +106,11 @@ export function ModalWrapper({ isOpen, onClose, children, showOverlay = false, o
           }}
         >
           {/* Inner container with white background */}
-          <div className="relative w-full h-full bg-white flex flex-col max-h-[calc(90vh-20px)]" style={{ borderRadius: "0px" }}>
+          <div className="relative w-full h-full bg-white flex flex-col max-h-[calc(85vh-20px)]" style={{ borderRadius: "0px" }}>
             <Button variant="ghost" size="icon" className="absolute right-4 top-4 h-8 w-8 rounded-full z-10" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
-            <div className="overflow-y-auto p-8">
+            <div className="overflow-y-auto p-8" style={{ maxHeight: "calc(85vh - 80px)" }}>
               {children}
             </div>
           </div>
@@ -122,7 +122,8 @@ export function ModalWrapper({ isOpen, onClose, children, showOverlay = false, o
             onClick={(e) => e.stopPropagation()}
             style={{
               position: "relative",
-              marginTop: "20px",
+              marginTop: "10px",
+              marginBottom: "20px",
               width: "540px",
               maxWidth: "540px",
               minWidth: "540px",
@@ -133,6 +134,7 @@ export function ModalWrapper({ isOpen, onClose, children, showOverlay = false, o
               justifyContent: "center",
               zIndex: 10001,
               borderRadius: "0px",
+              flexShrink: 0,
             }}
           >
             <div style={{
@@ -203,7 +205,8 @@ export function ModalWrapper({ isOpen, onClose, children, showOverlay = false, o
             onClick={(e) => e.stopPropagation()}
             style={{
               position: "relative",
-              marginTop: "20px",
+              marginTop: "10px",
+              marginBottom: "20px",
               width: "540px",
               maxWidth: "540px",
               minWidth: "540px",
@@ -214,6 +217,7 @@ export function ModalWrapper({ isOpen, onClose, children, showOverlay = false, o
               justifyContent: "center",
               zIndex: 10001,
               borderRadius: "0px",
+              flexShrink: 0,
             }}
           >
             <div style={{

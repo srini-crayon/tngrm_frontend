@@ -363,8 +363,15 @@ export function UnifiedAuthModal({
     <div 
       className="fixed inset-0 z-50 overflow-y-auto bg-black/40"
       onClick={onClose}
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        paddingTop: '20px',
+        paddingBottom: '20px',
+      }}
     >
-      <div className="min-h-full flex flex-col items-center justify-center py-8">
+      <div className="flex flex-col items-center justify-start w-full min-h-full py-8">
         <ModalWrapper 
           isOpen={isOpen} 
           onClose={onClose}
@@ -629,6 +636,7 @@ export function UnifiedAuthModal({
           maxWidth: "560px",
           minWidth: "540px",
           padding: "0 20px",
+          marginBottom: "20px",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -717,6 +725,7 @@ export function UnifiedAuthModal({
           maxWidth: "580px",
           minWidth: "540px",
           padding: "0 20px",
+          marginBottom: "20px",
         }}
         onClick={(e) => e.stopPropagation()}
       >
