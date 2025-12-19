@@ -348,6 +348,13 @@ export default function AdminPage() {
       filtered = filtered.filter(enquiry => enquiry.user_type === enquiryUserTypeFilter)
     }
 
+    // Sort by created_at descending (latest first)
+    filtered = filtered.sort((a, b) => {
+      const dateA = new Date(a.created_at || 0).getTime()
+      const dateB = new Date(b.created_at || 0).getTime()
+      return dateB - dateA // Descending order (newest first)
+    })
+
     return filtered
   }, [enquiries, searchTerm, enquiryStatusFilter, enquiryUserTypeFilter])
 
@@ -725,7 +732,7 @@ export default function AdminPage() {
                   Status: {statusFilter === "all" ? "All" : statusFilter === "approved" ? "Approved" : "Pending"}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent align="start" side="bottom" sideOffset={8}>
                 <DropdownMenuItem onClick={() => setStatusFilter("all")}>All</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setStatusFilter("approved")}>Approved</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setStatusFilter("pending")}>Pending</DropdownMenuItem>
@@ -740,7 +747,7 @@ export default function AdminPage() {
                     Asset Type: {assetTypeFilter === "all" ? "All" : assetTypeFilter}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
+                <DropdownMenuContent align="start" side="bottom" sideOffset={8}>
                   <DropdownMenuItem onClick={() => setAssetTypeFilter("all")}>All</DropdownMenuItem>
                   {getAssetTypes().map((type) => (
                     <DropdownMenuItem key={type} onClick={() => setAssetTypeFilter(type)}>
@@ -759,7 +766,7 @@ export default function AdminPage() {
                     Status: {enquiryStatusFilter === "all" ? "All" : enquiryStatusFilter === "new" ? "New" : "Read"}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
+                <DropdownMenuContent align="start" side="bottom" sideOffset={8}>
                   <DropdownMenuItem onClick={() => setEnquiryStatusFilter("all")}>All</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setEnquiryStatusFilter("new")}>New</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setEnquiryStatusFilter("read")}>Read</DropdownMenuItem>
@@ -775,7 +782,7 @@ export default function AdminPage() {
                     User Type: {enquiryUserTypeFilter === "all" ? "All" : enquiryUserTypeFilter}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
+                <DropdownMenuContent align="start" side="bottom" sideOffset={8}>
                   <DropdownMenuItem onClick={() => setEnquiryUserTypeFilter("all")}>All</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setEnquiryUserTypeFilter("client")}>Client</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setEnquiryUserTypeFilter("isv")}>ISV</DropdownMenuItem>
@@ -1370,7 +1377,7 @@ export default function AdminPage() {
                           return (
                             <TableRow 
                               key={enquiry.enquiry_id}
-                              className={`border-b border-gray-100 cursor-pointer transition-colors ${enquiry.status === 'new' ? 'bg-blue-50/30' : ''}`}
+                              className="border-b border-gray-100 cursor-pointer"
                               onClick={() => handleShowMessage(enquiry)}
                             >
                               <TableCell onClick={(e) => e.stopPropagation()}>
@@ -1392,58 +1399,51 @@ export default function AdminPage() {
                               <TableCell className="min-w-[150px] text-sm text-gray-900">
                                 {enquiry.company_name || '-'}
                               </TableCell>
-                              <TableCell className="min-w-[180px] text-sm text-gray-900 truncate max-w-[180px]">
+                              <TableCell className="min-w-[180px] text-sm text-gray-900">
                                 {enquiry.email || '-'}
                               </TableCell>
                               <TableCell className="min-w-[120px] text-sm text-gray-900">
                                 {enquiry.phone || '-'}
                               </TableCell>
-                              <TableCell className="min-w-[100px]">
+                              <TableCell className="min-w-[100px] text-sm text-gray-900">
                                 {enquiry.user_type && enquiry.user_type !== 'anonymous' ? (
-                                  <Badge variant="outline" className="text-xs">
-                                    {enquiry.user_type.toUpperCase()}
-                                  </Badge>
+                                  enquiry.user_type.toUpperCase()
                                 ) : (
-                                  <span className="text-sm text-gray-400">Anonymous</span>
+                                  'Anonymous'
                                 )}
                               </TableCell>
                               <TableCell className="w-32">
                                 {enquiry.status === 'new' ? (
-                                  <Badge variant="default" className="bg-blue-600 text-white text-xs">
+                                  <span className="inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-medium bg-yellow-100 text-black">
                                     New
-                                  </Badge>
+                                  </span>
                                 ) : (
-                                  <Badge variant="outline" className="text-xs">
+                                  <span className="inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-medium bg-green-100 text-black">
                                     Read
-                                  </Badge>
+                                  </span>
                                 )}
                               </TableCell>
-                              <TableCell className="min-w-[120px] text-sm text-gray-500">
+                              <TableCell className="min-w-[120px] text-sm text-gray-900">
                                 {getRelativeTime(enquiry.created_at)}
                               </TableCell>
-                              <TableCell className="min-w-[200px]" onClick={(e) => e.stopPropagation()}>
-                                <div className="text-sm text-gray-700 line-clamp-2">
-                                  {enquiry.message ? (
-                                    enquiry.message.length > 100 ? (
-                                      <>
-                                        {enquiry.message.substring(0, 100)}...
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            handleShowMessage(enquiry)
-                                          }}
-                                          className="text-blue-600 hover:text-blue-700 hover:underline text-sm ml-1"
-                                        >
-                                          more
-                                        </button>
-                                      </>
-                                    ) : (
-                                      enquiry.message
-                                    )
+                              <TableCell className="min-w-[200px] text-sm text-gray-900" onClick={(e) => e.stopPropagation()}>
+                                {enquiry.message ? (
+                                  enquiry.message.length > 100 ? (
+                                    <>
+                                      {enquiry.message.substring(0, 100)}...
+                                      <button
+                                        onClick={() => handleShowMessage(enquiry)}
+                                        className="text-blue-600 hover:text-blue-700 hover:underline text-sm ml-1"
+                                      >
+                                        more
+                                      </button>
+                                    </>
                                   ) : (
-                                    'No message provided'
-                                  )}
-                                </div>
+                                    enquiry.message
+                                  )
+                                ) : (
+                                  'No message provided'
+                                )}
                               </TableCell>
                               </TableRow>
                           )
@@ -1589,7 +1589,18 @@ export default function AdminPage() {
 
       {/* Message Modal for Enquiries */}
       <Dialog open={messageModalOpen} onOpenChange={setMessageModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent 
+          className="max-w-2xl"
+          style={{
+            position: 'fixed',
+            top: '45%',
+            left: '65%',
+            transform: 'translate(-50%, -50%)',
+            margin: 0,
+            maxHeight: '90vh',
+            overflow: 'auto'
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Message from {selectedMessage?.name}</DialogTitle>
             {selectedMessage?.email && (

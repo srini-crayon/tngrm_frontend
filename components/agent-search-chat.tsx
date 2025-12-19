@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Plus, ArrowUp, X } from "lucide-react"
+import { Plus, ArrowUp, X, ChevronDown } from "lucide-react"
 import { useChatStore } from "../lib/store/chat.store"
 import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group"
 import { VoiceInputControls } from "./voice-input-controls"
@@ -103,34 +103,60 @@ export function AgentSearchChat({ externalValue, onExternalValueChange, onEnterC
             accept="*/*"
           />
           <div className="flex-1 flex items-start gap-2">
-            <textarea
-              ref={textInputRef}
-              placeholder="I want an agent to review NDAs"
-              className="w-full text-lg py-2 flex-1 resize-none border-none focus:outline-none focus:bg-transparent focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
-              value={searchInput}
-              onChange={(e) => handleInputChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              style={{ 
-                outline: 'none', 
-                boxShadow: 'none', 
-                border: 'none', 
-                borderWidth: '0',
-                WebkitAppearance: 'none',
-                MozAppearance: 'none',
-                overflowY: 'auto',
-                minHeight: '40px',
-                maxHeight: '200px',
-                backgroundColor: 'transparent'
-              }}
-              onFocus={(e) => {
-                e.target.style.backgroundColor = 'transparent'
-                setIsFocused(true)
-              }}
-              onBlur={(e) => {
-                e.target.style.backgroundColor = 'transparent'
-                setIsFocused(false)
-              }}
-            />
+            <div className="relative w-full">
+              {/* Plus sign component - merged with textarea */}
+              <div
+                style={{
+                  position: "absolute",
+                  left: "10px",
+                  top: "30%",
+                  transform: "translateY(-50%)",
+                  color: "#6B7280",
+                  fontFamily: "Poppins, sans-serif",
+                  fontSize: "18px",
+                  lineHeight: "1.5",
+                  pointerEvents: "none",
+                  zIndex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  height: "100%",
+                  
+                }}
+              >
+                +
+
+              </div>
+              <textarea
+                ref={textInputRef}
+                placeholder="I want an agent to review NDAs"
+                className="w-full text-lg py-2 flex-1 resize-none border-none focus:outline-none focus:bg-transparent focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
+                value={searchInput}
+                onChange={(e) => handleInputChange(e.target.value)}
+                onKeyDown={handleKeyDown}
+                style={{ 
+                  outline: 'none', 
+                  boxShadow: 'none', 
+                  border: 'none', 
+                  borderWidth: '0',
+                  WebkitAppearance: 'none',
+                  MozAppearance: 'none',
+                  overflowY: 'auto',
+                  minHeight: '40px',
+                  maxHeight: '200px',
+                  backgroundColor: 'transparent',
+                  fontFamily: "Poppins, sans-serif",
+                  paddingLeft: "30px",
+                }}
+                onFocus={(e) => {
+                  e.target.style.backgroundColor = 'transparent'
+                  setIsFocused(true)
+                }}
+                onBlur={(e) => {
+                  e.target.style.backgroundColor = 'transparent'
+                  setIsFocused(false)
+                }}
+              />
+            </div>
             {attachedFile && (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
                 <span className="text-sm text-gray-700 truncate max-w-[150px]">
@@ -152,7 +178,7 @@ export function AgentSearchChat({ externalValue, onExternalValueChange, onEnterC
         {/* Lower section: Buttons and controls */}
         <div className="flex items-center justify-between gap-4">
           {/* Left side: Mode toggle */}
-          <div className="flex items-center">
+          <div className="flex items-center gap-4">
             <ToggleGroup
               type="single"
               value={mode}
@@ -164,18 +190,69 @@ export function AgentSearchChat({ externalValue, onExternalValueChange, onEnterC
               <ToggleGroupItem
                 value="explore"
                 aria-label="Explore"
-                className="px-4 py-2 text-sm rounded-md data-[state=on]:bg-gray-900 data-[state=on]:text-white data-[state=off]:text-gray-600 data-[state=off]:hover:text-gray-900"
+                className="px-4 py-2 text-sm rounded-md data-[state=on]:bg-white data-[state=on]:text-gray-900 data-[state=off]:text-gray-600 data-[state=off]:hover:text-gray-900"
+                style={{
+                  boxShadow: mode === "explore" 
+                    ? "0px 3px 1px 0px #0000000A, 0px 3px 8px 0px #0000001F" 
+                    : undefined,
+                }}
               >
                 Explore
               </ToggleGroupItem>
               <ToggleGroupItem
                 value="create"
                 aria-label="Create"
-                className="px-4 py-2 text-sm rounded-md data-[state=on]:bg-gray-900 data-[state=on]:text-white data-[state=off]:text-gray-600 data-[state=off]:hover:text-gray-900"
+                className="px-4 py-2 text-sm rounded-md data-[state=on]:bg-white data-[state=on]:text-gray-900 data-[state=off]:text-gray-600 data-[state=off]:hover:text-gray-900"
+                style={{
+                  boxShadow: mode === "create" 
+                    ? "0px 3px 1px 0px #0000000A, 0px 3px 8px 0px #0000001F" 
+                    : undefined,
+                }}
               >
                 Create
               </ToggleGroupItem>
             </ToggleGroup>
+            
+            {/* Language selector */}
+            <button
+              type="button"
+              style={{
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 500,
+                fontSize: "14px",
+                lineHeight: "150%",
+                letterSpacing: "0%",
+                textAlign: "center",
+                verticalAlign: "middle",
+                color: "#111827",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                padding: "6px 8px",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                transition: "opacity 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = "0.7";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = "1";
+              }}
+            >
+              <span style={{
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 500,
+                fontSize: "14px",
+                lineHeight: "150%",
+                letterSpacing: "0%",
+                textAlign: "center",
+                verticalAlign: "middle",
+                color: "#111827",
+              }}>English</span>
+              <ChevronDown className="h-4 w-4" style={{ color: "#111827" }} />
+            </button>
           </div>
 
           {/* Right side: Microphone and Submit button */}

@@ -199,9 +199,8 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
     setLoadingDeployments(prev => ({ ...prev, [capabilityId]: true }))
     
     try {
-      const apiUrl = process.env.NODE_ENV === 'development'
-        ? `http://localhost:8000/api/capabilities/${capabilityId}/deployments`
-        : `/api/capabilities/${capabilityId}/deployments`
+      const { createApiUrl } = await import('../lib/api/config')
+      const apiUrl = createApiUrl(`/api/capabilities/${capabilityId}/deployments`)
       
       const response = await fetch(apiUrl, {
         method: 'GET',
@@ -265,10 +264,8 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
     const fetchCapabilities = async () => {
       setIsLoadingCapabilities(true)
       try {
-        // Determine API URL - use localhost:8000 for local dev, or proxy for production
-        const apiUrl = process.env.NODE_ENV === 'development' 
-          ? 'http://localhost:8000/api/capabilities'
-          : '/api/capabilities'
+        const { createApiUrl } = await import('../lib/api/config')
+        const apiUrl = createApiUrl('/api/capabilities')
         
         const response = await fetch(apiUrl, {
           method: 'GET',
@@ -930,7 +927,7 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
                     </Label>
                     <Input
                       id="keyFeatures"
-                      placeholder="Add agent key features. Add multiple using [;] comma separated"
+                      placeholder="Add agent key features. Add multiple using [;] separated"
                       value={formData.keyFeatures}
                       onChange={(e) => setFormData({ ...formData, keyFeatures: e.target.value })}
                       className="mt-2"
@@ -975,7 +972,7 @@ export function CustomOnboardModal({ isOpen, onClose }: CustomOnboardModalProps)
                     </Label>
                     <Textarea
                       id="roiInformation"
-                      placeholder="Add ROI of your agent. Add multiple ROI using [;] comma separated"
+                      placeholder="Add ROI of your agent. Add multiple ROI using [;] separated"
                       value={formData.roiInformation}
                       onChange={(e) => setFormData({ ...formData, roiInformation: e.target.value })}
                       className="mt-2"

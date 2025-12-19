@@ -328,20 +328,6 @@ export function Navbar() {
                 Reseller
               </Link>
               <Link 
-                href="/tech-stack" 
-                className={`text-[14px] whitespace-nowrap transition-all ${
-                  pathname === '/tech-stack' 
-                    ? 'font-medium text-[#091917]' 
-                    : 'font-normal text-[#091917] hover:font-medium'
-                }`}
-                style={{ 
-                  fontFamily: 'Poppins, sans-serif',
-                  lineHeight: '24px'
-                }}
-              >
-                Deployment
-              </Link>
-              <Link 
                 href="/ai-catalyst" 
                 className={`text-[14px] whitespace-nowrap transition-all ${
                   pathname === '/ai-catalyst' 
@@ -705,13 +691,6 @@ export function Navbar() {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Reseller
-            </Link>
-            <Link 
-              href="/tech-stack" 
-              className="block text-sm font-medium text-gray-700 hover:text-primary transition-colors py-2"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Deployment
             </Link>
             <Link 
               href="/ai-catalyst" 

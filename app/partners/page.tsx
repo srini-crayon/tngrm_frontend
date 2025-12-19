@@ -1,8 +1,10 @@
 import { Button } from "../../components/ui/button"
 import { Card, CardContent } from "../../components/ui/card"
 import { Lightbulb, Globe, Zap } from "lucide-react"
+import { useAuthStore } from "../../lib/store/auth.store"
 
 export default function PartnersPage() {
+  const { isAuthenticated } = useAuthStore()
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -221,7 +223,13 @@ export default function PartnersPage() {
                     Our partner are certified Tangram.ai channel partner, technology partner, or independent software
                     vendor (ISV).
                   </p>
-                  <Button variant="outline">BECOME A ISV</Button>
+                  <Button 
+                    variant="outline" 
+                    disabled={isAuthenticated}
+                    className={isAuthenticated ? "cursor-not-allowed" : ""}
+                  >
+                    BECOME A ISV
+                  </Button>
                 </CardContent>
               </Card>
 
@@ -234,7 +242,13 @@ export default function PartnersPage() {
                     Our Reseller program allows you to access Tangram.ai resources, support and professional services
                     for your projects.
                   </p>
-                  <Button variant="outline">BECOME A RESELLER</Button>
+                  <Button 
+                    variant="outline" 
+                    disabled={isAuthenticated}
+                    className={isAuthenticated ? "cursor-not-allowed" : ""}
+                  >
+                    BECOME A RESELLER
+                  </Button>
                 </CardContent>
               </Card>
             </div>

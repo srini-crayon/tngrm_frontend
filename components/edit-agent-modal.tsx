@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useRef, useEffect, useMemo } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { Textarea } from "./ui/textarea"
@@ -598,61 +597,188 @@ export function EditAgentModal({ agent, open, onOpenChange, onSave }: EditAgentM
     }
   }
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!max-w-[1400px] !w-[95vw] !max-h-[90vh] !p-0 overflow-hidden flex flex-col !top-[50%] !left-[50%] !translate-x-[-50%] !translate-y-[-50%] !rounded-xl">
-        <DialogHeader className="px-6 md:px-8 py-5 border-b bg-white sticky top-0 z-10">
-          <DialogTitle className="text-2xl md:text-3xl font-bold text-gray-900">Edit Agent</DialogTitle>
-          <p className="text-sm text-gray-500 mt-1">Update your agent information step by step</p>
-        </DialogHeader>
+  if (!open) return null
 
-        <div className="flex-1 overflow-hidden flex flex-col bg-gray-50">
-          {/* Progress Steps */}
-          <div className="border-b bg-white px-4 md:px-8 py-5 sticky top-[0px] z-10">
-            <div className="flex items-center justify-between gap-2 overflow-x-auto">
-              {steps.map((step, index) => (
-                <div key={step.number} className="flex flex-1 items-center min-w-[120px]">
+  // Calculate progress percentage
+  const progressPercentage = ((currentStep - 1) / (steps.length - 1)) * 100
+
+  return (
+    <div 
+      className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-6 animate-in fade-in duration-300 overflow-y-auto scrollbar-hide"
+      style={{
+        backgroundColor: "rgba(0, 0, 0, 0.6)",
+        backdropFilter: "blur(8px)",
+      }}
+      onClick={() => onOpenChange(false)}
+    >
+      <div 
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-top-4 duration-300 my-4"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "linear-gradient(135deg, #FFFFFF 0%, #FAFBFC 100%)",
+          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05)",
+        }}
+      >
+        {/* Header with gradient background */}
+        <div 
+          className="px-6 py-5 flex items-start justify-between relative"
+          style={{
+            background: "linear-gradient(135deg, #F8F9FA 0%, #FFFFFF 100%)",
+            borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+          }}
+        >
+          <div className="flex flex-col gap-2">
+            <h1 
+              className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent"
+              style={{
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 700,
+                fontSize: "28px",
+                lineHeight: "130%",
+                letterSpacing: "-0.5px",
+                margin: 0,
+              }}
+            >
+              Edit Agent
+            </h1>
+            <p className="text-sm text-gray-500 mt-1" style={{ fontFamily: "Inter, sans-serif" }}>
+              Step {currentStep} of {steps.length} • {Math.round(progressPercentage)}% complete
+            </p>
+          </div>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="h-9 w-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-all duration-200 group"
+            style={{
+              border: "1px solid transparent",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#F3F4F6"
+              e.currentTarget.style.borderColor = "#E5E7EB"
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent"
+              e.currentTarget.style.borderColor = "transparent"
+            }}
+          >
+            <X className="h-4 w-4 text-gray-500 group-hover:text-gray-700 transition-colors" />
+          </button>
+        </div>
+
+        {/* Enhanced Progress Steps with animated progress bar */}
+        <div 
+          className="relative"
+          style={{
+            width: "100%",
+            padding: "0 42px",
+            backgroundColor: "#FFFFFF",
+            borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+          }}
+        >
+          {/* Animated progress bar */}
+          <div 
+            className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500 ease-out"
+            style={{
+              width: `${progressPercentage}%`,
+              boxShadow: "0 0 8px rgba(0, 75, 236, 0.4)",
+            }}
+          />
+          
+          <div className="flex items-center justify-between w-full py-4">
+            {steps.map((step, index) => {
+              const isActive = currentStep === step.number
+              const isCompleted = currentStep > step.number
+              
+              return (
+                <div 
+                  key={step.number} 
+                  className="flex items-center flex-1 group"
+                  style={{
+                    position: "relative",
+                  }}
+                >
+                  {index > 0 && (
+                    <div
+                      className="mr-3 transition-all duration-300"
+                      style={{
+                        width: "32px",
+                        height: "2px",
+                        backgroundColor: isCompleted ? "#004BEC" : "#E5E7EB",
+                        borderRadius: "2px",
+                        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      }}
+                    />
+                  )}
                   <button
                     onClick={() => handleTabClick(step.number)}
-                    className="flex flex-1 items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity group"
+                    className="flex items-center gap-3 transition-all duration-200"
                     disabled={isSaving}
+                    style={{
+                      minWidth: "fit-content",
+                    }}
                   >
+                    {/* Step indicator circle */}
                     <div
-                      className={cn(
-                        "flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full text-sm font-semibold transition-all shrink-0",
-                        currentStep === step.number
-                          ? "bg-black text-white shadow-md scale-105"
-                          : currentStep > step.number
-                            ? "bg-green-600 text-white shadow-sm"
-                            : "bg-gray-200 text-gray-500 group-hover:bg-gray-300",
-                      )}
+                      className="flex items-center justify-center rounded-full transition-all duration-300"
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        backgroundColor: isActive 
+                          ? "#004BEC" 
+                          : isCompleted 
+                            ? "#10B981" 
+                            : "#F3F4F6",
+                        border: isActive ? "2px solid #004BEC" : "2px solid transparent",
+                        boxShadow: isActive 
+                          ? "0 0 0 4px rgba(0, 75, 236, 0.1)" 
+                          : "none",
+                        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      }}
                     >
-                      {currentStep > step.number ? <Check className="h-5 w-5" /> : step.number}
+                      {isCompleted ? (
+                        <Check className="h-4 w-4 text-white" />
+                      ) : (
+                        <span
+                          style={{
+                            fontFamily: "Inter, sans-serif",
+                            fontWeight: 600,
+                            fontSize: "13px",
+                            color: isActive ? "#FFFFFF" : "#6B7280",
+                          }}
+                        >
+                          {step.number}
+                        </span>
+                      )}
                     </div>
-                    <div className="hidden sm:block min-w-0">
-                      <div className="text-xs text-gray-500 font-medium">Step {step.number}</div>
-                      <div
-                        className={cn(
-                          "text-sm font-semibold truncate",
-                          currentStep === step.number ? "text-black" : "text-gray-600",
-                        )}
+                    
+                    <div className="hidden md:block">
+                      <div 
+                        className="transition-all duration-200"
+                        style={{
+                          fontFamily: "Poppins, sans-serif",
+                          fontWeight: isActive ? 600 : 400,
+                          fontSize: "13px",
+                          lineHeight: "150%",
+                          color: isActive 
+                            ? "#004BEC" 
+                            : isCompleted 
+                              ? "#10B981" 
+                              : "#6B7280",
+                        }}
                       >
                         {step.label}
                       </div>
                     </div>
                   </button>
-                  {index < steps.length - 1 && (
-                    <div className="mx-2 md:mx-4 flex items-center shrink-0">
-                      <ChevronRight className="h-4 w-4 text-gray-400" />
-                    </div>
-                  )}
                 </div>
-              ))}
-            </div>
+              )
+            })}
           </div>
+        </div>
+
+        <div className="flex-1 overflow-hidden flex flex-col bg-gray-50">
 
           {/* Form Content */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "#FFFFFF" }}>
             <div className="mx-auto max-w-4xl px-4 md:px-6 lg:px-8 py-8 md:py-10">
               {isLoading ? (
                 <div className="flex items-center justify-center py-20">
@@ -1256,7 +1382,7 @@ export function EditAgentModal({ agent, open, onOpenChange, onSave }: EditAgentM
             </div>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   )
 }
