@@ -20,6 +20,13 @@ export const metadata: Metadata = {
   title: "Tangram.ai - AI Agent Store",
   description: "Explore AI-powered agents built to automate workflows",
   generator: "v0.app",
+  icons: {
+    icon: [
+      { url: '/img/Crayon Logo.png', type: 'image/png' },
+    ],
+    shortcut: '/img/Crayon Logo.png',
+    apple: '/img/Crayon Logo.png',
+  },
 }
 
 export default function RootLayout({
