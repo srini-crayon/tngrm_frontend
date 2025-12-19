@@ -22,7 +22,6 @@ import { useState, useMemo, useEffect } from "react"
 import clsx from "clsx"
 import { AspectRatio } from "./ui/aspect-ratio"
 import { Button } from "./ui/button"
-import { Dialog, DialogContent } from "./ui/dialog"
 import { Minimize2, Maximize2, X, ChevronLeft, ChevronRight } from "lucide-react"
 
 type DemoAsset = { 
@@ -405,9 +404,24 @@ export default function DemoAssetsViewer({ assets, className, demoPreview }: Dem
       )}
 
       {/* Overlay dialog - Centered with white background */}
-      <Dialog open={isOverlayOpen} onOpenChange={setIsOverlayOpen}>
-        <DialogContent showCloseButton={false} className="!max-w-[95vw] !w-[95vw] !h-[95vh] !p-4 bg-white border border-gray-200 !m-0 !rounded-2xl shadow-2xl">
-          <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+      {isOverlayOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-4 animate-in fade-in duration-300 overflow-y-auto scrollbar-hide"
+          style={{
+            backgroundColor: "rgba(0, 0, 0, 0.1)",
+            backdropFilter: "blur(8px)",
+          }}
+          onClick={() => setIsOverlayOpen(false)}
+        >
+          <div 
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[95vw] max-h-[95vh] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-top-4 duration-300 my-4"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "white",
+              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05)",
+            }}
+          >
+            <div className="relative w-full flex items-center justify-center overflow-hidden flex-1" style={{ minHeight: '80vh' }}>
             {/* Left Navigation Button */}
             {normalized.length > 1 && (
               <Button
@@ -465,16 +479,18 @@ export default function DemoAssetsViewer({ assets, className, demoPreview }: Dem
               </div>
             )}
             {selectedUrl && (/\.mp4($|\?)/i.test(selectedUrl) ? (
-              <video 
-                src={selectedUrl} 
-                className="max-h-[calc(100%-4rem)] max-w-[calc(100%-8rem)] w-auto h-auto object-contain" 
-                style={{ borderRadius: '0px' }}
-                controls 
-                autoPlay 
-                muted 
-                playsInline
-                onError={() => handleImageError(selectedUrl)}
-              />
+              <div className="w-full h-full flex items-center justify-center px-16">
+                <video 
+                  src={selectedUrl} 
+                  className="max-h-full max-w-full w-auto h-auto object-contain" 
+                  style={{ borderRadius: '0px' }}
+                  controls 
+                  autoPlay 
+                  muted 
+                  playsInline
+                  onError={() => handleImageError(selectedUrl)}
+                />
+              </div>
             ) : imageErrors.has(selectedUrl) ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-400" style={{ borderRadius: '0px' }}>
                 <svg className="h-16 w-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -489,25 +505,28 @@ export default function DemoAssetsViewer({ assets, className, demoPreview }: Dem
                 </p>
               </div>
             ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img 
-                src={selectedUrl} 
-                alt="expanded" 
-                className="max-h-[calc(100%-4rem)] max-w-[calc(100%-8rem)] w-auto h-auto object-contain"
-                style={{ borderRadius: '0px' }}
-                onError={(e) => {
-                  console.error('Expanded image load error for:', selectedUrl, e)
-                  handleImageError(selectedUrl)
-                }}
-                onLoad={() => {
-                  console.log('Expanded image loaded successfully:', selectedUrl)
-                  handleImageLoad(selectedUrl)
-                }}
-              />
+              <div className="w-full h-full flex items-center justify-center px-16">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img 
+                  src={selectedUrl} 
+                  alt="expanded" 
+                  className="max-h-full max-w-full w-auto h-auto object-contain"
+                  style={{ borderRadius: '0px' }}
+                  onError={(e) => {
+                    console.error('Expanded image load error for:', selectedUrl, e)
+                    handleImageError(selectedUrl)
+                  }}
+                  onLoad={() => {
+                    console.log('Expanded image loaded successfully:', selectedUrl)
+                    handleImageLoad(selectedUrl)
+                  }}
+                />
+              </div>
             ))}
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </div>
   )
 }
