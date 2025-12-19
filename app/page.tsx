@@ -10,9 +10,11 @@ import ChatDialog from "../components/chat-dialog";
 import Image from "next/image";
 import Link from "next/link";
 import HeroCta from "../components/HeroCta";
+import { useAuthStore } from "../lib/store/auth.store";
 
 export default function HomePage() {
   const { openModal } = useModal();
+  const { isAuthenticated } = useAuthStore();
   const [chatOpen, setChatOpen] = useState(false);
   const [expandedItem, setExpandedItem] = useState<number | null>(1);
   const [typedText, setTypedText] = useState("");
@@ -2109,7 +2111,8 @@ export default function HomePage() {
                 </div>
                 <div className="flex justify-start">
                   <button 
-                    onClick={() => openModal("auth", { mode: "signup", role: "isv" })}
+                    onClick={() => !isAuthenticated && openModal("auth", { mode: "signup", role: "isv" })}
+                    disabled={isAuthenticated}
                     style={{
                       height: "36.61px",
                       paddingTop: "10.8px",
@@ -2130,8 +2133,9 @@ export default function HomePage() {
                       verticalAlign: "middle",
                       textTransform: "uppercase",
                       color: "#FFFFFF",
-                      cursor: "pointer",
+                      cursor: isAuthenticated ? "not-allowed" : "pointer",
                       whiteSpace: "nowrap",
+                      opacity: 1,
                     }}
                   >
                     BECOME A ISV
@@ -2217,7 +2221,8 @@ export default function HomePage() {
                 </div>
                 <div className="flex justify-start">
                   <button 
-                    onClick={() => openModal("auth", { mode: "signup", role: "reseller" })}
+                    onClick={() => !isAuthenticated && openModal("auth", { mode: "signup", role: "reseller" })}
+                    disabled={isAuthenticated}
                     style={{
                       height: "36.61px",
                       paddingTop: "10.8px",
@@ -2238,8 +2243,9 @@ export default function HomePage() {
                       verticalAlign: "middle",
                       textTransform: "uppercase",
                       color: "#FFFFFF",
-                      cursor: "pointer",
+                      cursor: isAuthenticated ? "not-allowed" : "pointer",
                       whiteSpace: "nowrap",
+                      opacity: 1,
                     }}
                   >
                     BECOME A RESELLER

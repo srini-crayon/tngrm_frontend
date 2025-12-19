@@ -9,6 +9,7 @@ import { Label } from "../../components/ui/label";
 import ChatDialog from "../../components/chat-dialog";
 import { useAuthStore } from "../../lib/store/auth.store";
 import { useToast } from "../../hooks/use-toast";
+import { ContactSuccessModal } from "../../components/contact-success-modal";
 
 export default function ContactPage() {
   const { user } = useAuthStore();
@@ -22,6 +23,7 @@ export default function ContactPage() {
   });
   const [chatOpen, setChatOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,9 +90,6 @@ export default function ContactPage() {
       }
 
       if (response.ok && data.success) {
-        toast({
-          description: data.message || "Thank you for your enquiry! We'll get back to you soon.",
-        });
         // Reset form
         setFormData({
           firstName: "",
@@ -99,6 +98,8 @@ export default function ContactPage() {
           phone: "",
           message: "",
         });
+        // Show success modal
+        setIsSuccessModalOpen(true);
       } else {
         // Handle error responses - FastAPI often uses 'detail' field for errors
         const errorMessage = data?.detail || data?.message || data?.error || `Server error: ${response.status} ${response.statusText}`;
@@ -452,6 +453,12 @@ export default function ContactPage() {
       </section>
 
       <ChatDialog open={chatOpen} onOpenChange={setChatOpen} initialMode="create" />
+      
+      {/* Success Modal */}
+      <ContactSuccessModal 
+        isOpen={isSuccessModalOpen} 
+        onClose={() => setIsSuccessModalOpen(false)} 
+      />
     </div>
   );
 }

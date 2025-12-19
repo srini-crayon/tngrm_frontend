@@ -12,6 +12,7 @@ import { ToggleGroup, ToggleGroupItem } from "../../../components/ui/toggle-grou
 import { VoiceInputControls } from "../../../components/voice-input-controls";
 import { formatTime, formatDateTime } from "../../../lib/utils";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Agent {
   agent_id: string;
@@ -1730,6 +1731,87 @@ function InlineAgentCard({ agent }: { agent: Agent }) {
   );
 }
 
+// Swipe to visit agent store component - positioned on right side
+function SwipeToAgentStore() {
+  const router = useRouter();
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const minSwipeDistance = 50;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchEndX.current = null;
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    if (isLeftSwipe || isRightSwipe) {
+      router.push('/agents');
+    }
+  };
+
+  const handleClick = () => {
+    router.push('/agents');
+  };
+
+  return (
+    <div
+      onClick={handleClick}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      className="fixed right-8 top-1/2 cursor-pointer  items-center gap-3 py-4 px-3 rounded-lg hover:bg-white/90 active:bg-white transition-all select-none"
+      style={{
+        fontFamily: "Poppins, sans-serif",
+       
+      }}
+    >
+      <span 
+        className="whitespace-nowrap"
+        style={{
+          fontFamily: "Poppins, sans-serif",
+          fontWeight: 600,
+          fontSize: "12px",
+          lineHeight: "130%",
+          letterSpacing: "0%",
+          verticalAlign: "middle",
+          textTransform: "uppercase",
+          color: "#111827",
+          width: "88px",
+          height: "32px",
+          // top: "391px",
+          transform: "rotate(0deg)",
+          opacity: 1,
+          backgroundColor: "transparent",
+        }}
+      >
+        VISIT <br/> AGENTS STORE
+         <div 
+        className="flex items-center justify-center"
+      >
+
+        <Image
+          src="/Arrow_right.png"
+          alt="Arrow right"
+          width={120}
+          height={120}
+          className="object-contain"
+        />
+      </div>
+        
+      </span>
+     
+    </div>
+  );
+}
+
 export default function AgentsChatPage() {
   const router = useRouter();
   const [chatInput, setChatInput] = useState("");
@@ -1739,6 +1821,7 @@ export default function AgentsChatPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   const { messages, mode, setMode, addMessage, updateMessage, sessionId } = useChatStore();
   
@@ -2063,10 +2146,11 @@ export default function AgentsChatPage() {
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
-    if (messagesEndRef.current && isMounted) {
+    if (scrollContainerRef.current && isMounted && messages.length > 0) {
+      const scrollContainer = scrollContainerRef.current;
       setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-      }, 100);
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }, 150);
     }
   }, [messages, isMounted]);
 
@@ -2145,26 +2229,99 @@ export default function AgentsChatPage() {
     );
   };
 
+  // Add CSS to hide scrollbar
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .chat-scroll-container::-webkit-scrollbar {
+        display: none;
+      }
+      .chat-scroll-container {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   return (
     <div 
-      className="flex flex-col h-screen"
+      className="flex flex-col h-screen relative overflow-hidden"
       style={{
         backgroundColor: "#f8fafc",
         fontFamily: "Poppins, sans-serif",
       }}
     >
+      {/* Background images on left and right sides - greyed out */}
+      <div
+        className="fixed left-0 top-0 bottom-0 z-0"
+        style={{
+          width: "30%",
+          backgroundImage: "url('/backgrop chat.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "left center",
+          backgroundRepeat: "no-repeat",
+          pointerEvents: "none",
+          filter: "grayscale(100%) opacity(0.4)",
+        }}
+      />
+      <div
+        className="fixed right-0 top-0 bottom-0 z-0"
+        style={{
+          width: "30%",
+          backgroundImage: "url('/backgrop chat.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "right center",
+          backgroundRepeat: "no-repeat",
+          pointerEvents: "none",
+          filter: "grayscale(100%) opacity(0.4)",
+        }}
+      />
+      {/* Swipe to visit agent store - positioned on right side */}
+      <SwipeToAgentStore />
       {/* Single scrollable container for entire chat */}
       <div 
-        className="flex-1 overflow-y-auto"
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto relative z-10 chat-scroll-container"
         style={{ 
           scrollBehavior: "smooth",
+          scrollbarWidth: "none", /* Firefox */
+          msOverflowStyle: "none", /* IE and Edge */
         }}
       >
+        {/* White background for center content area - extends full height */}
+        <div 
+          className="fixed top-0 bottom-0 z-0"
+          style={{
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "1800px",
+            maxWidth: "100%",
+            backgroundImage: `
+  linear-gradient(to right,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.3) 10%,
+    rgba(255,255,255,0.6) 14%,
+    rgba(255,255,255,0.85) 18%,
+    white 25%,
+    white 75%,
+    rgba(255,255,255,0.85) 85%,
+    rgba(255,255,255,0.6) 90%,
+    rgba(255,255,255,0.3) 95%,
+    rgba(255,255,255,0) 100%
+  )
+`,
+          }}
+        />
         {/* Centered content wrapper */}
         <div 
-          className="w-full max-w-3xl mx-auto px-4 py-6"
+          className="relative z-10 w-full max-w-3xl mx-auto px-4 py-6"
           style={{
-            paddingBottom: "180px", // Space for fixed input
+            paddingBottom: "160px", // Space for fixed input
+            backgroundColor: "white",
           }}
         >
           <div className="space-y-4">

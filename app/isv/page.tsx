@@ -311,8 +311,9 @@ export default function ISVPage() {
             {/* Buttons */}
           <div className="flex justify-center scale-in">
             <button
-              onClick={() => openModal("auth", { mode: "login", role: "isv" })}
-              className="border-gradient relative text-white rounded-[4px] px-[28px] cursor-pointer transition-all hover:opacity-90 hover:scale-105"
+              onClick={() => !isAuthenticated && openModal("auth", { mode: "login", role: "isv" })}
+              disabled={isAuthenticated}
+              className="border-gradient relative text-white rounded-[4px] px-[28px] transition-all"
               style={{
                 willChange: "transform",
                 display: "flex",
@@ -332,6 +333,8 @@ export default function ISVPage() {
               "--gradient-angle": "0deg",
               border: "none",
               outline: "none",
+              cursor: isAuthenticated ? "not-allowed" : "pointer",
+              opacity: 1,
             } as React.CSSProperties & { "--gradient-angle"?: string }}
           >
             {/* Text */}

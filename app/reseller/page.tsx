@@ -303,7 +303,8 @@ export default function ResellerPage() {
           <div className="flex justify-center scale-in">
             <button
               onClick={handleResellerLogin}
-              className="border-gradient relative text-white rounded-[4px] px-[28px] cursor-pointer transition-all hover:opacity-90"
+              disabled={isAuthenticated}
+              className="border-gradient relative text-white rounded-[4px] px-[28px] transition-all"
               style={{
                 display: "flex",
                 height: "48px",
@@ -322,6 +323,8 @@ export default function ResellerPage() {
                 "--gradient-angle": "0deg",
                 border: "none",
                 outline: "none",
+                cursor: isAuthenticated ? "not-allowed" : "pointer",
+                opacity: 1,
               } as React.CSSProperties & { "--gradient-angle"?: string }}
             >
               {/* Text */}

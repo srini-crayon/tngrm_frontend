@@ -226,21 +226,35 @@ export function UploadAgentModal({ isOpen, onClose }: UploadAgentModalProps) {
     <>
       {isOpen && (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-6 animate-in fade-in duration-300 overflow-y-auto scrollbar-hide"
+      style={{
+        backgroundColor: "rgba(0, 0, 0, 0.6)",
+        backdropFilter: "blur(8px)",
+      }}
       onClick={onClose}
     >
       <div 
-        className="relative bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-top-4 duration-300 my-4"
         onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "linear-gradient(135deg, #FFFFFF 0%, #FAFBFC 100%)",
+          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05)",
+        }}
       >
-        {/* Header */}
-        <div className="px-6 py-4 flex items-start justify-between">
+        {/* Header with gradient background */}
+        <div 
+          className="px-6 py-5 flex items-start justify-between relative"
+          style={{
+            background: "linear-gradient(135deg, #F8F9FA 0%, #FFFFFF 100%)",
+            borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+          }}
+        >
           <div className="flex flex-col gap-2">
             <button
               onClick={handleBack}
-              className="flex items-center"
+              className="flex items-center mb-1"
               style={{
-                width: "45px",
+                width: "auto",
                 height: "24px",
                 borderRadius: "4px",
                 gap: "4px",
@@ -261,47 +275,43 @@ export function UploadAgentModal({ isOpen, onClose }: UploadAgentModalProps) {
               Back
             </button>
             <h1 
+              className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent"
               style={{
                 fontFamily: "Poppins, sans-serif",
-                fontWeight: 600,
-                fontStyle: "normal",
-                fontSize: "26px",
+                fontWeight: 700,
+                fontSize: "28px",
                 lineHeight: "130%",
-                letterSpacing: "0px",
-                verticalAlign: "middle",
-                color: "#00092C",
+                letterSpacing: "-0.5px",
                 margin: 0,
               }}
             >
               Upload Agent Data
             </h1>
-            <p 
-              style={{
-                fontFamily: "Poppins, sans-serif",
-                fontWeight: 400,
-                fontStyle: "normal",
-                fontSize: "16px",
-                lineHeight: "150%",
-                letterSpacing: "0px",
-                verticalAlign: "middle",
-                color: "#00092C",
-                margin: 0,
-                marginTop: "4px",
-              }}
-            >
+            <p className="text-sm text-gray-500 mt-1" style={{ fontFamily: "Inter, sans-serif" }}>
               Upload a CSV or Excel file with your agent information.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+            className="h-9 w-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-all duration-200 group"
+            style={{
+              border: "1px solid transparent",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#F3F4F6"
+              e.currentTarget.style.borderColor = "#E5E7EB"
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent"
+              e.currentTarget.style.borderColor = "transparent"
+            }}
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4 text-gray-500 group-hover:text-gray-700 transition-colors" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 pb-6">
+        <div className="flex-1 overflow-y-auto px-6 pb-6" style={{ backgroundColor: "#FFFFFF" }}>
           {/* Upload Zone */}
           <div
             onDragOver={handleDragOver}

@@ -5,7 +5,7 @@ import { AgentSearchChat } from "../../components/agent-search-chat";
 import { AgentCard } from "../../components/agent-card";
 import { ModelCard } from "../../components/model-card";
 import { AgentCardSkeleton } from "../../components/agent-card-skeleton";
-import { ChevronDown, Filter } from "lucide-react";
+import { ChevronDown, Filter, Search } from "lucide-react";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useChatStore } from "../../lib/store/chat.store";
@@ -39,6 +39,7 @@ type Agent = {
   deploymentType: string;
   persona: string;
   assetType: string;
+  valueProposition?: string;
   agents_ordering?: number;
   demoPreview?: string;
 };
@@ -139,9 +140,9 @@ export default function AgentLibraryPage() {
   const [agentSearchChatValue, setAgentSearchChatValue] = useState("");
   const [providerFilter, setProviderFilter] = useState<string>("All");
   const [capabilityFilter, setCapabilityFilter] = useState<string>("All");
-  const [deploymentFilter, setDeploymentFilter] = useState<string>("Agent");
+  const [deploymentFilter, setDeploymentFilter] = useState<string>("All");
   const [personaFilter, setPersonaFilter] = useState<string>("All");
-  const [selectedDeploymentType, setSelectedDeploymentType] = useState<string>("Agent");
+  const [selectedCapability, setSelectedCapability] = useState<string>("All");
   const [indicatorStyle, setIndicatorStyle] = useState<{ left: number; width: number } | null>(null);
   const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const tabsContainerRef = useRef<HTMLDivElement>(null);
@@ -218,6 +219,7 @@ export default function AgentLibraryPage() {
               deploymentType: a.asset_type || "",
               persona: a.by_persona || "",
               assetType: a.asset_type || "",
+              valueProposition: (a as any).by_value || "",
               agents_ordering: ordering,
               demoPreview: firstPreviewImage,
             };
@@ -231,19 +233,9 @@ export default function AgentLibraryPage() {
         
         setAgents(mappedAgents.length > 0 ? mappedAgents : fallbackAgents);
         
-        // Set default deployment type to "Agent" if it exists, otherwise first available type
-        if (mappedAgents.length > 0) {
-          const deploymentTypes = new Set<string>();
-          mappedAgents.forEach(agent => {
-            if (agent.deploymentType) deploymentTypes.add(agent.deploymentType);
-          });
-          const sortedTypes = Array.from(deploymentTypes).sort();
-          const defaultType = sortedTypes.includes("Agent") ? "Agent" : (sortedTypes[0] || "");
-          if (defaultType) {
-            setSelectedDeploymentType(defaultType);
-            setDeploymentFilter(defaultType);
-          }
-        }
+        // Set default capability to "All"
+        setSelectedCapability("All");
+        setCapabilityFilter("All");
       } catch (err) {
         console.error(err);
         setError("Failed to load agents");
@@ -400,12 +392,25 @@ export default function AgentLibraryPage() {
 
 
   const allCapabilities = useMemo(() => {
-    const capabilities = new Set<string>();
+    const values = new Set<string>();
     agents.forEach(agent => {
-      agent.capabilities.forEach(capability => capabilities.add(capability));
+      if (agent.valueProposition) {
+        values.add(agent.valueProposition);
+      }
     });
-    return Array.from(capabilities).sort();
+    return Array.from(values).sort();
   }, [agents]);
+
+  // Calculate counts for each value proposition
+  const capabilityCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    allCapabilities.forEach(value => {
+      counts[value] = agents.filter(agent => 
+        agent.valueProposition === value
+      ).length;
+    });
+    return counts;
+  }, [agents, allCapabilities]);
 
   const allProviders = useMemo(() => {
     const providers = new Set<string>();
@@ -415,40 +420,14 @@ export default function AgentLibraryPage() {
     return Array.from(providers).sort();
   }, [agents]);
 
-  const allDeploymentTypes = useMemo(() => {
-    const types = new Set<string>();
-    agents.forEach(agent => {
-      if (agent.deploymentType) types.add(agent.deploymentType);
-    });
-    // Exclude "Model" from the deployment types menu
-    types.delete("Model");
-    // Sort with custom order: Agent, Solution, then others
-    const orderedTypes = ["Agent", "Solution"];
-    const otherTypes = Array.from(types).filter(t => !orderedTypes.includes(t)).sort();
-    return [...orderedTypes.filter(t => types.has(t)), ...otherTypes];
-  }, [agents]);
-
-  // Calculate counts for each deployment type
-  const deploymentTypeCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    allDeploymentTypes.forEach(type => {
-      if (type === "Model") {
-        counts[type] = models.length;
-      } else {
-        counts[type] = agents.filter(agent => agent.deploymentType === type).length;
-      }
-    });
-    return counts;
-  }, [agents, models, allDeploymentTypes]);
-
-  // Update indicator position when selected deployment type changes
+  // Update indicator position when selected capability changes
   useEffect(() => {
-    if (!tabsContainerRef.current || !selectedDeploymentType) {
+    if (!tabsContainerRef.current || !selectedCapability) {
       setIndicatorStyle(null);
       return;
     }
 
-    const tabElement = tabRefs.current.get(selectedDeploymentType);
+    const tabElement = tabRefs.current.get(selectedCapability);
     if (!tabElement) {
       setIndicatorStyle(null);
       return;
@@ -468,14 +447,39 @@ export default function AgentLibraryPage() {
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [selectedDeploymentType, allDeploymentTypes]);
+  }, [selectedCapability, allCapabilities]);
 
-  // Sync selected segment when deployment filter changes from dropdown
+  // Calculate grey line width to span all tabs
+  const [greyLineStyle, setGreyLineStyle] = useState<{ left: number; width: number } | null>(null);
+  
   useEffect(() => {
-    if (deploymentFilter !== "All" && allDeploymentTypes.includes(deploymentFilter)) {
-      setSelectedDeploymentType(deploymentFilter);
+    if (!tabsContainerRef.current) {
+      setGreyLineStyle(null);
+      return;
     }
-  }, [deploymentFilter, allDeploymentTypes]);
+
+    const timer = setTimeout(() => {
+      if (!tabsContainerRef.current) return;
+      
+      const containerRect = tabsContainerRef.current.getBoundingClientRect();
+      const allTab = tabRefs.current.get("All");
+      const lastTab = allCapabilities.length > 0 
+        ? tabRefs.current.get(allCapabilities[allCapabilities.length - 1])
+        : allTab;
+      
+      if (allTab && lastTab) {
+        const firstRect = allTab.getBoundingClientRect();
+        const lastRect = lastTab.getBoundingClientRect();
+        
+        setGreyLineStyle({
+          left: firstRect.left - containerRect.left,
+          width: (lastRect.right - firstRect.left),
+        });
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [allCapabilities]);
 
   const allPersonas = useMemo(() => {
     const personas = new Set<string>();
@@ -485,57 +489,43 @@ export default function AgentLibraryPage() {
     return Array.from(personas).sort();
   }, [agents]);
 
-  // Filter options based on selected deployment type
+  // Filter options based on selected value proposition
   const filteredProviders = useMemo(() => {
-    if (selectedDeploymentType === "All" || !selectedDeploymentType) return allProviders;
+    if (selectedCapability === "All" || !selectedCapability) return allProviders;
     const providers = new Set<string>();
     agents
-      .filter(agent => agent.deploymentType === selectedDeploymentType)
+      .filter(agent => agent.valueProposition === selectedCapability)
       .forEach(agent => {
         agent.providers.forEach(provider => providers.add(provider));
       });
     return Array.from(providers).sort();
-  }, [agents, selectedDeploymentType, allProviders]);
-
-  const filteredCapabilities = useMemo(() => {
-    if (selectedDeploymentType === "All" || !selectedDeploymentType) return allCapabilities;
-    const capabilities = new Set<string>();
-    agents
-      .filter(agent => agent.deploymentType === selectedDeploymentType)
-      .forEach(agent => {
-        agent.capabilities.forEach(capability => capabilities.add(capability));
-      });
-    return Array.from(capabilities).sort();
-  }, [agents, selectedDeploymentType, allCapabilities]);
+  }, [agents, selectedCapability, allProviders]);
 
   const filteredPersonas = useMemo(() => {
-    if (selectedDeploymentType === "All" || !selectedDeploymentType) return allPersonas;
+    if (selectedCapability === "All" || !selectedCapability) return allPersonas;
     const personas = new Set<string>();
     agents
-      .filter(agent => agent.deploymentType === selectedDeploymentType)
+      .filter(agent => agent.valueProposition === selectedCapability)
       .forEach(agent => {
         if (agent.persona) personas.add(agent.persona);
       });
     return Array.from(personas).sort();
-  }, [agents, selectedDeploymentType, allPersonas]);
+  }, [agents, selectedCapability, allPersonas]);
 
-  // Update deployment filter when segment is selected and reset filters if needed
+  // Update capability filter when segment is selected and reset filters if needed
   useEffect(() => {
-    if (selectedDeploymentType) {
-      setDeploymentFilter(selectedDeploymentType);
+    if (selectedCapability) {
+      setCapabilityFilter(selectedCapability === "All" ? "All" : selectedCapability);
       
-      // Reset filters if they're not available for the new deployment type
+      // Reset filters if they're not available for the new capability
       if (!filteredProviders.includes(providerFilter) && providerFilter !== "All") {
         setProviderFilter("All");
-      }
-      if (!filteredCapabilities.includes(capabilityFilter) && capabilityFilter !== "All") {
-        setCapabilityFilter("All");
       }
       if (!filteredPersonas.includes(personaFilter) && personaFilter !== "All") {
         setPersonaFilter("All");
       }
     }
-  }, [selectedDeploymentType, filteredProviders, filteredCapabilities, filteredPersonas, providerFilter, capabilityFilter, personaFilter]);
+  }, [selectedCapability, filteredProviders, filteredPersonas, providerFilter, personaFilter]);
 
   // Get AI searched agent IDs from the latest chat message
   const aiSearchedAgentIds = useMemo(() => {
@@ -570,7 +560,7 @@ export default function AgentLibraryPage() {
     
     if (capabilityFilter !== "All") {
       filtered = filtered.filter(agent => 
-        agent.capabilities.includes(capabilityFilter)
+        agent.valueProposition === capabilityFilter
       );
     }
     
@@ -667,7 +657,7 @@ export default function AgentLibraryPage() {
 
   useEffect(() => {
     setModelsCurrentPage(1);
-  }, [search, selectedDeploymentType]);
+  }, [search, selectedCapability]);
 
   useEffect(() => {
     const maxPages = Math.max(1, Math.ceil(filteredModels.length / PAGE_SIZE));
@@ -678,11 +668,11 @@ export default function AgentLibraryPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, providerFilter, capabilityFilter, deploymentFilter, personaFilter, agentIdFromUrl]);
+  }, [search, providerFilter, capabilityFilter, deploymentFilter, personaFilter, agentIdFromUrl, selectedCapability]);
 
   useEffect(() => {
     setAiCurrentPage(1);
-  }, [aiSearchedAgentIds, search, providerFilter, capabilityFilter, deploymentFilter, personaFilter]);
+  }, [aiSearchedAgentIds, search, providerFilter, capabilityFilter, deploymentFilter, personaFilter, selectedCapability]);
 
   useEffect(() => {
     const maxPages = Math.max(1, Math.ceil(allFilteredAgents.length / PAGE_SIZE));
@@ -926,39 +916,44 @@ export default function AgentLibraryPage() {
           </div>
         )}
 
-        {/* Additional Filters */}
+        {/* Capability Tabs Section - Centered */}
         <div 
           className="w-full"
           style={{
             width: "100%",
+            backgroundColor: "#FFFFFF",
+            paddingTop: "40px",
+            paddingBottom: "20px",
           }}
         >
-          <div 
-            className="flex flex-col lg:flex-row gap-4 items-end mx-auto"
-            style={{
-              width: "100%",
-              maxWidth: "1360px",
-              height: "64px",
-              backgroundColor: "#FFFFFF",
-              borderTop: "none",
-              borderBottom: "none",
-              borderLeft: "none",
-              borderRight: "none",
-              paddingLeft: "8px",
-              paddingRight: "8px",
-            }}
-          >
-            {/* Deployment Type Segment Tabs */}
-            {allDeploymentTypes.length > 0 && (
-              <div className="relative w-full lg:basis-[60%] flex justify-start items-end">
+          <div className="w-full mx-auto" style={{ maxWidth: "1360px", paddingLeft: "12px", paddingRight: "12px" }}>
+            {/* Capability Segment Tabs - Centered */}
+            {allCapabilities.length > 0 && (
+              <div className="relative w-full flex justify-center items-center">
                 <div 
                   ref={tabsContainerRef}
-                  className="relative flex gap-8" 
+                  className="relative flex gap-8 flex-wrap justify-center" 
                   style={{ 
                     position: "relative",
                   }}
                 >
-                  {/* Animated sliding indicator */}
+                  {/* Base grey line - always visible under all tabs */}
+                  {greyLineStyle && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: "-1px",
+                        left: `${greyLineStyle.left}px`,
+                        width: `${greyLineStyle.width}px`,
+                        height: "2px",
+                        backgroundColor: "#E5E7EB",
+                        pointerEvents: "none",
+                        zIndex: 0,
+                      }}
+                    />
+                  )}
+                  
+                  {/* Animated sliding black indicator - overlaps grey line */}
                   {indicatorStyle && (
                     <div
                       style={{
@@ -974,26 +969,60 @@ export default function AgentLibraryPage() {
                         backfaceVisibility: "hidden",
                         WebkitBackfaceVisibility: "hidden",
                         pointerEvents: "none",
+                        zIndex: 1,
                       }}
                     />
                   )}
                   
-                  {/* Deployment type tabs */}
-                  {allDeploymentTypes.map((type) => {
-                    const count = deploymentTypeCounts[type] || 0;
-                    const isSelected = selectedDeploymentType === type;
+                  {/* All option */}
+                  <button
+                    key="All"
+                    ref={(el) => {
+                      if (el) {
+                        tabRefs.current.set("All", el);
+                      } else {
+                        tabRefs.current.delete("All");
+                      }
+                    }}
+                    onClick={() => setSelectedCapability("All")}
+                    className="relative pb-2 px-4"
+                    style={{
+                      fontFamily: "Poppins",
+                      fontSize: "14px",
+                      fontWeight: selectedCapability === "All" ? 600 : 500,
+                      color: selectedCapability === "All" ? "#000" : "#344054",
+                      paddingBottom: "12px",
+                      whiteSpace: "nowrap",
+                      opacity: 1,
+                      cursor: "pointer",
+                      display: "inline-block",
+                      visibility: "visible",
+                      transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1), font-weight 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      willChange: "transform",
+                      backfaceVisibility: "hidden",
+                      WebkitBackfaceVisibility: "hidden",
+                      transform: "translateZ(0)",
+                    }}
+                  >
+                    All ({agents.length})
+                  </button>
+                  
+                  {/* Capability tabs */}
+                  {allCapabilities.map((capability) => {
+                    const count = capabilityCounts[capability] || 0;
+                    const isSelected = selectedCapability === capability;
                     
                     return (
                       <button
-                        key={type}
+                        key={capability}
                         ref={(el) => {
                           if (el) {
-                            tabRefs.current.set(type, el);
+                            tabRefs.current.set(capability, el);
                           } else {
-                            tabRefs.current.delete(type);
+                            tabRefs.current.delete(capability);
                           }
                         }}
-                        onClick={() => setSelectedDeploymentType(type)}
+                        onClick={() => setSelectedCapability(capability)}
                         className="relative pb-2 px-4"
                         style={{
                           fontFamily: "Poppins",
@@ -1013,19 +1042,67 @@ export default function AgentLibraryPage() {
                           transform: "translateZ(0)",
                         }}
                       >
-                        {type} ({count})
+                        {capability} ({count})
                       </button>
                     );
                   })}
                 </div>
               </div>
             )}
-            
-            {/* Filter Button */}
-            <div className="flex items-center justify-end w-full lg:basis-[40%] lg:pl-4">
+          </div>
+        </div>
+
+        {/* Search Bar Section - Full Width with Filter Integrated */}
+        <div 
+          className="w-full"
+          style={{
+            width: "100%",
+            backgroundColor: "#FFFFFF",
+            paddingTop: "20px",
+            paddingBottom: "24px",
+          }}
+        >
+          <div className="w-full mx-auto" style={{ maxWidth: "1360px", paddingLeft: "12px", paddingRight: "12px" }}>
+            <div className="w-full relative">
+              <Search 
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 pointer-events-none"
+                style={{
+                  zIndex: 1,
+                  color: "#9CA3AF",
+                }}
+              />
+                <input
+                  type="text"
+                  placeholder="Search over 100+ Agents and Solutions Available"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "12px 140px 12px 40px",
+                    fontFamily: "Poppins, sans-serif",
+                    fontSize: "14px",
+                    border: "none",
+                    borderBottom: "1px solid #E5E7EB",
+                    borderRadius: "0",
+                    outline: "none",
+                    transition: "border-color 0.2s",
+                    backgroundColor: "transparent",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderBottomColor = "#000";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderBottomColor = "#E5E7EB";
+                  }}
+                />
+              {/* Filter Button - Inside Search Bar */}
               <button
                 onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
                 style={{
+                  position: "absolute",
+                  right: "4px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
                   fontFamily: "Poppins, sans-serif",
                   fontSize: "14px",
                   color: "#344054",
@@ -1035,15 +1112,17 @@ export default function AgentLibraryPage() {
                   padding: "8px 12px",
                   display: "flex",
                   alignItems: "center",
-                  gap: "8px",
+                  gap: "6px",
                   whiteSpace: "nowrap",
-                  position: "relative",
+                  height: "36px",
+                  transition: "all 0.2s",
+                  borderRadius: "6px",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.opacity = "0.7";
+                  e.currentTarget.style.backgroundColor = "#F9FAFB";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.opacity = "1";
+                  e.currentTarget.style.backgroundColor = "transparent";
                 }}
               >
                 <div style={{ position: "relative", display: "inline-flex" }}>
@@ -1063,7 +1142,7 @@ export default function AgentLibraryPage() {
                     />
                   )}
                 </div>
-                <span>Filter</span>
+                <span>Filters</span>
                 <ChevronDown 
                   className="h-4 w-4 transition-transform duration-200"
                   style={{
@@ -1073,14 +1152,6 @@ export default function AgentLibraryPage() {
               </button>
             </div>
           </div>
-          {/* Fixed Divider - stays in place */}
-          <div 
-            className="w-full mx-auto"
-            style={{
-              maxWidth: "1360px",
-              borderBottom: "1px solid #DFDFDF",
-            }}
-          />
         </div>
 
         {/* Expandable Filter Panel */}
@@ -1213,7 +1284,7 @@ export default function AgentLibraryPage() {
                     >
                       All
                     </button>
-                    {filteredCapabilities.map(capability => (
+                    {allCapabilities.map(capability => (
                       <button
                         key={capability}
                         onClick={() => setCapabilityFilter(capability)}
@@ -1331,8 +1402,8 @@ export default function AgentLibraryPage() {
                       onClick={() => {
                         setProviderFilter("All");
                         setCapabilityFilter("All");
-                        setDeploymentFilter("Agent");
-                        setSelectedDeploymentType("Agent");
+                        setSelectedCapability("All");
+                        setDeploymentFilter("All");
                         setPersonaFilter("All");
                         setSearch("");
                       }}
@@ -1385,48 +1456,7 @@ export default function AgentLibraryPage() {
             </div>
           )}
           
-          {!loading && !error && selectedDeploymentType === "Model" ? (
-            <>
-              {/* Models Section */}
-              {(modelsLoading || models.length > 0) && (
-                <div>
-                  {modelsLoading ? (
-                    <div 
-                      className="grid gap-4 md:gap-6 lg:gap-10"
-                      style={{
-                        gridTemplateColumns: "repeat(3, 1fr)",
-                      }}
-                    >
-                      {Array.from({ length: 9 }).map((_, index) => (
-                        <AgentCardSkeleton key={index} />
-                      ))}
-                    </div>
-                  ) : (
-                    <>
-                      <div 
-                        className="grid gap-4 md:gap-6 lg:gap-10"
-                        style={{
-                          gridTemplateColumns: "repeat(3, 1fr)",
-                        }}
-                      >
-                        {paginatedModels.map((model) => (
-                          <ModelCard key={model.id} {...model} />
-                        ))}
-                      </div>
-
-                      {filteredModels.length === 0 && (
-                        <div className="text-center py-12">
-                          <div className="text-muted-foreground">No models found matching your criteria.</div>
-                        </div>
-                      )}
-
-                      {modelsTotalPages > 1 && renderPaginationControls(modelsCurrentPage, modelsTotalPages, setModelsCurrentPage)}
-                    </>
-                  )}
-                </div>
-              )}
-            </>
-          ) : !loading && !error && (
+          {!loading && !error && (
             <>
               {/* All Agents Section */}
               <div className={aiSearchedAgentIds && aiSearchedAgentIds.length > 0 ? "border-t pt-12" : ""}>
@@ -1689,8 +1719,7 @@ export default function AgentLibraryPage() {
           </div>
         </div>
       </section>
-        </>
-      )}
+      </>
     </div>
   );
 }
